@@ -13,6 +13,8 @@ export interface AppLayoutProps {
   onSelectTab?: (tabId: string) => void;
   onCloseTab?: (tabId: string) => void;
   onBackToDocuments?: () => void;
+  onOpenVersions?: () => void;
+  onOpenReleases?: () => void;
   children?: ReactNode;
 }
 
@@ -56,6 +58,8 @@ export function AppLayout({
   onSelectTab,
   onCloseTab,
   onBackToDocuments,
+  onOpenVersions,
+  onOpenReleases,
   children,
 }: AppLayoutProps) {
   const [internalActive, setInternalActive] = useState(
@@ -187,6 +191,24 @@ export function AppLayout({
               className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
             >
               Documents
+            </button>
+          )}
+          {onOpenVersions && (
+            <button
+              type="button"
+              onClick={onOpenVersions}
+              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+            >
+              Versions
+            </button>
+          )}
+          {onOpenReleases && (
+            <button
+              type="button"
+              onClick={onOpenReleases}
+              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+            >
+              Releases
             </button>
           )}
           <span className="font-mono text-[10px] text-eng-faint">mm · ISO</span>

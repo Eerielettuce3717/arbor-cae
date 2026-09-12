@@ -120,9 +120,15 @@ function formatModified(iso: string): string {
 
 export interface DocumentsPageProps {
   onOpenDocument?: (documentId: string) => void;
+  onOpenVersions?: () => void;
+  onOpenReleases?: () => void;
 }
 
-export function DocumentsPage({ onOpenDocument }: DocumentsPageProps) {
+export function DocumentsPage({
+  onOpenDocument,
+  onOpenVersions,
+  onOpenReleases,
+}: DocumentsPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [orgSection, setOrgSection] = useState<OrgSection>("folders");
   const [selectedFolderId, setSelectedFolderId] = useState("f-mech");
@@ -389,6 +395,20 @@ export function DocumentsPage({ onOpenDocument }: DocumentsPageProps) {
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenVersions}
+              className="rounded-md border border-eng-border px-2.5 py-1.5 text-xs font-medium text-eng-muted hover:border-sky-700 hover:text-sky-300"
+            >
+              Versions
+            </button>
+            <button
+              type="button"
+              onClick={onOpenReleases}
+              className="rounded-md border border-eng-border px-2.5 py-1.5 text-xs font-medium text-eng-muted hover:border-sky-700 hover:text-sky-300"
+            >
+              Releases
+            </button>
             <div className="flex items-center gap-1 rounded-md border border-eng-border bg-eng-elevated p-0.5">
               <button
                 type="button"

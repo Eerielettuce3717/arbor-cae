@@ -5,6 +5,11 @@ node_modules/
 dist/
 src-tauri/target/
 
+# Local PDM store
+.cad_workspace/
+**/.cad_db
+**/.cad_db-*
+
 # Logs / OS
 *.log
 .DS_Store

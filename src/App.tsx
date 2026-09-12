@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { DocumentsPage } from "./components/documents/DocumentsPage";
 import { AppLayout, type WorkspaceTab } from "./components/layout/AppLayout";
+import { ReleaseManagement } from "./components/pdm/ReleaseManagement";
+import { VersionManager } from "./components/pdm/VersionManager";
 
-type AppRoute = "documents" | "workspace";
+type AppRoute = "documents" | "workspace" | "versions" | "releases";
 
 const INITIAL_TABS: WorkspaceTab[] = [
   { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
@@ -13,6 +15,11 @@ export default function App() {
   const [route, setRoute] = useState<AppRoute>("documents");
   const [tabs, setTabs] = useState<WorkspaceTab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState("d-2");
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  const onProjectReady = useCallback((id: string) => {
+    setProjectId(id);
+  }, []);
 
   function openDocument(documentId: string) {
     const catalog: Record<string, WorkspaceTab> = {
@@ -50,7 +57,51 @@ export default function App() {
   }
 
   if (route === "documents") {
-    return <DocumentsPage onOpenDocument={openDocument} />;
+    return (
+      <DocumentsPage
+        onOpenDocument={openDocument}
+        onOpenVersions={() => setRoute("versions")}
+        onOpenReleases={() => setRoute("releases")}
+      />
+    );
+  }
+
+  if (route === "versions") {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <PdmNav
+          active="versions"
+          onBack={() => setRoute("documents")}
+          onVersions={() => setRoute("versions")}
+          onReleases={() => setRoute("releases")}
+        />
+        <div className="min-h-0 flex-1">
+          <VersionManager
+            projectId={projectId}
+            onProjectReady={onProjectReady}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (route === "releases") {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <PdmNav
+          active="releases"
+          onBack={() => setRoute("documents")}
+          onVersions={() => setRoute("versions")}
+          onReleases={() => setRoute("releases")}
+        />
+        <div className="min-h-0 flex-1">
+          <ReleaseManagement
+            projectId={projectId}
+            onProjectReady={onProjectReady}
+          />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,6 +111,54 @@ export default function App() {
       onSelectTab={setActiveTabId}
       onCloseTab={closeTab}
       onBackToDocuments={() => setRoute("documents")}
+      onOpenVersions={() => setRoute("versions")}
+      onOpenReleases={() => setRoute("releases")}
     />
+  );
+}
+
+function PdmNav({
+  active,
+  onBack,
+  onVersions,
+  onReleases,
+}: {
+  active: "versions" | "releases";
+  onBack: () => void;
+  onVersions: () => void;
+  onReleases: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-eng-border bg-eng-elevated px-3 py-1.5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+      >
+        ← Documents
+      </button>
+      <button
+        type="button"
+        onClick={onVersions}
+        className={`rounded px-2.5 py-1 text-[11px] font-medium ${
+          active === "versions"
+            ? "bg-eng-active text-sky-300"
+            : "text-eng-muted hover:bg-eng-hover"
+        }`}
+      >
+        Versions
+      </button>
+      <button
+        type="button"
+        onClick={onReleases}
+        className={`rounded px-2.5 py-1 text-[11px] font-medium ${
+          active === "releases"
+            ? "bg-eng-active text-sky-300"
+            : "text-eng-muted hover:bg-eng-hover"
+        }`}
+      >
+        Releases
+      </button>
+    </div>
   );
 }
