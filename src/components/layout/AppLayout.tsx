@@ -3,6 +3,7 @@ import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
 import { useFeatureStore } from "../../store/featureStore";
 import type { FeatureToolType } from "../../store/featureTypes";
 import { useSketchStore } from "../../store/sketchStore";
+import { AssemblyWorkspace, InstanceTree } from "../assembly";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
 import {
   FeatureEditor,
@@ -10,6 +11,12 @@ import {
   SketchCanvas,
   SketchTool,
 } from "../partstudio";
+import { useAssemblyStore } from "../../store/assemblyStore";
+import {
+  MATE_CATALOG,
+  RELATION_CATALOG,
+  type AssemblyToolId,
+} from "../../store/assemblyTypes";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
@@ -92,6 +99,57 @@ const TOOLBAR_GROUPS: {
   },
 ];
 
+const ASSEMBLY_TOOLBAR_GROUPS: {
+  id: string;
+  label: string;
+  tools: { id: AssemblyToolId; label: string }[];
+}[] = [
+  {
+    id: "insert",
+    label: "Insert",
+    tools: [
+      { id: "insert", label: "Insert" },
+      { id: "link", label: "Link" },
+      { id: "updateRefs", label: "Update refs" },
+    ],
+  },
+  {
+    id: "mates",
+    label: "Mates",
+    tools: MATE_CATALOG.map((m) => ({ id: m.type, label: m.label })),
+  },
+  {
+    id: "assembly",
+    label: "Assembly",
+    tools: [
+      { id: "group", label: "Group" },
+      { id: "snapMode", label: "Snap Mode" },
+      { id: "showMates", label: "Show Mates" },
+      { id: "replicate", label: "Replicate" },
+      { id: "replace", label: "Replace" },
+      { id: "linearPattern", label: "Linear Pattern" },
+      { id: "circularPattern", label: "Circular Pattern" },
+      { id: "mirror", label: "Mirror" },
+    ],
+  },
+  {
+    id: "relations",
+    label: "Relations",
+    tools: RELATION_CATALOG.map((r) => ({ id: r.type, label: r.label })),
+  },
+  {
+    id: "states",
+    label: "States",
+    tools: [
+      { id: "namedPositions", label: "Named Positions" },
+      { id: "displayStates", label: "Display States" },
+      { id: "explodedViews", label: "Exploded Views" },
+      { id: "inContext", label: "In Context" },
+      { id: "bom", label: "BOM" },
+    ],
+  },
+];
+
 const TOOL_TO_ANALYSIS: Record<string, AnalysisToolId> = {
   Measure: "measure",
   "Mass Props": "mass-properties",
@@ -125,6 +183,7 @@ export function AppLayout({
 
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
+  const isAssembly = activeTab?.kind === "assembly";
 
   function selectTab(id: string) {
     setInternalActive(id);
@@ -142,6 +201,12 @@ export function AppLayout({
   const openEditor = useFeatureStore((s) => s.openEditor);
   const selectFeature = useFeatureStore((s) => s.selectFeature);
   const updateFeatureParams = useFeatureStore((s) => s.updateFeatureParams);
+
+  const assemblyTool = useAssemblyStore((s) => s.activeTool);
+  const setAssemblyTool = useAssemblyStore((s) => s.setActiveTool);
+  const assemblyStatus = useAssemblyStore((s) => s.statusMessage);
+  const snapMode = useAssemblyStore((s) => s.snapMode);
+  const showMatesMode = useAssemblyStore((s) => s.showMatesMode);
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId);
   const sculptActive =
@@ -363,34 +428,73 @@ export function AppLayout({
 
       {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
-        {TOOLBAR_GROUPS.map((group) => (
-          <div key={group.id} className="flex items-center gap-1">
-            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
-              {group.label}
-            </span>
-            {group.tools.map((tool) => (
-              <button
-                key={tool}
-                type="button"
-                onClick={() => onSelectTool(tool)}
-                className={`rounded px-2 py-1 text-xs ${
-                  activeTool === tool
-                    ? "bg-sky-700 text-white"
-                    : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                }`}
-              >
-                {tool}
-              </button>
+        {isAssembly
+          ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
+              <div key={group.id} className="flex items-center gap-1">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                  {group.label}
+                </span>
+                {group.tools.map((tool) => {
+                  const toggled =
+                    (tool.id === "snapMode" && snapMode) ||
+                    (tool.id === "showMates" && showMatesMode);
+                  const active = assemblyTool === tool.id || toggled;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => setAssemblyTool(tool.id)}
+                      className={`rounded px-2 py-1 text-xs ${
+                        active
+                          ? "bg-sky-700 text-white"
+                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                      }`}
+                    >
+                      {tool.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          : TOOLBAR_GROUPS.map((group) => (
+              <div key={group.id} className="flex items-center gap-1">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                  {group.label}
+                </span>
+                {group.tools.map((tool) => (
+                  <button
+                    key={tool}
+                    type="button"
+                    onClick={() => onSelectTool(tool)}
+                    className={`rounded px-2 py-1 text-xs ${
+                      activeTool === tool
+                        ? "bg-sky-700 text-white"
+                        : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                    }`}
+                  >
+                    {tool}
+                  </button>
+                ))}
+              </div>
             ))}
-          </div>
-        ))}
         <div className="ml-auto flex items-center gap-2 text-[11px] text-eng-muted">
           <span>
-            Active: <span className="font-medium text-sky-300">{activeTool}</span>
+            Active:{" "}
+            <span className="font-medium text-sky-300">
+              {isAssembly ? assemblyTool : activeTool}
+            </span>
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
-          {selectedFeatureId && (
+          {isAssembly && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {assemblyStatus}
+              </span>
+            </>
+          )}
+          {!isAssembly && selectedFeatureId && (
             <>
               <span className="text-eng-faint">|</span>
               <span className="text-sky-300/80">
@@ -412,7 +516,7 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                Feature Tree
+                {isAssembly ? "Instance Tree" : "Feature Tree"}
               </span>
             )}
             <button
@@ -424,39 +528,45 @@ export function AppLayout({
               {panelCollapsed ? "»" : "«"}
             </button>
           </div>
-          {!panelCollapsed && (
-            <FeatureList
-              onMeshReady={onMeshReady}
-              onActivateSketch={(feature) => {
-                setSketchActive(true, {
-                  id: feature.id,
-                  name: feature.name,
-                });
-              }}
-            />
-          )}
+          {!panelCollapsed &&
+            (isAssembly ? (
+              <InstanceTree />
+            ) : (
+              <FeatureList
+                onMeshReady={onMeshReady}
+                onActivateSketch={(feature) => {
+                  setSketchActive(true, {
+                    id: feature.id,
+                    name: feature.name,
+                  });
+                }}
+              />
+            ))}
         </aside>
 
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
-          {children ?? (
-            <>
-              <Viewport3D
-                occtMesh={sculptActive ? null : occtMesh}
-                sculptActive={sculptActive}
-                sculptParams={sculptParams}
-                onSculptCageChanged={onSculptCageChanged}
-                onSculptLevelsChanged={onSculptLevelsChanged}
-              />
-              <AnalysisPanel
-                activeTool={analysisTool}
-                onClose={() => setAnalysisTool(null)}
-                onMeshReady={onMeshReady}
-              />
-              {sketchActive && <SketchCanvas />}
-              <FeatureEditor />
-            </>
-          )}
+          {children ??
+            (isAssembly ? (
+              <AssemblyWorkspace />
+            ) : (
+              <>
+                <Viewport3D
+                  occtMesh={sculptActive ? null : occtMesh}
+                  sculptActive={sculptActive}
+                  sculptParams={sculptParams}
+                  onSculptCageChanged={onSculptCageChanged}
+                  onSculptLevelsChanged={onSculptLevelsChanged}
+                />
+                <AnalysisPanel
+                  activeTool={analysisTool}
+                  onClose={() => setAnalysisTool(null)}
+                  onMeshReady={onMeshReady}
+                />
+                {sketchActive && <SketchCanvas />}
+                <FeatureEditor />
+              </>
+            ))}
         </section>
       </div>
     </div>
