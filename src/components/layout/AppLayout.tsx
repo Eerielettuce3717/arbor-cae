@@ -4,6 +4,7 @@ import { useFeatureStore } from "../../store/featureStore";
 import type { FeatureToolType } from "../../store/featureTypes";
 import { useSketchStore } from "../../store/sketchStore";
 import { AssemblyWorkspace, InstanceTree } from "../assembly";
+import { CamTree, CamWorkspace } from "../cam";
 import { DrawingTree, DrawingWorkspace } from "../drawings";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
 import {
@@ -18,6 +19,8 @@ import {
   RELATION_CATALOG,
   type AssemblyToolId,
 } from "../../store/assemblyTypes";
+import { useCamStore } from "../../store/camStore";
+import { CAM_TOOLBAR_GROUPS, type CamToolId } from "../../store/camTypes";
 import { useDrawingStore } from "../../store/drawingStore";
 import {
   DRAWING_TOOLBAR_GROUPS,
@@ -28,7 +31,7 @@ import { Viewport3D } from "../viewport/Viewport3D";
 export interface WorkspaceTab {
   id: string;
   title: string;
-  kind: "part" | "assembly" | "drawing";
+  kind: "part" | "assembly" | "drawing" | "cam";
   dirty?: boolean;
 }
 
@@ -47,6 +50,7 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
   { id: "d-1", title: "Bracket Plate", kind: "part" },
   { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
+  { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
 ];
 
 const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
@@ -191,6 +195,7 @@ export function AppLayout({
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
   const isAssembly = activeTab?.kind === "assembly";
   const isDrawing = activeTab?.kind === "drawing";
+  const isCam = activeTab?.kind === "cam";
 
   function selectTab(id: string) {
     setInternalActive(id);
@@ -218,6 +223,10 @@ export function AppLayout({
   const drawingTool = useDrawingStore((s) => s.activeTool);
   const setDrawingTool = useDrawingStore((s) => s.setActiveTool);
   const drawingStatus = useDrawingStore((s) => s.statusMessage);
+
+  const camTool = useCamStore((s) => s.activeCamTool);
+  const setCamTool = useCamStore((s) => s.setActiveCamTool);
+  const camStatus = useCamStore((s) => s.statusMessage);
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId);
   const sculptActive =
@@ -328,6 +337,7 @@ export function AppLayout({
                   { type: "item", label: "New Part Studio" },
                   { type: "item", label: "New Assembly" },
                   { type: "item", label: "New Drawing" },
+                  { type: "item", label: "New CAM Studio" },
                   { type: "sep", label: "sep-1" },
                   { type: "item", label: "Open…" },
                   { type: "item", label: "Save" },
@@ -439,7 +449,32 @@ export function AppLayout({
 
       {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
-        {isDrawing
+        {isCam
+          ? CAM_TOOLBAR_GROUPS.map((group) => (
+              <div key={group.id} className="flex items-center gap-1">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                  {group.label}
+                </span>
+                {group.tools.map((tool) => {
+                  const active = camTool === tool.id;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => setCamTool(tool.id as CamToolId)}
+                      className={`rounded px-2 py-1 text-xs ${
+                        active
+                          ? "bg-sky-700 text-white"
+                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                      }`}
+                    >
+                      {tool.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          : isDrawing
           ? DRAWING_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
                 <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
@@ -517,11 +552,25 @@ export function AppLayout({
           <span>
             Active:{" "}
             <span className="font-medium text-sky-300">
-              {isDrawing ? drawingTool : isAssembly ? assemblyTool : activeTool}
+              {isCam
+                ? camTool
+                : isDrawing
+                  ? drawingTool
+                  : isAssembly
+                    ? assemblyTool
+                    : activeTool}
             </span>
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
+          {isCam && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {camStatus}
+              </span>
+            </>
+          )}
           {isDrawing && (
             <>
               <span className="text-eng-faint">|</span>
@@ -538,7 +587,7 @@ export function AppLayout({
               </span>
             </>
           )}
-          {!isAssembly && !isDrawing && selectedFeatureId && (
+          {!isAssembly && !isDrawing && !isCam && selectedFeatureId && (
             <>
               <span className="text-eng-faint">|</span>
               <span className="text-sky-300/80">
@@ -560,11 +609,13 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                {isDrawing
-                  ? "Drawing Tree"
-                  : isAssembly
-                    ? "Instance Tree"
-                    : "Feature Tree"}
+                {isCam
+                  ? "CAM Tree"
+                  : isDrawing
+                    ? "Drawing Tree"
+                    : isAssembly
+                      ? "Instance Tree"
+                      : "Feature Tree"}
               </span>
             )}
             <button
@@ -577,7 +628,9 @@ export function AppLayout({
             </button>
           </div>
           {!panelCollapsed &&
-            (isDrawing ? (
+            (isCam ? (
+              <CamTree />
+            ) : isDrawing ? (
               <DrawingTree />
             ) : isAssembly ? (
               <InstanceTree />
@@ -597,7 +650,9 @@ export function AppLayout({
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
           {children ??
-            (isDrawing ? (
+            (isCam ? (
+              <CamWorkspace />
+            ) : isDrawing ? (
               <DrawingWorkspace />
             ) : isAssembly ? (
               <AssemblyWorkspace />

@@ -8,7 +8,7 @@ type OrgSection =
   | "trash"
   | "integrations";
 
-type DocumentKind = "part" | "assembly" | "drawing" | "folder";
+type DocumentKind = "part" | "assembly" | "drawing" | "cam" | "folder";
 type LengthUnit = "mm" | "in" | "m" | "ft";
 
 interface CadDocument {
@@ -92,6 +92,15 @@ const MOCK_DOCUMENTS: CadDocument[] = [
     modifiedAt: "2026-06-01T12:00:00Z",
     owner: "You",
   },
+  {
+    id: "d-cam",
+    name: "Bracket CAM Studio",
+    kind: "cam",
+    folderId: "f-proto",
+    labels: ["WIP", "Aluminum"],
+    modifiedAt: "2026-09-12T16:00:00Z",
+    owner: "You",
+  },
 ];
 
 const MOCK_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
@@ -106,6 +115,7 @@ const KIND_GLYPH: Record<DocumentKind, string> = {
   part: "◼",
   assembly: "⧉",
   drawing: "▭",
+  cam: "⚒",
   folder: "▦",
 };
 
@@ -233,6 +243,7 @@ export function DocumentsPage({
                 ["Part Studio", "part"],
                 ["Assembly", "assembly"],
                 ["Drawing", "drawing"],
+                ["CAM Studio", "cam"],
                 ["Folder", "folder"],
               ].map(([label]) => (
                 <button
@@ -471,6 +482,7 @@ export function DocumentsPage({
                 <option value="part">Part</option>
                 <option value="assembly">Assembly</option>
                 <option value="drawing">Drawing</option>
+                <option value="cam">CAM</option>
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-eng-muted">

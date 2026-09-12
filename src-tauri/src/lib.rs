@@ -50,6 +50,7 @@ pub fn run() {
             commands::pdm_list_release_packages,
             commands::pdm_list_reviews,
             commands::pdm_db_path,
+            commands::write_text_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running CAD Engine");

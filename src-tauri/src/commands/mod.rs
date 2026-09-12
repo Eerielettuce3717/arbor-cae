@@ -451,3 +451,26 @@ pub fn pdm_list_reviews(
 pub fn pdm_db_path(db: State<'_, CadDb>) -> Result<String, String> {
     Ok(db.path().display().to_string())
 }
+
+/// Write a text file under `.cad_workspace/<subdir>/` (CAM G-code / NC export).
+#[tauri::command]
+pub fn write_text_file(
+    file_name: String,
+    contents: String,
+    subdir: Option<String>,
+) -> Result<String, String> {
+    let cwd = std::env::current_dir().map_err(map_err)?;
+    let workspace = cwd.join(".cad_workspace");
+    let dir = match subdir {
+        Some(s) if !s.is_empty() => workspace.join(s),
+        _ => workspace,
+    };
+    std::fs::create_dir_all(&dir).map_err(map_err)?;
+
+    let safe = std::path::Path::new(&file_name)
+        .file_name()
+        .ok_or_else(|| "invalid file name".to_string())?;
+    let path = dir.join(safe);
+    std::fs::write(&path, contents).map_err(map_err)?;
+    Ok(path.display().to_string())
+}

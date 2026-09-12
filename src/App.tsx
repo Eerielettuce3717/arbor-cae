@@ -9,6 +9,7 @@ type AppRoute = "documents" | "workspace" | "versions" | "releases";
 const INITIAL_TABS: WorkspaceTab[] = [
   { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
   { id: "d-1", title: "Bracket Plate", kind: "part" },
+  { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
 ];
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
       "d-3": { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
       "d-4": { id: "d-4", title: "Shaft Collar", kind: "part" },
       "d-5": { id: "d-5", title: "PCB Frame", kind: "part" },
+      "d-cam": { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
     };
     const tab = catalog[documentId] ?? {
       id: documentId,
