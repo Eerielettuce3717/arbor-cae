@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
   id: string;
@@ -298,39 +299,7 @@ export function AppLayout({
 
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
-          {children ?? (
-            <div className="absolute inset-0 flex flex-col">
-              <div
-                className="pointer-events-none absolute inset-0 opacity-[0.12]"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(#64748b 1px, transparent 1px), linear-gradient(90deg, #64748b 1px, transparent 1px)",
-                  backgroundSize: "32px 32px",
-                }}
-              />
-              <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-2 text-center">
-                <p className="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Viewport
-                </p>
-                <p className="max-w-md text-sm text-slate-400">
-                  CAD canvas shell — WebGL / wgpu renderer mounts here.
-                  Selection, orbit, and sketch overlays attach to this surface.
-                </p>
-                <div className="mt-4 flex gap-6 font-mono text-[10px] text-slate-600">
-                  <span>X →</span>
-                  <span>Y ↑</span>
-                  <span>Z ⊙</span>
-                </div>
-              </div>
-              <div className="relative z-10 flex items-center justify-between border-t border-eng-border/60 bg-eng-panel/90 px-3 py-1 text-[10px] text-eng-muted">
-                <span>Ready</span>
-                <span className="font-mono">
-                  {activeTab?.kind ?? "—"} · {selectedFeatureId}
-                </span>
-                <span>Perspective · Shaded w/ edges</span>
-              </div>
-            </div>
-          )}
+          {children ?? <Viewport3D />}
         </section>
       </div>
     </div>
