@@ -10,6 +10,8 @@ const INITIAL_TABS: WorkspaceTab[] = [
   { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
   { id: "d-1", title: "Bracket Plate", kind: "part" },
   { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
+  { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
+  { id: "d-render", title: "Bracket Render Studio", kind: "render" },
 ];
 
 export default function App() {
@@ -30,6 +32,16 @@ export default function App() {
       "d-4": { id: "d-4", title: "Shaft Collar", kind: "part" },
       "d-5": { id: "d-5", title: "PCB Frame", kind: "part" },
       "d-cam": { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
+      "d-sim": {
+        id: "d-sim",
+        title: "Bracket Simulation Studio",
+        kind: "simulation",
+      },
+      "d-render": {
+        id: "d-render",
+        title: "Bracket Render Studio",
+        kind: "render",
+      },
     };
     const tab = catalog[documentId] ?? {
       id: documentId,

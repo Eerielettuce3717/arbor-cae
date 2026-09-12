@@ -6,6 +6,8 @@ import { useSketchStore } from "../../store/sketchStore";
 import { AssemblyWorkspace, InstanceTree } from "../assembly";
 import { CamTree, CamWorkspace } from "../cam";
 import { DrawingTree, DrawingWorkspace } from "../drawings";
+import { RenderSceneList, RenderWorkspace } from "../render";
+import { SimulationTree, SimulationWorkspace } from "../simulation";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
 import {
   FeatureEditor,
@@ -26,12 +28,22 @@ import {
   DRAWING_TOOLBAR_GROUPS,
   type DrawingToolId,
 } from "../../store/drawingTypes";
+import { useRenderStore } from "../../store/renderStore";
+import {
+  RENDER_TOOLBAR_GROUPS,
+  type RenderToolId,
+} from "../../store/renderTypes";
+import { useSimulationStore } from "../../store/simulationStore";
+import {
+  SIMULATION_TOOLBAR_GROUPS,
+  type SimulationToolId,
+} from "../../store/simulationTypes";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
   id: string;
   title: string;
-  kind: "part" | "assembly" | "drawing" | "cam";
+  kind: "part" | "assembly" | "drawing" | "cam" | "simulation" | "render";
   dirty?: boolean;
 }
 
@@ -51,6 +63,8 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { id: "d-1", title: "Bracket Plate", kind: "part" },
   { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
   { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
+  { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
+  { id: "d-render", title: "Bracket Render Studio", kind: "render" },
 ];
 
 const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
@@ -196,6 +210,8 @@ export function AppLayout({
   const isAssembly = activeTab?.kind === "assembly";
   const isDrawing = activeTab?.kind === "drawing";
   const isCam = activeTab?.kind === "cam";
+  const isSimulation = activeTab?.kind === "simulation";
+  const isRender = activeTab?.kind === "render";
 
   function selectTab(id: string) {
     setInternalActive(id);
@@ -227,6 +243,14 @@ export function AppLayout({
   const camTool = useCamStore((s) => s.activeCamTool);
   const setCamTool = useCamStore((s) => s.setActiveCamTool);
   const camStatus = useCamStore((s) => s.statusMessage);
+
+  const simulationTool = useSimulationStore((s) => s.activeTool);
+  const setSimulationTool = useSimulationStore((s) => s.setActiveTool);
+  const simulationStatus = useSimulationStore((s) => s.statusMessage);
+
+  const renderTool = useRenderStore((s) => s.activeTool);
+  const setRenderTool = useRenderStore((s) => s.setActiveTool);
+  const renderStatus = useRenderStore((s) => s.statusMessage);
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId);
   const sculptActive =
@@ -338,6 +362,8 @@ export function AppLayout({
                   { type: "item", label: "New Assembly" },
                   { type: "item", label: "New Drawing" },
                   { type: "item", label: "New CAM Studio" },
+                  { type: "item", label: "New Simulation Studio" },
+                  { type: "item", label: "New Render Studio" },
                   { type: "sep", label: "sep-1" },
                   { type: "item", label: "Open…" },
                   { type: "item", label: "Save" },
@@ -449,19 +475,19 @@ export function AppLayout({
 
       {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
-        {isCam
-          ? CAM_TOOLBAR_GROUPS.map((group) => (
+        {isRender
+          ? RENDER_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
                 <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
                   {group.label}
                 </span>
                 {group.tools.map((tool) => {
-                  const active = camTool === tool.id;
+                  const active = renderTool === tool.id;
                   return (
                     <button
                       key={tool.id}
                       type="button"
-                      onClick={() => setCamTool(tool.id as CamToolId)}
+                      onClick={() => setRenderTool(tool.id as RenderToolId)}
                       className={`rounded px-2 py-1 text-xs ${
                         active
                           ? "bg-sky-700 text-white"
@@ -474,47 +500,21 @@ export function AppLayout({
                 })}
               </div>
             ))
-          : isDrawing
-          ? DRAWING_TOOLBAR_GROUPS.map((group) => (
-              <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
-                  {group.label}
-                </span>
-                {group.tools.map((tool) => {
-                  const active = drawingTool === tool.id;
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => setDrawingTool(tool.id as DrawingToolId)}
-                      className={`rounded px-2 py-1 text-xs ${
-                        active
-                          ? "bg-sky-700 text-white"
-                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                      }`}
-                    >
-                      {tool.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ))
-          : isAssembly
-            ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
+          : isSimulation
+            ? SIMULATION_TOOLBAR_GROUPS.map((group) => (
                 <div key={group.id} className="flex items-center gap-1">
                   <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
                     {group.label}
                   </span>
                   {group.tools.map((tool) => {
-                    const toggled =
-                      (tool.id === "snapMode" && snapMode) ||
-                      (tool.id === "showMates" && showMatesMode);
-                    const active = assemblyTool === tool.id || toggled;
+                    const active = simulationTool === tool.id;
                     return (
                       <button
                         key={tool.id}
                         type="button"
-                        onClick={() => setAssemblyTool(tool.id)}
+                        onClick={() =>
+                          setSimulationTool(tool.id as SimulationToolId)
+                        }
                         className={`rounded px-2 py-1 text-xs ${
                           active
                             ? "bg-sky-700 text-white"
@@ -527,42 +527,142 @@ export function AppLayout({
                   })}
                 </div>
               ))
-            : TOOLBAR_GROUPS.map((group) => (
-                <div key={group.id} className="flex items-center gap-1">
-                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
-                    {group.label}
-                  </span>
-                  {group.tools.map((tool) => (
-                    <button
-                      key={tool}
-                      type="button"
-                      onClick={() => onSelectTool(tool)}
-                      className={`rounded px-2 py-1 text-xs ${
-                        activeTool === tool
-                          ? "bg-sky-700 text-white"
-                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                      }`}
-                    >
-                      {tool}
-                    </button>
-                  ))}
-                </div>
-              ))}
+            : isCam
+              ? CAM_TOOLBAR_GROUPS.map((group) => (
+                  <div key={group.id} className="flex items-center gap-1">
+                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                      {group.label}
+                    </span>
+                    {group.tools.map((tool) => {
+                      const active = camTool === tool.id;
+                      return (
+                        <button
+                          key={tool.id}
+                          type="button"
+                          onClick={() => setCamTool(tool.id as CamToolId)}
+                          className={`rounded px-2 py-1 text-xs ${
+                            active
+                              ? "bg-sky-700 text-white"
+                              : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                          }`}
+                        >
+                          {tool.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))
+              : isDrawing
+                ? DRAWING_TOOLBAR_GROUPS.map((group) => (
+                    <div key={group.id} className="flex items-center gap-1">
+                      <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                        {group.label}
+                      </span>
+                      {group.tools.map((tool) => {
+                        const active = drawingTool === tool.id;
+                        return (
+                          <button
+                            key={tool.id}
+                            type="button"
+                            onClick={() =>
+                              setDrawingTool(tool.id as DrawingToolId)
+                            }
+                            className={`rounded px-2 py-1 text-xs ${
+                              active
+                                ? "bg-sky-700 text-white"
+                                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                            }`}
+                          >
+                            {tool.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))
+                : isAssembly
+                  ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
+                      <div key={group.id} className="flex items-center gap-1">
+                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                          {group.label}
+                        </span>
+                        {group.tools.map((tool) => {
+                          const toggled =
+                            (tool.id === "snapMode" && snapMode) ||
+                            (tool.id === "showMates" && showMatesMode);
+                          const active = assemblyTool === tool.id || toggled;
+                          return (
+                            <button
+                              key={tool.id}
+                              type="button"
+                              onClick={() => setAssemblyTool(tool.id)}
+                              className={`rounded px-2 py-1 text-xs ${
+                                active
+                                  ? "bg-sky-700 text-white"
+                                  : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                              }`}
+                            >
+                              {tool.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))
+                  : TOOLBAR_GROUPS.map((group) => (
+                      <div key={group.id} className="flex items-center gap-1">
+                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                          {group.label}
+                        </span>
+                        {group.tools.map((tool) => (
+                          <button
+                            key={tool}
+                            type="button"
+                            onClick={() => onSelectTool(tool)}
+                            className={`rounded px-2 py-1 text-xs ${
+                              activeTool === tool
+                                ? "bg-sky-700 text-white"
+                                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                            }`}
+                          >
+                            {tool}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
         <div className="ml-auto flex items-center gap-2 text-[11px] text-eng-muted">
           <span>
             Active:{" "}
             <span className="font-medium text-sky-300">
-              {isCam
-                ? camTool
-                : isDrawing
-                  ? drawingTool
-                  : isAssembly
-                    ? assemblyTool
-                    : activeTool}
+              {isRender
+                ? renderTool
+                : isSimulation
+                  ? simulationTool
+                  : isCam
+                    ? camTool
+                    : isDrawing
+                      ? drawingTool
+                      : isAssembly
+                        ? assemblyTool
+                        : activeTool}
             </span>
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
+          {isRender && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {renderStatus}
+              </span>
+            </>
+          )}
+          {isSimulation && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {simulationStatus}
+              </span>
+            </>
+          )}
           {isCam && (
             <>
               <span className="text-eng-faint">|</span>
@@ -587,7 +687,12 @@ export function AppLayout({
               </span>
             </>
           )}
-          {!isAssembly && !isDrawing && !isCam && selectedFeatureId && (
+          {!isAssembly &&
+            !isDrawing &&
+            !isCam &&
+            !isSimulation &&
+            !isRender &&
+            selectedFeatureId && (
             <>
               <span className="text-eng-faint">|</span>
               <span className="text-sky-300/80">
@@ -609,13 +714,17 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                {isCam
-                  ? "CAM Tree"
-                  : isDrawing
-                    ? "Drawing Tree"
-                    : isAssembly
-                      ? "Instance Tree"
-                      : "Feature Tree"}
+                {isRender
+                  ? "Scene List"
+                  : isSimulation
+                    ? "Simulation Tree"
+                    : isCam
+                      ? "CAM Tree"
+                      : isDrawing
+                        ? "Drawing Tree"
+                        : isAssembly
+                          ? "Instance Tree"
+                          : "Feature Tree"}
               </span>
             )}
             <button
@@ -628,7 +737,11 @@ export function AppLayout({
             </button>
           </div>
           {!panelCollapsed &&
-            (isCam ? (
+            (isRender ? (
+              <RenderSceneList />
+            ) : isSimulation ? (
+              <SimulationTree />
+            ) : isCam ? (
               <CamTree />
             ) : isDrawing ? (
               <DrawingTree />
@@ -650,7 +763,11 @@ export function AppLayout({
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
           {children ??
-            (isCam ? (
+            (isRender ? (
+              <RenderWorkspace />
+            ) : isSimulation ? (
+              <SimulationWorkspace />
+            ) : isCam ? (
               <CamWorkspace />
             ) : isDrawing ? (
               <DrawingWorkspace />

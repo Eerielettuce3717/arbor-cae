@@ -8,7 +8,14 @@ type OrgSection =
   | "trash"
   | "integrations";
 
-type DocumentKind = "part" | "assembly" | "drawing" | "cam" | "folder";
+type DocumentKind =
+  | "part"
+  | "assembly"
+  | "drawing"
+  | "cam"
+  | "simulation"
+  | "render"
+  | "folder";
 type LengthUnit = "mm" | "in" | "m" | "ft";
 
 interface CadDocument {
@@ -101,6 +108,24 @@ const MOCK_DOCUMENTS: CadDocument[] = [
     modifiedAt: "2026-09-12T16:00:00Z",
     owner: "You",
   },
+  {
+    id: "d-sim",
+    name: "Bracket Simulation Studio",
+    kind: "simulation",
+    folderId: "f-proto",
+    labels: ["WIP"],
+    modifiedAt: "2026-09-12T16:20:00Z",
+    owner: "You",
+  },
+  {
+    id: "d-render",
+    name: "Bracket Render Studio",
+    kind: "render",
+    folderId: "f-proto",
+    labels: ["WIP"],
+    modifiedAt: "2026-09-12T16:22:00Z",
+    owner: "You",
+  },
 ];
 
 const MOCK_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
@@ -116,6 +141,8 @@ const KIND_GLYPH: Record<DocumentKind, string> = {
   assembly: "⧉",
   drawing: "▭",
   cam: "⚒",
+  simulation: "∿",
+  render: "◈",
   folder: "▦",
 };
 
@@ -244,6 +271,8 @@ export function DocumentsPage({
                 ["Assembly", "assembly"],
                 ["Drawing", "drawing"],
                 ["CAM Studio", "cam"],
+                ["Simulation Studio", "simulation"],
+                ["Render Studio", "render"],
                 ["Folder", "folder"],
               ].map(([label]) => (
                 <button
@@ -483,6 +512,8 @@ export function DocumentsPage({
                 <option value="assembly">Assembly</option>
                 <option value="drawing">Drawing</option>
                 <option value="cam">CAM</option>
+                <option value="simulation">Simulation</option>
+                <option value="render">Render</option>
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-eng-muted">
