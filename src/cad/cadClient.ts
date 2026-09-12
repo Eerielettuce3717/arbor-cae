@@ -9,6 +9,10 @@ import type {
   CadRequest,
   CadResponse,
   CadSuccessPayload,
+  EvaluateBooleanParams,
+  EvaluateExtrudeParams,
+  EvaluateFilletParams,
+  FeatureEvalResult,
   MassPropertiesResult,
   MeasureResult,
   MeasureTarget,
@@ -155,6 +159,51 @@ export class CadClient {
       op: "runAnalysis",
       tool,
       shapeId,
+      params,
+    });
+    return payload.result;
+  }
+
+  /** Evaluate Extrude feature (prism from rectangle/circle profile). */
+  async evaluateExtrude(
+    params: EvaluateExtrudeParams,
+  ): Promise<FeatureEvalResult> {
+    await this.init();
+    const payload = await request<{
+      op: "evaluateExtrude";
+      result: FeatureEvalResult;
+    }>({
+      op: "evaluateExtrude",
+      params,
+    });
+    return payload.result;
+  }
+
+  /** Evaluate Fillet feature (edge blend on target body). */
+  async evaluateFillet(
+    params: EvaluateFilletParams,
+  ): Promise<FeatureEvalResult> {
+    await this.init();
+    const payload = await request<{
+      op: "evaluateFillet";
+      result: FeatureEvalResult;
+    }>({
+      op: "evaluateFillet",
+      params,
+    });
+    return payload.result;
+  }
+
+  /** Evaluate Boolean feature (union / subtract / intersect). */
+  async evaluateBoolean(
+    params: EvaluateBooleanParams,
+  ): Promise<FeatureEvalResult> {
+    await this.init();
+    const payload = await request<{
+      op: "evaluateBoolean";
+      result: FeatureEvalResult;
+    }>({
+      op: "evaluateBoolean",
       params,
     });
     return payload.result;

@@ -74,6 +74,47 @@ export interface TessellateOptions {
   angularDeflection?: number;
 }
 
+/* ---------- Feature evaluation (Extrude / Fillet / Boolean) ---------- */
+
+export type ExtrudeEvalOperation = "new" | "add" | "remove" | "intersect";
+export type ExtrudeEvalEndType = "blind" | "symmetric" | "throughAll" | "upToFace";
+
+export interface EvaluateExtrudeParams {
+  featureId: string;
+  depth: number;
+  draft: number;
+  operation: ExtrudeEvalOperation;
+  endType: ExtrudeEvalEndType;
+  direction: "normal" | "opposite" | "both";
+  profile: "rectangle" | "circle";
+  width: number;
+  height: number;
+  radius: number;
+}
+
+export interface EvaluateFilletParams {
+  featureId: string;
+  radius: number;
+  targetShapeId: string;
+  edgeSelection: "all" | "manual";
+  tangentPropagation: boolean;
+}
+
+export type BooleanEvalOperation = "union" | "subtract" | "intersect";
+
+export interface EvaluateBooleanParams {
+  featureId: string;
+  operation: BooleanEvalOperation;
+  targetShapeId: string;
+  toolShapeId: string;
+  keepTools: boolean;
+}
+
+export interface FeatureEvalResult {
+  shapeId: string;
+  mesh: MeshBuffers;
+}
+
 /* ---------- Worker protocol ---------- */
 
 export type CadRequest =
@@ -98,7 +139,10 @@ export type CadRequest =
       tool: Exclude<AnalysisToolId, "measure" | "mass-properties">;
       shapeId: string;
       params?: Record<string, unknown>;
-    };
+    }
+  | { id: string; op: "evaluateExtrude"; params: EvaluateExtrudeParams }
+  | { id: string; op: "evaluateFillet"; params: EvaluateFilletParams }
+  | { id: string; op: "evaluateBoolean"; params: EvaluateBooleanParams };
 
 export type CadSuccessPayload =
   | { op: "init"; ready: true; version: string }
@@ -106,7 +150,10 @@ export type CadSuccessPayload =
   | { op: "tessellate"; mesh: MeshBuffers }
   | { op: "measure"; result: MeasureResult }
   | { op: "massProperties"; result: MassPropertiesResult }
-  | { op: "runAnalysis"; result: AnalysisStubResult };
+  | { op: "runAnalysis"; result: AnalysisStubResult }
+  | { op: "evaluateExtrude"; result: FeatureEvalResult }
+  | { op: "evaluateFillet"; result: FeatureEvalResult }
+  | { op: "evaluateBoolean"; result: FeatureEvalResult };
 
 export type CadResponse =
   | { id: string; ok: true; payload: CadSuccessPayload }

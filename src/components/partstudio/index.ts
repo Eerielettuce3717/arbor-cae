@@ -1,5 +1,7 @@
 export { SketchCanvas } from "./SketchCanvas";
 export { SketchToolbar } from "./SketchToolbar";
+export { FeatureList } from "./FeatureList";
+export { FeatureEditor } from "./FeatureEditor";
 export {
   SketchTool,
   SketchConstraintType,

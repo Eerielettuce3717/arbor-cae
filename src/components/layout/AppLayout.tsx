@@ -1,8 +1,15 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
+import { useFeatureStore } from "../../store/featureStore";
+import type { FeatureToolType } from "../../store/featureTypes";
 import { useSketchStore } from "../../store/sketchStore";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
-import { SketchCanvas, SketchTool } from "../partstudio";
+import {
+  FeatureEditor,
+  FeatureList,
+  SketchCanvas,
+  SketchTool,
+} from "../partstudio";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
@@ -35,6 +42,13 @@ const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
   Circle: SketchTool.CenterPointCircle,
   Rect: SketchTool.CornerRectangle,
   Fillet: SketchTool.SketchFillet,
+};
+
+const FEATURE_TOOL_MAP: Record<string, FeatureToolType> = {
+  Extrude: "extrude",
+  Revolve: "revolve",
+  Hole: "hole",
+  Boolean: "boolean",
 };
 
 const TOOLBAR_GROUPS: {
@@ -82,16 +96,6 @@ const TOOL_TO_ANALYSIS: Record<string, AnalysisToolId> = {
   Interference: "interference-detection",
 };
 
-const FEATURE_TREE = [
-  { id: "origin", label: "Origin", kind: "system" },
-  { id: "planes", label: "Planes (Front / Top / Right)", kind: "system" },
-  { id: "sk1", label: "Sketch 1", kind: "sketch" },
-  { id: "ex1", label: "Extrude 1", kind: "feature" },
-  { id: "sk2", label: "Sketch 2", kind: "sketch" },
-  { id: "cut1", label: "Extrude Cut 1", kind: "feature" },
-  { id: "fil1", label: "Fillet 1", kind: "feature" },
-];
-
 export function AppLayout({
   tabs = DEFAULT_TABS,
   activeTabId,
@@ -108,7 +112,6 @@ export function AppLayout({
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTool, setActiveTool] = useState("Extrude");
   const [panelCollapsed, setPanelCollapsed] = useState(false);
-  const [selectedFeatureId, setSelectedFeatureId] = useState("ex1");
   const [analysisTool, setAnalysisTool] = useState<AnalysisToolId | null>(
     null,
   );
@@ -126,6 +129,17 @@ export function AppLayout({
   const setSketchActive = useSketchStore((s) => s.setActive);
   const setSketchTool = useSketchStore((s) => s.setActiveTool);
 
+  const selectedFeatureId = useFeatureStore((s) => s.selectedFeatureId);
+  const features = useFeatureStore((s) => s.features);
+  const lastMesh = useFeatureStore((s) => s.lastMesh);
+  const addFeature = useFeatureStore((s) => s.addFeature);
+  const openEditor = useFeatureStore((s) => s.openEditor);
+  const selectFeature = useFeatureStore((s) => s.selectFeature);
+
+  useEffect(() => {
+    if (lastMesh) setOcctMesh(lastMesh);
+  }, [lastMesh]);
+
   const onSelectTool = useCallback(
     (tool: string) => {
       setActiveTool(tool);
@@ -134,18 +148,41 @@ export function AppLayout({
 
       const sketchTool = SKETCH_TOOL_MAP[tool];
       if (sketchTool) {
+        const selected = features.find((f) => f.id === selectedFeatureId);
         setSketchActive(true, {
-          id: selectedFeatureId.startsWith("sk")
-            ? selectedFeatureId
-            : "sk1",
+          id:
+            selected?.type === "sketch"
+              ? selected.id
+              : (features.find((f) => f.type === "sketch")?.id ?? "sk1"),
           name:
-            FEATURE_TREE.find((n) => n.id === selectedFeatureId)?.label ??
-            "Sketch 1",
+            selected?.type === "sketch"
+              ? selected.name
+              : (features.find((f) => f.type === "sketch")?.name ?? "Sketch 1"),
         });
         setSketchTool(sketchTool);
+        return;
+      }
+
+      const featureType = FEATURE_TOOL_MAP[tool];
+      if (featureType) {
+        const existing = features.find((f) => f.type === featureType);
+        if (existing) {
+          selectFeature(existing.id);
+          openEditor(existing.id);
+        } else {
+          addFeature(featureType);
+        }
       }
     },
-    [selectedFeatureId, setSketchActive, setSketchTool],
+    [
+      addFeature,
+      features,
+      openEditor,
+      selectFeature,
+      selectedFeatureId,
+      setSketchActive,
+      setSketchTool,
+    ],
   );
 
   const onMeshReady = useCallback((mesh: MeshBuffers) => {
@@ -318,6 +355,15 @@ export function AppLayout({
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
+          {selectedFeatureId && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="text-sky-300/80">
+                {features.find((f) => f.id === selectedFeatureId)?.name ??
+                  selectedFeatureId}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -331,7 +377,7 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                Document Panel
+                Feature Tree
               </span>
             )}
             <button
@@ -344,37 +390,15 @@ export function AppLayout({
             </button>
           </div>
           {!panelCollapsed && (
-            <div className="min-h-0 flex-1 overflow-y-auto p-1">
-              {FEATURE_TREE.map((node) => (
-                <button
-                  key={node.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedFeatureId(node.id);
-                    if (node.kind === "sketch") {
-                      setSketchActive(true, {
-                        id: node.id,
-                        name: node.label,
-                      });
-                    }
-                  }}
-                  className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                    selectedFeatureId === node.id
-                      ? "bg-eng-active text-sky-300"
-                      : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                  }`}
-                >
-                  <span className="w-3 text-center text-[10px] text-eng-faint">
-                    {node.kind === "sketch"
-                      ? "◇"
-                      : node.kind === "feature"
-                        ? "▣"
-                        : "·"}
-                  </span>
-                  {node.label}
-                </button>
-              ))}
-            </div>
+            <FeatureList
+              onMeshReady={onMeshReady}
+              onActivateSketch={(feature) => {
+                setSketchActive(true, {
+                  id: feature.id,
+                  name: feature.name,
+                });
+              }}
+            />
           )}
         </aside>
 
@@ -389,6 +413,7 @@ export function AppLayout({
                 onMeshReady={onMeshReady}
               />
               {sketchActive && <SketchCanvas />}
+              <FeatureEditor />
             </>
           )}
         </section>

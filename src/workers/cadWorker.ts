@@ -13,6 +13,10 @@ import type {
   AnalysisToolId,
   CadRequest,
   CadResponse,
+  EvaluateBooleanParams,
+  EvaluateExtrudeParams,
+  EvaluateFilletParams,
+  FeatureEvalResult,
   MassPropertiesResult,
   MeasureResult,
   MeasureTarget,
@@ -296,6 +300,209 @@ function runAnalysisStub(
   };
 }
 
+/** Build a planar wire profile on XY for Extrude evaluation. */
+function makeExtrudeProfile(params: EvaluateExtrudeParams): TopoDS_Shape {
+  const occ = requireOc();
+
+  if (params.profile === "circle") {
+    const r = Math.max(params.radius, 0.01);
+    const axis = new occ.gp_Ax2_3(
+      new occ.gp_Pnt_3(0, 0, 0),
+      new occ.gp_Dir_4(0, 0, 1),
+    );
+    const circle = new occ.gp_Circ_2(axis, r);
+    const edge = new occ.BRepBuilderAPI_MakeEdge_8(circle).Edge();
+    const wire = new occ.BRepBuilderAPI_MakeWire_2(edge).Wire();
+    return new occ.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  }
+
+  const w = Math.max(params.width, 0.01);
+  const h = Math.max(params.height, 0.01);
+  const hx = w / 2;
+  const hy = h / 2;
+  const p1 = new occ.gp_Pnt_3(-hx, -hy, 0);
+  const p2 = new occ.gp_Pnt_3(hx, -hy, 0);
+  const p3 = new occ.gp_Pnt_3(hx, hy, 0);
+  const p4 = new occ.gp_Pnt_3(-hx, hy, 0);
+
+  const e1 = new occ.BRepBuilderAPI_MakeEdge_3(p1, p2).Edge();
+  const e2 = new occ.BRepBuilderAPI_MakeEdge_3(p2, p3).Edge();
+  const e3 = new occ.BRepBuilderAPI_MakeEdge_3(p3, p4).Edge();
+  const e4 = new occ.BRepBuilderAPI_MakeEdge_3(p4, p1).Edge();
+
+  const mw = new occ.BRepBuilderAPI_MakeWire_1();
+  mw.Add_1(e1);
+  mw.Add_1(e2);
+  mw.Add_1(e3);
+  mw.Add_1(e4);
+  return new occ.BRepBuilderAPI_MakeFace_15(mw.Wire(), true).Face();
+}
+
+/**
+ * Extrude evaluation math: prism from a rectangle/circle profile.
+ * Draft / through-all / boolean ops against existing bodies are approximated.
+ */
+function evaluateExtrude(params: EvaluateExtrudeParams): FeatureEvalResult {
+  const occ = requireOc();
+  const face = makeExtrudeProfile(params);
+
+  let depth = Math.max(params.depth, 0.01);
+  if (params.endType === "symmetric" || params.direction === "both") {
+    depth = depth / 2;
+  }
+  if (params.direction === "opposite") {
+    depth = -depth;
+  }
+
+  // Blind prism along +Z (model units = mm in UI).
+  const vec = new occ.gp_Vec_4(0, 0, depth);
+  const prism = new occ.BRepPrimAPI_MakePrism_1(face, vec, false, true);
+  let result = prism.Shape();
+
+  if (params.endType === "symmetric" || params.direction === "both") {
+    const vecNeg = new occ.gp_Vec_4(0, 0, -Math.abs(depth));
+    const prismNeg = new occ.BRepPrimAPI_MakePrism_1(face, vecNeg, false, true);
+    const fuse = new occ.BRepAlgoAPI_Fuse_3(
+      result,
+      prismNeg.Shape(),
+      new occ.Message_ProgressRange_1(),
+    );
+    fuse.Build(new occ.Message_ProgressRange_1());
+    if (!fuse.IsDone()) throw new Error("Symmetric extrude fuse failed");
+    result = fuse.Shape();
+  }
+
+  // Optional draft approximation via uniform scale about mid-height (scaffold-lite).
+  if (Math.abs(params.draft) > 1e-6) {
+    const draftRad = (params.draft * Math.PI) / 180;
+    const scale = Math.max(0.1, 1 - Math.tan(Math.abs(draftRad)) * 0.05);
+    const trsf = new occ.gp_Trsf_1();
+    trsf.SetScale(new occ.gp_Pnt_3(0, 0, depth / 2), scale);
+    result = new occ.BRepBuilderAPI_Transform_2(result, trsf, false).Shape();
+  }
+
+  // Boolean against demo body when operation is add/remove/intersect.
+  if (params.operation !== "new" && shapes.has("demo")) {
+    const target = requireShape("demo");
+    const progress = new occ.Message_ProgressRange_1();
+    let booleanOp;
+    if (params.operation === "add") {
+      booleanOp = new occ.BRepAlgoAPI_Fuse_3(target, result, progress);
+    } else if (params.operation === "remove") {
+      booleanOp = new occ.BRepAlgoAPI_Cut_3(target, result, progress);
+    } else {
+      booleanOp = new occ.BRepAlgoAPI_Common_3(target, result, progress);
+    }
+    booleanOp.Build(new occ.Message_ProgressRange_1());
+    if (!booleanOp.IsDone()) {
+      throw new Error(`Extrude ${params.operation} boolean failed`);
+    }
+    result = booleanOp.Shape();
+  }
+
+  const shapeId = `feat_${params.featureId}`;
+  shapes.set(shapeId, result);
+  const mesh = tessellateShape(shapeId);
+  return { shapeId, mesh };
+}
+
+/** Fillet evaluation: blend all edges of the target body. */
+function evaluateFillet(params: EvaluateFilletParams): FeatureEvalResult {
+  const occ = requireOc();
+  const targetId = params.targetShapeId || "demo";
+  if (!shapes.has(targetId)) {
+    createDemoShape(targetId);
+  }
+  const target = requireShape(targetId);
+  const radius = Math.max(params.radius, 0.01);
+
+  const fillet = new occ.BRepFilletAPI_MakeFillet(
+    target,
+    occ.ChFi3d_FilletShape.ChFi3d_Rational as unknown as import("opencascade.js").ChFi3d_FilletShape,
+  );
+
+  const edgeEnum = occ.TopAbs_ShapeEnum.TopAbs_EDGE as unknown as import("opencascade.js").TopAbs_ShapeEnum;
+  const shapeEnum = occ.TopAbs_ShapeEnum.TopAbs_SHAPE as unknown as import("opencascade.js").TopAbs_ShapeEnum;
+  const explorer = new occ.TopExp_Explorer_2(target, edgeEnum, shapeEnum);
+
+  let edgeCount = 0;
+  while (explorer.More()) {
+    const edge = occ.TopoDS.Edge_1(explorer.Current());
+    fillet.Add_2(radius, edge);
+    edgeCount += 1;
+    explorer.Next();
+    // Manual selection would filter here; "all" fillets every edge.
+    if (params.edgeSelection === "manual" && edgeCount >= 4) break;
+  }
+
+  if (edgeCount === 0) {
+    throw new Error("Fillet: no edges found on target shape");
+  }
+
+  fillet.Build(new occ.Message_ProgressRange_1());
+  if (!fillet.IsDone()) {
+    throw new Error("Fillet build failed — radius may be too large for geometry");
+  }
+
+  const shapeId = `feat_${params.featureId}`;
+  shapes.set(shapeId, fillet.Shape());
+  // Also update demo so subsequent ops see the filleted body when targeting demo.
+  if (targetId === "demo") {
+    shapes.set("demo", fillet.Shape());
+  }
+  const mesh = tessellateShape(shapeId);
+  return { shapeId, mesh };
+}
+
+/** Boolean evaluation: union / subtract / intersect two shapes. */
+function evaluateBoolean(params: EvaluateBooleanParams): FeatureEvalResult {
+  const occ = requireOc();
+  const targetId = params.targetShapeId || "demo";
+  if (!shapes.has(targetId)) {
+    createDemoShape(targetId);
+  }
+  const target = requireShape(targetId);
+
+  let tool: TopoDS_Shape;
+  if (params.toolShapeId && shapes.has(params.toolShapeId)) {
+    tool = requireShape(params.toolShapeId);
+  } else {
+    // Default tool: small box cutter when no tool shape is selected yet.
+    const box = new occ.BRepPrimAPI_MakeBox_2(0.8, 0.8, 0.8);
+    const tf = new occ.gp_Trsf_1();
+    tf.SetTranslation_1(new occ.gp_Vec_4(-0.4, 0.1, -0.4));
+    tool = box.Shape().Moved(new occ.TopLoc_Location_2(tf), false);
+    shapes.set(`tool_${params.featureId}`, tool);
+  }
+
+  const progress = new occ.Message_ProgressRange_1();
+  let booleanOp;
+  if (params.operation === "union") {
+    booleanOp = new occ.BRepAlgoAPI_Fuse_3(target, tool, progress);
+  } else if (params.operation === "subtract") {
+    booleanOp = new occ.BRepAlgoAPI_Cut_3(target, tool, progress);
+  } else {
+    booleanOp = new occ.BRepAlgoAPI_Common_3(target, tool, progress);
+  }
+  booleanOp.Build(new occ.Message_ProgressRange_1());
+  if (!booleanOp.IsDone()) {
+    throw new Error(`Boolean ${params.operation} failed`);
+  }
+
+  const result = booleanOp.Shape();
+  const shapeId = `feat_${params.featureId}`;
+  shapes.set(shapeId, result);
+  if (targetId === "demo") {
+    shapes.set("demo", result);
+  }
+  if (!params.keepTools && params.toolShapeId) {
+    shapes.delete(params.toolShapeId);
+  }
+
+  const mesh = tessellateShape(shapeId);
+  return { shapeId, mesh };
+}
+
 function collectTransferables(mesh: MeshBuffers): Transferable[] {
   return [mesh.positions.buffer, mesh.normals.buffer, mesh.indices.buffer];
 }
@@ -374,6 +581,42 @@ async function handleRequest(req: CadRequest): Promise<{
           ok: true,
           payload: { op: "runAnalysis", result },
         },
+      };
+    }
+    case "evaluateExtrude": {
+      await initKernel();
+      const result = evaluateExtrude(req.params);
+      return {
+        response: {
+          id: req.id,
+          ok: true,
+          payload: { op: "evaluateExtrude", result },
+        },
+        transfer: collectTransferables(result.mesh),
+      };
+    }
+    case "evaluateFillet": {
+      await initKernel();
+      const result = evaluateFillet(req.params);
+      return {
+        response: {
+          id: req.id,
+          ok: true,
+          payload: { op: "evaluateFillet", result },
+        },
+        transfer: collectTransferables(result.mesh),
+      };
+    }
+    case "evaluateBoolean": {
+      await initKernel();
+      const result = evaluateBoolean(req.params);
+      return {
+        response: {
+          id: req.id,
+          ok: true,
+          payload: { op: "evaluateBoolean", result },
+        },
+        transfer: collectTransferables(result.mesh),
       };
     }
     default: {
