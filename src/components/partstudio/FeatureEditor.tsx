@@ -6,6 +6,7 @@ import {
   FEATURE_TOOL_BY_TYPE,
   FEATURE_TOOL_CATALOG,
   ONSHAPE_MATERIAL_LIBRARY,
+  SCULPT_FEATURE_TOOLS,
   type CadFeature,
   type FeatureFieldDef,
   type FeatureToolType,
@@ -407,7 +408,9 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
   const evaluateFeature = useFeatureStore((s) => s.evaluateFeature);
   const regenerating = useFeatureStore((s) => s.regenerating);
   const def = FEATURE_TOOL_BY_TYPE[feature.type];
-  const evaluated = EVALUATED_FEATURE_TOOLS.has(feature.type);
+  const isOcct = EVALUATED_FEATURE_TOOLS.has(feature.type);
+  const isSculpt = SCULPT_FEATURE_TOOLS.has(feature.type);
+  const evaluated = isOcct || isSculpt;
 
   if (!def) {
     return (
@@ -443,7 +446,11 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
         <span className="text-[10px] uppercase tracking-wide text-eng-faint">
           {def.category}
         </span>
-        {evaluated ? (
+        {isSculpt ? (
+          <span className="rounded bg-sky-900/50 px-1.5 py-0.5 text-[9px] text-sky-300">
+            Form Workspace
+          </span>
+        ) : evaluated ? (
           <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-300">
             Worker evaluated
           </span>
@@ -471,7 +478,11 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
           onClick={() => void evaluateFeature(feature.id)}
           className="mt-2 w-full rounded bg-sky-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600 disabled:opacity-40"
         >
-          {regenerating ? "Evaluating…" : "Evaluate in worker"}
+          {regenerating
+            ? "Evaluating…"
+            : isSculpt
+              ? "Bake Catmull-Clark mesh"
+              : "Evaluate in worker"}
         </button>
       )}
     </div>

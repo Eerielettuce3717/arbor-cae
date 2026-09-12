@@ -33,6 +33,10 @@ import {
 import { meshFromBuffers } from "../../cad/meshFromBuffers";
 import type { MeshBuffers } from "../../cad/types";
 import {
+  FormWorkspace,
+  type GizmoMode,
+} from "../../sculpt/FormWorkspace";
+import {
   ArViewportPlaceholder,
   createArViewportBridge,
 } from "./ar/ArViewportScaffold";
@@ -78,15 +82,33 @@ interface ViewportApi {
   orthographic: OrthographicCamera;
   active: ActiveCamera;
   controls: OnshapeControls;
+  scene: Scene;
   modelRoot: Group;
   solidMeshes: Mesh[];
   edgeLines: LineSegments[];
   phantomEdges: LineSegments[];
   sectionPlane: Plane;
+  formWorkspace: FormWorkspace | null;
   setActiveCamera: (cam: ActiveCamera) => void;
   fit: () => void;
   aimDirection: (dir: Vector3, orthographic: boolean) => void;
   applyOcctMesh: (buffers: MeshBuffers) => void;
+  enterFormWorkspace: (opts: {
+    size: number;
+    levels: number;
+    cageVertices?: number[];
+    onCageChanged?: (flat: number[]) => void;
+  }) => void;
+  exitFormWorkspace: () => void;
+  setFormLevels: (levels: number) => void;
+  setFormGizmoMode: (mode: GizmoMode) => void;
+}
+
+export interface SculptViewportParams {
+  size?: number;
+  levels?: number;
+  cageVertices?: number[];
+  showCage?: boolean;
 }
 
 export interface Viewport3DProps {
@@ -96,20 +118,31 @@ export interface Viewport3DProps {
   showArPanel?: boolean;
   /** Tessellated B-Rep mesh from the CAD worker (Float32Arrays). */
   occtMesh?: MeshBuffers | null;
+  /** When true, activate Fusion-style Form Workspace sculpt session. */
+  sculptActive?: boolean;
+  sculptParams?: SculptViewportParams | null;
+  onSculptCageChanged?: (cageVertices: number[]) => void;
+  onSculptLevelsChanged?: (levels: number) => void;
 }
 
 /**
  * Enterprise CAD WebGL viewport: Three.js scene, dual cameras,
- * Onshape-style navigation, View Cube, and render/display menus.
+ * Onshape-style navigation, View Cube, Form Workspace, and render/display menus.
  */
 export function Viewport3D({
   className,
   style,
   showArPanel: showArPanelProp,
   occtMesh,
+  sculptActive = false,
+  sculptParams = null,
+  onSculptCageChanged,
+  onSculptLevelsChanged,
 }: Viewport3DProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ViewportApi | null>(null);
+  const onCageChangedRef = useRef(onSculptCageChanged);
+  onCageChangedRef.current = onSculptCageChanged;
 
   const [cameraMode, setCameraMode] = useState<CameraMode>("isometric");
   const [renderOptions, setRenderOptions] = useState<RenderOptionsState>(
@@ -123,6 +156,8 @@ export function Viewport3D({
   const [statusLine, setStatusLine] = useState("Ready");
   const [fps, setFps] = useState(0);
   const [arPanelOpen, setArPanelOpen] = useState(showArPanelProp ?? false);
+  const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
+  const [formLevels, setFormLevels] = useState(2);
 
   const arBridge = useMemo(() => createArViewportBridge(), []);
 
@@ -197,6 +232,7 @@ export function Viewport3D({
     }
 
     const sectionPlane = new Plane(new Vector3(0, 0, -1), 0);
+    let formWorkspace: FormWorkspace | null = null;
 
     const setActiveCamera = (cam: ActiveCamera) => {
       cam.position.copy(active.position);
@@ -206,11 +242,16 @@ export function Viewport3D({
       controls.setCamera(cam);
       controls.syncSphericalFromCamera();
       controls.update();
+      formWorkspace?.setCamera(cam);
       if (apiRef.current) apiRef.current.active = cam;
     };
 
     const fit = () => {
-      controls.fitToSphere(new Vector3(0, 0.25, 0), 1.6, 1.4);
+      controls.fitToSphere(
+        new Vector3(0, 0.25, 0),
+        formWorkspace ? 18 : 1.6,
+        1.4,
+      );
     };
 
     const aimDirection = (dir: Vector3, useOrtho: boolean) => {
@@ -227,8 +268,7 @@ export function Viewport3D({
       controls.update();
     };
 
-    const applyOcctMesh = (buffers: MeshBuffers) => {
-      // Remove previous OCCT or demo solids from the model root.
+    const clearModelRoot = () => {
       while (modelRoot.children.length > 0) {
         const child = modelRoot.children[0];
         modelRoot.remove(child);
@@ -237,6 +277,11 @@ export function Viewport3D({
       solidMeshes.length = 0;
       edgeLines.length = 0;
       phantomEdges.length = 0;
+    };
+
+    const applyOcctMesh = (buffers: MeshBuffers) => {
+      if (formWorkspace) return;
+      clearModelRoot();
 
       const solid = meshFromBuffers(buffers, { partId: "demo-part" });
       modelRoot.add(solid);
@@ -276,6 +321,39 @@ export function Viewport3D({
       fit();
     };
 
+    const exitFormWorkspace = () => {
+      if (!formWorkspace) return;
+      formWorkspace.dispose();
+      formWorkspace = null;
+      if (apiRef.current) apiRef.current.formWorkspace = null;
+      controls.enabled = true;
+      setStatusLine("Form Workspace closed");
+    };
+
+    const enterFormWorkspace = (opts: {
+      size: number;
+      levels: number;
+      cageVertices?: number[];
+      onCageChanged?: (flat: number[]) => void;
+    }) => {
+      exitFormWorkspace();
+      clearModelRoot();
+      formWorkspace = new FormWorkspace({
+        scene,
+        camera: active,
+        domElement: renderer.domElement,
+        orbitControls: controls,
+        size: opts.size,
+        levels: opts.levels,
+        cageVertices: opts.cageVertices,
+        onCageChanged: opts.onCageChanged,
+        onStatus: setStatusLine,
+      });
+      if (apiRef.current) apiRef.current.formWorkspace = formWorkspace;
+      controls.target.set(0, 0, 0);
+      fit();
+    };
+
     aimDirection(AXONOMETRIC.isometric.dir.clone(), true);
     fit();
 
@@ -284,15 +362,21 @@ export function Viewport3D({
       orthographic,
       active,
       controls,
+      scene,
       modelRoot,
       solidMeshes,
       edgeLines,
       phantomEdges,
       sectionPlane,
+      formWorkspace,
       setActiveCamera,
       fit,
       aimDirection,
       applyOcctMesh,
+      enterFormWorkspace,
+      exitFormWorkspace,
+      setFormLevels: (levels: number) => formWorkspace?.setLevels(levels),
+      setFormGizmoMode: (mode: GizmoMode) => formWorkspace?.setGizmoMode(mode),
     };
 
     const resize = () => {
@@ -302,7 +386,7 @@ export function Viewport3D({
       const aspect = w / h;
       perspective.aspect = aspect;
       perspective.updateProjectionMatrix();
-      const frustum = 2.2;
+      const frustum = formWorkspace ? 14 : 2.2;
       orthographic.left = -frustum * aspect;
       orthographic.right = frustum * aspect;
       orthographic.top = frustum;
@@ -358,6 +442,7 @@ export function Viewport3D({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      exitFormWorkspace();
       controls.dispose();
       arBridge.dispose();
       disposeObject(scene);
@@ -370,9 +455,47 @@ export function Viewport3D({
   }, [arBridge]);
 
   useEffect(() => {
-    if (!occtMesh) return;
+    if (!occtMesh || sculptActive) return;
     apiRef.current?.applyOcctMesh(occtMesh);
-  }, [occtMesh]);
+  }, [occtMesh, sculptActive]);
+
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+
+    if (sculptActive) {
+      const size = Number(sculptParams?.size) || 20;
+      const levels = Number(sculptParams?.levels) || 2;
+      setFormLevels(levels);
+      api.enterFormWorkspace({
+        size,
+        levels,
+        cageVertices: sculptParams?.cageVertices,
+        onCageChanged: (flat) => onCageChangedRef.current?.(flat),
+      });
+      api.setFormGizmoMode(gizmoMode);
+      return () => {
+        api.exitFormWorkspace();
+      };
+    }
+
+    api.exitFormWorkspace();
+    return undefined;
+    // Intentionally omit cageVertices — live edits update FormWorkspace in place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sculptActive, sculptParams?.size]);
+
+  useEffect(() => {
+    if (!sculptActive) return;
+    const levels = Number(sculptParams?.levels) || 2;
+    setFormLevels(levels);
+    apiRef.current?.setFormLevels(levels);
+  }, [sculptActive, sculptParams?.levels]);
+
+  useEffect(() => {
+    if (!sculptActive) return;
+    apiRef.current?.setFormGizmoMode(gizmoMode);
+  }, [sculptActive, gizmoMode]);
 
   useEffect(() => {
     const api = apiRef.current;
@@ -470,6 +593,15 @@ export function Viewport3D({
     });
   }, []);
 
+  const onFormLevelClick = useCallback(
+    (levels: number) => {
+      setFormLevels(levels);
+      apiRef.current?.setFormLevels(levels);
+      onSculptLevelsChanged?.(levels);
+    },
+    [onSculptLevelsChanged],
+  );
+
   const modeLabel =
     cameraMode === "orient-sketch-plane"
       ? "Sketch Normal"
@@ -493,6 +625,58 @@ export function Viewport3D({
       />
 
       <ViewCube viewDirection={viewDirection} onFaceClick={onFaceClick} />
+
+      {sculptActive && (
+        <div className="pointer-events-auto absolute left-3 top-14 z-20 flex flex-col gap-2 rounded border border-eng-border bg-eng-panel/95 p-2 shadow-xl">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-sky-300">
+            Form Workspace
+          </div>
+          <div className="flex gap-1">
+            {(
+              [
+                ["translate", "Move", "W"],
+                ["rotate", "Rotate", "E"],
+                ["scale", "Scale", "R"],
+              ] as const
+            ).map(([mode, label, key]) => (
+              <button
+                key={mode}
+                type="button"
+                title={`${label} (${key})`}
+                onClick={() => setGizmoMode(mode)}
+                className={`rounded px-2 py-1 text-[11px] ${
+                  gizmoMode === mode
+                    ? "bg-sky-700 text-white"
+                    : "bg-eng-elevated text-eng-muted hover:text-eng-text"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-eng-muted">Subdiv</span>
+            {[0, 1, 2, 3, 4].map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => onFormLevelClick(level)}
+                className={`h-6 w-6 rounded text-[11px] ${
+                  formLevels === level
+                    ? "bg-sky-700 text-white"
+                    : "bg-eng-elevated text-eng-muted hover:text-eng-text"
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+          <p className="max-w-[200px] text-[10px] leading-snug text-eng-faint">
+            Click amber vertices, cyan edges, or violet face centers. Drag the
+            gizmo to edit the cage — smooth mesh updates live.
+          </p>
+        </div>
+      )}
 
       <div className="pointer-events-auto absolute right-3 top-3 z-20">
         <button
@@ -519,10 +703,12 @@ export function Viewport3D({
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-eng-border/60 bg-eng-panel/90 px-3 py-1 text-[10px] text-eng-muted">
         <span>{statusLine}</span>
         <span className="font-mono">
-          RMB orbit · MMB pan · wheel zoom-to-cursor · pinch
+          {sculptActive
+            ? "LMB select cage · W/E/R gizmo · RMB orbit"
+            : "RMB orbit · MMB pan · wheel zoom-to-cursor · pinch"}
         </span>
         <span className="font-mono">
-          {modeLabel} · {renderOptions.shading}
+          {sculptActive ? "Form" : modeLabel} · {renderOptions.shading}
           {displayOverrides.sectionViewEnabled ? " · section" : ""} · {fps} fps
         </span>
       </div>

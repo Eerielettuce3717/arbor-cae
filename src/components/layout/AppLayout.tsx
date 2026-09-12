@@ -49,6 +49,7 @@ const FEATURE_TOOL_MAP: Record<string, FeatureToolType> = {
   Revolve: "revolve",
   Hole: "hole",
   Boolean: "boolean",
+  Sculpt: "sculpt",
 };
 
 const TOOLBAR_GROUPS: {
@@ -65,6 +66,11 @@ const TOOLBAR_GROUPS: {
     id: "feature",
     label: "Feature",
     tools: ["Extrude", "Revolve", "Hole", "Pattern", "Boolean"],
+  },
+  {
+    id: "form",
+    label: "Form",
+    tools: ["Sculpt"],
   },
   {
     id: "analyze",
@@ -135,10 +141,39 @@ export function AppLayout({
   const addFeature = useFeatureStore((s) => s.addFeature);
   const openEditor = useFeatureStore((s) => s.openEditor);
   const selectFeature = useFeatureStore((s) => s.selectFeature);
+  const updateFeatureParams = useFeatureStore((s) => s.updateFeatureParams);
+
+  const selectedFeature = features.find((f) => f.id === selectedFeatureId);
+  const sculptActive =
+    selectedFeature?.type === "sculpt" && !selectedFeature.suppressed;
+  const sculptParams = sculptActive
+    ? (selectedFeature.params as {
+        size?: number;
+        levels?: number;
+        cageVertices?: number[];
+        showCage?: boolean;
+      })
+    : null;
 
   useEffect(() => {
     if (lastMesh) setOcctMesh(lastMesh);
   }, [lastMesh]);
+
+  const onSculptCageChanged = useCallback(
+    (cageVertices: number[]) => {
+      if (!selectedFeatureId || !sculptActive) return;
+      updateFeatureParams(selectedFeatureId, { cageVertices });
+    },
+    [selectedFeatureId, sculptActive, updateFeatureParams],
+  );
+
+  const onSculptLevelsChanged = useCallback(
+    (levels: number) => {
+      if (!selectedFeatureId || !sculptActive) return;
+      updateFeatureParams(selectedFeatureId, { levels });
+    },
+    [selectedFeatureId, sculptActive, updateFeatureParams],
+  );
 
   const onSelectTool = useCallback(
     (tool: string) => {
@@ -406,7 +441,13 @@ export function AppLayout({
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
           {children ?? (
             <>
-              <Viewport3D occtMesh={occtMesh} />
+              <Viewport3D
+                occtMesh={sculptActive ? null : occtMesh}
+                sculptActive={sculptActive}
+                sculptParams={sculptParams}
+                onSculptCageChanged={onSculptCageChanged}
+                onSculptLevelsChanged={onSculptLevelsChanged}
+              />
               <AnalysisPanel
                 activeTool={analysisTool}
                 onClose={() => setAnalysisTool(null)}

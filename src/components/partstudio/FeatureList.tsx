@@ -3,6 +3,7 @@ import { useFeatureStore } from "../../store/featureStore";
 import {
   EVALUATED_FEATURE_TOOLS,
   FEATURE_TOOL_BY_TYPE,
+  SCULPT_FEATURE_TOOLS,
   type CadFeature,
   type FeatureStatus,
 } from "../../store/featureTypes";
@@ -11,6 +12,12 @@ const SYSTEM_NODES = [
   { id: "origin", label: "Origin", icon: "·" },
   { id: "planes", label: "Planes (Front / Top / Right)", icon: "·" },
 ] as const;
+
+function isEvaluatedTool(type: CadFeature["type"]): boolean {
+  return (
+    EVALUATED_FEATURE_TOOLS.has(type) || SCULPT_FEATURE_TOOLS.has(type)
+  );
+}
 
 function statusGlyph(status: FeatureStatus, suppressed: boolean): string {
   if (suppressed) return "⊘";
@@ -158,6 +165,14 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
         >
           + Boolean
         </button>
+        <button
+          type="button"
+          title="Add Sculpt (Form Workspace)"
+          onClick={() => addFeature("sculpt")}
+          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-sky-300"
+        >
+          + Sculpt
+        </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1">
@@ -228,7 +243,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                 >
                   {feature.name}
                 </span>
-                {!EVALUATED_FEATURE_TOOLS.has(feature.type) &&
+                {!isEvaluatedTool(feature.type) &&
                   feature.type !== "sketch" && (
                     <span className="ml-auto shrink-0 text-[9px] uppercase tracking-wide text-eng-faint">
                       UI
@@ -251,7 +266,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
               >
                 ✎
               </button>
-              {EVALUATED_FEATURE_TOOLS.has(feature.type) && (
+              {isEvaluatedTool(feature.type) && (
                 <button
                   type="button"
                   title="Evaluate"

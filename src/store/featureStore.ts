@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import { cadClient } from "../cad/cadClient";
 import type { MeshBuffers } from "../cad/types";
+import { sculptMeshFromParams } from "../sculpt/FormWorkspace";
 import {
   EVALUATED_FEATURE_TOOLS,
   FEATURE_TOOL_BY_TYPE,
   ONSHAPE_MATERIAL_LIBRARY,
+  SCULPT_FEATURE_TOOLS,
   defaultNameForType,
   type BooleanParams,
   type CadFeature,
@@ -18,6 +20,7 @@ import {
   type OnshapeMaterial,
   type PartAppearance,
   type PartConfigurationState,
+  type SculptParams,
 } from "./featureTypes";
 
 function uid(prefix: string): string {
@@ -40,7 +43,10 @@ function createFeature(
     type,
     name: defaultNameForType(type, countOfType(features, type)),
     suppressed: false,
-    status: EVALUATED_FEATURE_TOOLS.has(type) ? "ok" : "scaffold",
+    status:
+      EVALUATED_FEATURE_TOOLS.has(type) || SCULPT_FEATURE_TOOLS.has(type)
+        ? "ok"
+        : "scaffold",
     params: { ...(def?.defaults ?? {}) },
     shapeId: null,
     references: [],
@@ -204,7 +210,7 @@ export interface FeatureStoreState {
   upsertConfigRow: (row: ConfigTableRow) => void;
   upsertConfigColumn: (column: ConfigTableColumn) => void;
 
-  /** Evaluate Extrude / Fillet / Boolean via the CAD worker. */
+  /** Evaluate Extrude / Fillet / Boolean via CAD worker, or Sculpt via Catmull-Clark. */
   evaluateFeature: (id: string) => Promise<MeshBuffers | null>;
   regenerateTree: () => Promise<void>;
 }
@@ -466,7 +472,9 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
   evaluateFeature: async (id) => {
     const feature = get().features.find((f) => f.id === id);
     if (!feature || feature.suppressed) return null;
-    if (!EVALUATED_FEATURE_TOOLS.has(feature.type)) {
+    const isOcct = EVALUATED_FEATURE_TOOLS.has(feature.type);
+    const isSculpt = SCULPT_FEATURE_TOOLS.has(feature.type);
+    if (!isOcct && !isSculpt) {
       set((s) => ({
         features: s.features.map((f) =>
           f.id === id ? { ...f, status: "scaffold" } : f,
@@ -480,7 +488,25 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
       let mesh: MeshBuffers | null = null;
       let shapeId: string | null = feature.shapeId;
 
-      if (feature.type === "extrude") {
+      if (feature.type === "sculpt") {
+        const params = feature.params as unknown as SculptParams;
+        const buffers = sculptMeshFromParams({
+          size: Number(params.size) || 20,
+          levels: Number(params.levels) || 2,
+          cageVertices: Array.isArray(params.cageVertices)
+            ? (params.cageVertices as number[])
+            : undefined,
+        });
+        shapeId = `sculpt_${feature.id}`;
+        mesh = {
+          positions: buffers.positions,
+          normals: buffers.normals,
+          indices: buffers.indices,
+          vertexCount: buffers.vertexCount,
+          triangleCount: buffers.triangleCount,
+          shapeId,
+        };
+      } else if (feature.type === "extrude") {
         const params = feature.params as unknown as ExtrudeParams;
         const result = await cadClient.evaluateExtrude({
           featureId: feature.id,
@@ -550,7 +576,12 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
     try {
       for (const feature of features) {
         if (feature.suppressed) continue;
-        if (!EVALUATED_FEATURE_TOOLS.has(feature.type)) continue;
+        if (
+          !EVALUATED_FEATURE_TOOLS.has(feature.type) &&
+          !SCULPT_FEATURE_TOOLS.has(feature.type)
+        ) {
+          continue;
+        }
         const mesh = await evaluateFeature(feature.id);
         if (mesh) lastMesh = mesh;
       }

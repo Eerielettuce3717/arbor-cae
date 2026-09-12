@@ -3,6 +3,7 @@
 export type FeatureCategory =
   | "solid"
   | "surfacing"
+  | "form"
   | "curves"
   | "org"
   | "frames"
@@ -47,6 +48,8 @@ export type FeatureToolType =
   | "ruledSurface"
   | "mutualTrim"
   | "constrainedSurface"
+  // Form Workspace (organic / T-Spline-style sculpt)
+  | "sculpt"
   // Curves / Routing
   | "plane"
   | "helix"
@@ -100,6 +103,9 @@ export const EVALUATED_FEATURE_TOOLS = new Set<FeatureToolType>([
   "fillet",
   "boolean",
 ]);
+
+/** Client-side Form Workspace evaluation (Catmull-Clark, no OCCT). */
+export const SCULPT_FEATURE_TOOLS = new Set<FeatureToolType>(["sculpt"]);
 
 export type FeatureFieldKind =
   | "number"
@@ -237,6 +243,18 @@ export interface FilletParams {
   targetShapeId: string;
   edgeSelection: "all" | "manual";
   tangentPropagation: boolean;
+}
+
+/** Form Workspace / organic sculpt control-cage params. */
+export interface SculptParams {
+  /** Control-cage box size in mm. */
+  size: number;
+  /** Catmull-Clark subdivision levels (0–4). */
+  levels: number;
+  /** Flattened control-cage vertex positions [x,y,z, ...]. */
+  cageVertices: number[];
+  /** Show control cage overlay when feature is active. */
+  showCage: boolean;
 }
 
 export const ONSHAPE_MATERIAL_LIBRARY: OnshapeMaterial[] = [
@@ -638,6 +656,33 @@ export const FEATURE_TOOL_CATALOG: FeatureToolDef[] = [
     num("degree", "Degree"),
   ]),
 
+  // —— Form Workspace ——
+  tool(
+    "sculpt",
+    "Sculpt",
+    "form",
+    "⬡",
+    {
+      size: 20,
+      levels: 2,
+      showCage: true,
+      cageVertices: [
+        -10, -10, -10, 10, -10, -10, 10, 10, -10, -10, 10, -10, -10, -10, 10, 10,
+        -10, 10, 10, 10, 10, -10, 10, 10,
+      ],
+    },
+    [
+      num("size", "Cage size", { unit: "mm", min: 1, max: 500, step: 1 }),
+      num("levels", "Subdivision levels", {
+        min: 0,
+        max: 4,
+        step: 1,
+      }),
+      bool("showCage", "Show control cage"),
+    ],
+    true,
+  ),
+
   // —— Curves / Routing ——
   tool("plane", "Plane", "curves", "▭", { offset: 0, type: "offset" }, [
     sel("type", "Plane type", [
@@ -918,6 +963,7 @@ export const FEATURE_TOOL_BY_TYPE: Record<FeatureToolType, FeatureToolDef> =
 export const FEATURE_CATEGORIES: { id: FeatureCategory; label: string }[] = [
   { id: "solid", label: "Solid / Basic" },
   { id: "surfacing", label: "Surfacing" },
+  { id: "form", label: "Form Workspace" },
   { id: "curves", label: "Curves / Routing" },
   { id: "org", label: "Organization" },
   { id: "frames", label: "Frames" },
