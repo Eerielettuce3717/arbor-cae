@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
+import { AnalysisPanel } from "../analysis/AnalysisPanel";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
@@ -25,7 +27,11 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
 ];
 
-const TOOLBAR_GROUPS = [
+const TOOLBAR_GROUPS: {
+  id: string;
+  label: string;
+  tools: string[];
+}[] = [
   {
     id: "sketch",
     label: "Sketch",
@@ -37,11 +43,34 @@ const TOOLBAR_GROUPS = [
     tools: ["Extrude", "Revolve", "Hole", "Pattern", "Boolean"],
   },
   {
+    id: "analyze",
+    label: "Analyze",
+    tools: [
+      "Measure",
+      "Mass Props",
+      "Zebra",
+      "Curvature",
+      "Draft",
+      "Thickness",
+      "Interference",
+    ],
+  },
+  {
     id: "view",
     label: "View",
     tools: ["Fit", "Iso", "Section", "Edges"],
   },
 ];
+
+const TOOL_TO_ANALYSIS: Record<string, AnalysisToolId> = {
+  Measure: "measure",
+  "Mass Props": "mass-properties",
+  Zebra: "zebra-stripes",
+  Curvature: "curvature-color-map",
+  Draft: "draft-analysis",
+  Thickness: "thickness-analysis",
+  Interference: "interference-detection",
+};
 
 const FEATURE_TREE = [
   { id: "origin", label: "Origin", kind: "system" },
@@ -70,6 +99,10 @@ export function AppLayout({
   const [activeTool, setActiveTool] = useState("Extrude");
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [selectedFeatureId, setSelectedFeatureId] = useState("ex1");
+  const [analysisTool, setAnalysisTool] = useState<AnalysisToolId | null>(
+    null,
+  );
+  const [occtMesh, setOcctMesh] = useState<MeshBuffers | null>(null);
 
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
@@ -78,6 +111,16 @@ export function AppLayout({
     setInternalActive(id);
     onSelectTab?.(id);
   }
+
+  const onSelectTool = useCallback((tool: string) => {
+    setActiveTool(tool);
+    const analysis = TOOL_TO_ANALYSIS[tool];
+    if (analysis) setAnalysisTool(analysis);
+  }, []);
+
+  const onMeshReady = useCallback((mesh: MeshBuffers) => {
+    setOcctMesh(mesh);
+  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-eng-bg text-eng-text">
@@ -227,7 +270,7 @@ export function AppLayout({
               <button
                 key={tool}
                 type="button"
-                onClick={() => setActiveTool(tool)}
+                onClick={() => onSelectTool(tool)}
                 className={`rounded px-2 py-1 text-xs ${
                   activeTool === tool
                     ? "bg-sky-700 text-white"
@@ -299,7 +342,16 @@ export function AppLayout({
 
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
-          {children ?? <Viewport3D />}
+          {children ?? (
+            <>
+              <Viewport3D occtMesh={occtMesh} />
+              <AnalysisPanel
+                activeTool={analysisTool}
+                onClose={() => setAnalysisTool(null)}
+                onMeshReady={onMeshReady}
+              />
+            </>
+          )}
         </section>
       </div>
     </div>

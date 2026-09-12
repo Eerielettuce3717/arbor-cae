@@ -7,6 +7,14 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
+  // OpenCASCADE WASM must not be rewritten by dep optimizer / wasm plugins.
+  optimizeDeps: {
+    exclude: ["opencascade.js"],
+  },
+  assetsInclude: ["**/*.wasm"],
+  worker: {
+    format: "es",
+  },
   server: {
     port: 1420,
     strictPort: true,

@@ -30,6 +30,8 @@ import {
   type Material,
   type Object3D,
 } from "three";
+import { meshFromBuffers } from "../../cad/meshFromBuffers";
+import type { MeshBuffers } from "../../cad/types";
 import {
   ArViewportPlaceholder,
   createArViewportBridge,
@@ -76,6 +78,7 @@ interface ViewportApi {
   orthographic: OrthographicCamera;
   active: ActiveCamera;
   controls: OnshapeControls;
+  modelRoot: Group;
   solidMeshes: Mesh[];
   edgeLines: LineSegments[];
   phantomEdges: LineSegments[];
@@ -83,6 +86,7 @@ interface ViewportApi {
   setActiveCamera: (cam: ActiveCamera) => void;
   fit: () => void;
   aimDirection: (dir: Vector3, orthographic: boolean) => void;
+  applyOcctMesh: (buffers: MeshBuffers) => void;
 }
 
 export interface Viewport3DProps {
@@ -90,6 +94,8 @@ export interface Viewport3DProps {
   style?: CSSProperties;
   /** Open the AR / Vision Pro scaffold panel on mount. */
   showArPanel?: boolean;
+  /** Tessellated B-Rep mesh from the CAD worker (Float32Arrays). */
+  occtMesh?: MeshBuffers | null;
 }
 
 /**
@@ -100,6 +106,7 @@ export function Viewport3D({
   className,
   style,
   showArPanel: showArPanelProp,
+  occtMesh,
 }: Viewport3DProps) {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ViewportApi | null>(null);
@@ -220,6 +227,55 @@ export function Viewport3D({
       controls.update();
     };
 
+    const applyOcctMesh = (buffers: MeshBuffers) => {
+      // Remove previous OCCT or demo solids from the model root.
+      while (modelRoot.children.length > 0) {
+        const child = modelRoot.children[0];
+        modelRoot.remove(child);
+        disposeObject(child);
+      }
+      solidMeshes.length = 0;
+      edgeLines.length = 0;
+      phantomEdges.length = 0;
+
+      const solid = meshFromBuffers(buffers, { partId: "demo-part" });
+      modelRoot.add(solid);
+      solidMeshes.push(solid);
+
+      const edgeMat = new LineBasicMaterial({
+        color: 0x0f172a,
+        transparent: true,
+        opacity: 0.9,
+      });
+      const phantomMat = new LineBasicMaterial({
+        color: 0x64748b,
+        transparent: true,
+        opacity: 0.45,
+      });
+      const e = new LineSegments(
+        new EdgesGeometry(solid.geometry, 20),
+        edgeMat,
+      );
+      e.userData.partId = "demo-part";
+      e.userData.edgeKind = "boundary";
+      modelRoot.add(e);
+      edgeLines.push(e);
+
+      const p = new LineSegments(
+        new EdgesGeometry(solid.geometry, 1),
+        phantomMat,
+      );
+      p.userData.partId = "demo-part";
+      p.userData.edgeKind = "tangent";
+      modelRoot.add(p);
+      phantomEdges.push(p);
+
+      setStatusLine(
+        `OCCT mesh · ${buffers.triangleCount} tris · ${buffers.vertexCount} verts`,
+      );
+      fit();
+    };
+
     aimDirection(AXONOMETRIC.isometric.dir.clone(), true);
     fit();
 
@@ -228,6 +284,7 @@ export function Viewport3D({
       orthographic,
       active,
       controls,
+      modelRoot,
       solidMeshes,
       edgeLines,
       phantomEdges,
@@ -235,6 +292,7 @@ export function Viewport3D({
       setActiveCamera,
       fit,
       aimDirection,
+      applyOcctMesh,
     };
 
     const resize = () => {
@@ -310,6 +368,11 @@ export function Viewport3D({
       apiRef.current = null;
     };
   }, [arBridge]);
+
+  useEffect(() => {
+    if (!occtMesh) return;
+    apiRef.current?.applyOcctMesh(occtMesh);
+  }, [occtMesh]);
 
   useEffect(() => {
     const api = apiRef.current;
