@@ -4,6 +4,7 @@ import { useFeatureStore } from "../../store/featureStore";
 import type { FeatureToolType } from "../../store/featureTypes";
 import { useSketchStore } from "../../store/sketchStore";
 import { AssemblyWorkspace, InstanceTree } from "../assembly";
+import { DrawingTree, DrawingWorkspace } from "../drawings";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
 import {
   FeatureEditor,
@@ -17,6 +18,11 @@ import {
   RELATION_CATALOG,
   type AssemblyToolId,
 } from "../../store/assemblyTypes";
+import { useDrawingStore } from "../../store/drawingStore";
+import {
+  DRAWING_TOOLBAR_GROUPS,
+  type DrawingToolId,
+} from "../../store/drawingTypes";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
@@ -184,6 +190,7 @@ export function AppLayout({
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
   const isAssembly = activeTab?.kind === "assembly";
+  const isDrawing = activeTab?.kind === "drawing";
 
   function selectTab(id: string) {
     setInternalActive(id);
@@ -207,6 +214,10 @@ export function AppLayout({
   const assemblyStatus = useAssemblyStore((s) => s.statusMessage);
   const snapMode = useAssemblyStore((s) => s.snapMode);
   const showMatesMode = useAssemblyStore((s) => s.showMatesMode);
+
+  const drawingTool = useDrawingStore((s) => s.activeTool);
+  const setDrawingTool = useDrawingStore((s) => s.setActiveTool);
+  const drawingStatus = useDrawingStore((s) => s.statusMessage);
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId);
   const sculptActive =
@@ -428,22 +439,19 @@ export function AppLayout({
 
       {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
-        {isAssembly
-          ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
+        {isDrawing
+          ? DRAWING_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
                 <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
                   {group.label}
                 </span>
                 {group.tools.map((tool) => {
-                  const toggled =
-                    (tool.id === "snapMode" && snapMode) ||
-                    (tool.id === "showMates" && showMatesMode);
-                  const active = assemblyTool === tool.id || toggled;
+                  const active = drawingTool === tool.id;
                   return (
                     <button
                       key={tool.id}
                       type="button"
-                      onClick={() => setAssemblyTool(tool.id)}
+                      onClick={() => setDrawingTool(tool.id as DrawingToolId)}
                       className={`rounded px-2 py-1 text-xs ${
                         active
                           ? "bg-sky-700 text-white"
@@ -456,36 +464,72 @@ export function AppLayout({
                 })}
               </div>
             ))
-          : TOOLBAR_GROUPS.map((group) => (
-              <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
-                  {group.label}
-                </span>
-                {group.tools.map((tool) => (
-                  <button
-                    key={tool}
-                    type="button"
-                    onClick={() => onSelectTool(tool)}
-                    className={`rounded px-2 py-1 text-xs ${
-                      activeTool === tool
-                        ? "bg-sky-700 text-white"
-                        : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                    }`}
-                  >
-                    {tool}
-                  </button>
-                ))}
-              </div>
-            ))}
+          : isAssembly
+            ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
+                <div key={group.id} className="flex items-center gap-1">
+                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                    {group.label}
+                  </span>
+                  {group.tools.map((tool) => {
+                    const toggled =
+                      (tool.id === "snapMode" && snapMode) ||
+                      (tool.id === "showMates" && showMatesMode);
+                    const active = assemblyTool === tool.id || toggled;
+                    return (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        onClick={() => setAssemblyTool(tool.id)}
+                        className={`rounded px-2 py-1 text-xs ${
+                          active
+                            ? "bg-sky-700 text-white"
+                            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                        }`}
+                      >
+                        {tool.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            : TOOLBAR_GROUPS.map((group) => (
+                <div key={group.id} className="flex items-center gap-1">
+                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                    {group.label}
+                  </span>
+                  {group.tools.map((tool) => (
+                    <button
+                      key={tool}
+                      type="button"
+                      onClick={() => onSelectTool(tool)}
+                      className={`rounded px-2 py-1 text-xs ${
+                        activeTool === tool
+                          ? "bg-sky-700 text-white"
+                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                      }`}
+                    >
+                      {tool}
+                    </button>
+                  ))}
+                </div>
+              ))}
         <div className="ml-auto flex items-center gap-2 text-[11px] text-eng-muted">
           <span>
             Active:{" "}
             <span className="font-medium text-sky-300">
-              {isAssembly ? assemblyTool : activeTool}
+              {isDrawing ? drawingTool : isAssembly ? assemblyTool : activeTool}
             </span>
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
+          {isDrawing && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {drawingStatus}
+              </span>
+            </>
+          )}
           {isAssembly && (
             <>
               <span className="text-eng-faint">|</span>
@@ -494,7 +538,7 @@ export function AppLayout({
               </span>
             </>
           )}
-          {!isAssembly && selectedFeatureId && (
+          {!isAssembly && !isDrawing && selectedFeatureId && (
             <>
               <span className="text-eng-faint">|</span>
               <span className="text-sky-300/80">
@@ -516,7 +560,11 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                {isAssembly ? "Instance Tree" : "Feature Tree"}
+                {isDrawing
+                  ? "Drawing Tree"
+                  : isAssembly
+                    ? "Instance Tree"
+                    : "Feature Tree"}
               </span>
             )}
             <button
@@ -529,7 +577,9 @@ export function AppLayout({
             </button>
           </div>
           {!panelCollapsed &&
-            (isAssembly ? (
+            (isDrawing ? (
+              <DrawingTree />
+            ) : isAssembly ? (
               <InstanceTree />
             ) : (
               <FeatureList
@@ -547,7 +597,9 @@ export function AppLayout({
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
           {children ??
-            (isAssembly ? (
+            (isDrawing ? (
+              <DrawingWorkspace />
+            ) : isAssembly ? (
               <AssemblyWorkspace />
             ) : (
               <>
