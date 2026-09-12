@@ -15,7 +15,8 @@
     "opencascade.js": "^2.0.0-beta.b5ff984",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": "^0.186.0"
+    "three": "^0.186.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

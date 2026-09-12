@@ -1,6 +1,8 @@
 import { useCallback, useState, type ReactNode } from "react";
 import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
+import { useSketchStore } from "../../store/sketchStore";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
+import { SketchCanvas, SketchTool } from "../partstudio";
 import { Viewport3D } from "../viewport/Viewport3D";
 
 export interface WorkspaceTab {
@@ -26,6 +28,14 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { id: "d-1", title: "Bracket Plate", kind: "part" },
   { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
 ];
+
+const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
+  Line: SketchTool.Line,
+  Arc: SketchTool.ThreePointArc,
+  Circle: SketchTool.CenterPointCircle,
+  Rect: SketchTool.CornerRectangle,
+  Fillet: SketchTool.SketchFillet,
+};
 
 const TOOLBAR_GROUPS: {
   id: string;
@@ -112,11 +122,31 @@ export function AppLayout({
     onSelectTab?.(id);
   }
 
-  const onSelectTool = useCallback((tool: string) => {
-    setActiveTool(tool);
-    const analysis = TOOL_TO_ANALYSIS[tool];
-    if (analysis) setAnalysisTool(analysis);
-  }, []);
+  const sketchActive = useSketchStore((s) => s.active);
+  const setSketchActive = useSketchStore((s) => s.setActive);
+  const setSketchTool = useSketchStore((s) => s.setActiveTool);
+
+  const onSelectTool = useCallback(
+    (tool: string) => {
+      setActiveTool(tool);
+      const analysis = TOOL_TO_ANALYSIS[tool];
+      if (analysis) setAnalysisTool(analysis);
+
+      const sketchTool = SKETCH_TOOL_MAP[tool];
+      if (sketchTool) {
+        setSketchActive(true, {
+          id: selectedFeatureId.startsWith("sk")
+            ? selectedFeatureId
+            : "sk1",
+          name:
+            FEATURE_TREE.find((n) => n.id === selectedFeatureId)?.label ??
+            "Sketch 1",
+        });
+        setSketchTool(sketchTool);
+      }
+    },
+    [selectedFeatureId, setSketchActive, setSketchTool],
+  );
 
   const onMeshReady = useCallback((mesh: MeshBuffers) => {
     setOcctMesh(mesh);
@@ -319,7 +349,15 @@ export function AppLayout({
                 <button
                   key={node.id}
                   type="button"
-                  onClick={() => setSelectedFeatureId(node.id)}
+                  onClick={() => {
+                    setSelectedFeatureId(node.id);
+                    if (node.kind === "sketch") {
+                      setSketchActive(true, {
+                        id: node.id,
+                        name: node.label,
+                      });
+                    }
+                  }}
                   className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs ${
                     selectedFeatureId === node.id
                       ? "bg-eng-active text-sky-300"
@@ -350,6 +388,7 @@ export function AppLayout({
                 onClose={() => setAnalysisTool(null)}
                 onMeshReady={onMeshReady}
               />
+              {sketchActive && <SketchCanvas />}
             </>
           )}
         </section>
