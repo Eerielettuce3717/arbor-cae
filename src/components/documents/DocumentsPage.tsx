@@ -15,6 +15,7 @@ type DocumentKind =
   | "cam"
   | "simulation"
   | "render"
+  | "pcb"
   | "folder";
 type LengthUnit = "mm" | "in" | "m" | "ft";
 
@@ -126,6 +127,15 @@ const MOCK_DOCUMENTS: CadDocument[] = [
     modifiedAt: "2026-09-12T16:22:00Z",
     owner: "You",
   },
+  {
+    id: "d-pcb",
+    name: "Main Board PCB Studio",
+    kind: "pcb",
+    folderId: "f-elec",
+    labels: ["WIP"],
+    modifiedAt: "2026-09-12T16:35:00Z",
+    owner: "You",
+  },
 ];
 
 const MOCK_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
@@ -143,6 +153,7 @@ const KIND_GLYPH: Record<DocumentKind, string> = {
   cam: "⚒",
   simulation: "∿",
   render: "◈",
+  pcb: "⬡",
   folder: "▦",
 };
 
@@ -273,6 +284,7 @@ export function DocumentsPage({
                 ["CAM Studio", "cam"],
                 ["Simulation Studio", "simulation"],
                 ["Render Studio", "render"],
+                ["PCB Studio", "pcb"],
                 ["Folder", "folder"],
               ].map(([label]) => (
                 <button
@@ -514,6 +526,7 @@ export function DocumentsPage({
                 <option value="cam">CAM</option>
                 <option value="simulation">Simulation</option>
                 <option value="render">Render</option>
+                <option value="pcb">PCB</option>
               </select>
             </label>
             <label className="flex flex-col gap-1 text-xs text-eng-muted">

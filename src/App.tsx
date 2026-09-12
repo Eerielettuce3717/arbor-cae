@@ -12,6 +12,7 @@ const INITIAL_TABS: WorkspaceTab[] = [
   { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
   { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
   { id: "d-render", title: "Bracket Render Studio", kind: "render" },
+  { id: "d-pcb", title: "Main Board PCB Studio", kind: "pcb" },
 ];
 
 export default function App() {
@@ -41,6 +42,11 @@ export default function App() {
         id: "d-render",
         title: "Bracket Render Studio",
         kind: "render",
+      },
+      "d-pcb": {
+        id: "d-pcb",
+        title: "Main Board PCB Studio",
+        kind: "pcb",
       },
     };
     const tab = catalog[documentId] ?? {

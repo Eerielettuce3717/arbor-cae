@@ -6,6 +6,7 @@ import { useSketchStore } from "../../store/sketchStore";
 import { AssemblyWorkspace, InstanceTree } from "../assembly";
 import { CamTree, CamWorkspace } from "../cam";
 import { DrawingTree, DrawingWorkspace } from "../drawings";
+import { PcbTree, PcbWorkspace } from "../pcb";
 import { RenderSceneList, RenderWorkspace } from "../render";
 import { SimulationTree, SimulationWorkspace } from "../simulation";
 import { AnalysisPanel } from "../analysis/AnalysisPanel";
@@ -28,6 +29,8 @@ import {
   DRAWING_TOOLBAR_GROUPS,
   type DrawingToolId,
 } from "../../store/drawingTypes";
+import { usePcbStore } from "../../store/pcbStore";
+import { PCB_TOOLBAR_GROUPS, type PcbToolId } from "../../store/pcbTypes";
 import { useRenderStore } from "../../store/renderStore";
 import {
   RENDER_TOOLBAR_GROUPS,
@@ -43,7 +46,14 @@ import { Viewport3D } from "../viewport/Viewport3D";
 export interface WorkspaceTab {
   id: string;
   title: string;
-  kind: "part" | "assembly" | "drawing" | "cam" | "simulation" | "render";
+  kind:
+    | "part"
+    | "assembly"
+    | "drawing"
+    | "cam"
+    | "simulation"
+    | "render"
+    | "pcb";
   dirty?: boolean;
 }
 
@@ -65,6 +75,7 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
   { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
   { id: "d-render", title: "Bracket Render Studio", kind: "render" },
+  { id: "d-pcb", title: "Main Board PCB Studio", kind: "pcb" },
 ];
 
 const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
@@ -212,6 +223,7 @@ export function AppLayout({
   const isCam = activeTab?.kind === "cam";
   const isSimulation = activeTab?.kind === "simulation";
   const isRender = activeTab?.kind === "render";
+  const isPcb = activeTab?.kind === "pcb";
 
   function selectTab(id: string) {
     setInternalActive(id);
@@ -251,6 +263,10 @@ export function AppLayout({
   const renderTool = useRenderStore((s) => s.activeTool);
   const setRenderTool = useRenderStore((s) => s.setActiveTool);
   const renderStatus = useRenderStore((s) => s.statusMessage);
+
+  const pcbTool = usePcbStore((s) => s.activeTool);
+  const setPcbTool = usePcbStore((s) => s.setActiveTool);
+  const pcbStatus = usePcbStore((s) => s.statusMessage);
 
   const selectedFeature = features.find((f) => f.id === selectedFeatureId);
   const sculptActive =
@@ -364,6 +380,7 @@ export function AppLayout({
                   { type: "item", label: "New CAM Studio" },
                   { type: "item", label: "New Simulation Studio" },
                   { type: "item", label: "New Render Studio" },
+                  { type: "item", label: "New PCB Studio" },
                   { type: "sep", label: "sep-1" },
                   { type: "item", label: "Open…" },
                   { type: "item", label: "Save" },
@@ -475,7 +492,32 @@ export function AppLayout({
 
       {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
-        {isRender
+        {isPcb
+          ? PCB_TOOLBAR_GROUPS.map((group) => (
+              <div key={group.id} className="flex items-center gap-1">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                  {group.label}
+                </span>
+                {group.tools.map((tool) => {
+                  const active = pcbTool === tool.id;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => setPcbTool(tool.id as PcbToolId)}
+                      className={`rounded px-2 py-1 text-xs ${
+                        active
+                          ? "bg-sky-700 text-white"
+                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                      }`}
+                    >
+                      {tool.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          : isRender
           ? RENDER_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
                 <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
@@ -632,7 +674,9 @@ export function AppLayout({
           <span>
             Active:{" "}
             <span className="font-medium text-sky-300">
-              {isRender
+              {isPcb
+                ? pcbTool
+                : isRender
                 ? renderTool
                 : isSimulation
                   ? simulationTool
@@ -647,6 +691,14 @@ export function AppLayout({
           </span>
           <span className="text-eng-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
+          {isPcb && (
+            <>
+              <span className="text-eng-faint">|</span>
+              <span className="max-w-[240px] truncate text-sky-300/80">
+                {pcbStatus}
+              </span>
+            </>
+          )}
           {isRender && (
             <>
               <span className="text-eng-faint">|</span>
@@ -692,6 +744,7 @@ export function AppLayout({
             !isCam &&
             !isSimulation &&
             !isRender &&
+            !isPcb &&
             selectedFeatureId && (
             <>
               <span className="text-eng-faint">|</span>
@@ -714,7 +767,9 @@ export function AppLayout({
           <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
             {!panelCollapsed && (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
-                {isRender
+                {isPcb
+                  ? "PCB Tree"
+                  : isRender
                   ? "Scene List"
                   : isSimulation
                     ? "Simulation Tree"
@@ -737,7 +792,9 @@ export function AppLayout({
             </button>
           </div>
           {!panelCollapsed &&
-            (isRender ? (
+            (isPcb ? (
+              <PcbTree />
+            ) : isRender ? (
               <RenderSceneList />
             ) : isSimulation ? (
               <SimulationTree />
@@ -763,7 +820,9 @@ export function AppLayout({
         {/* Viewport / workspace content */}
         <section className="relative min-w-0 flex-1 bg-[#0b1220]">
           {children ??
-            (isRender ? (
+            (isPcb ? (
+              <PcbWorkspace />
+            ) : isRender ? (
               <RenderWorkspace />
             ) : isSimulation ? (
               <SimulationWorkspace />
