@@ -23,32 +23,21 @@ export function RenderGraphicsArea() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse at 30% 20%, ${activePbr.color}22 0%, transparent 45%),
-            linear-gradient(160deg, var(--background) 0%, var(--card) 100%)
-          `,
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0 bg-card" />
 
       <div className="absolute inset-0 flex items-center justify-center p-8">
         <div className="relative flex w-full max-w-lg flex-col items-center">
           <div
             className="relative aspect-square w-56 max-w-full rounded-lg border border-border"
             style={{
-              background: `
-                linear-gradient(145deg, ${activePbr.color} 0%, var(--card) 120%)
-              `,
+              background: activePbr.color,
               opacity: Math.max(0.35, activePbr.opacity),
-              boxShadow: "none",
             }}
           >
-            <div className="absolute inset-3 rounded border border-white/10 bg-gradient-to-br from-white/15 to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 text-[10px] text-white/80">
+            <div className="absolute inset-3 rounded border border-border/60" />
+            <div className="absolute bottom-3 left-3 right-3 text-[10px] text-foreground">
               <div className="font-medium">{selected?.label ?? "Selection"}</div>
-              <div className="font-mono opacity-70">
+              <div className="font-mono text-muted-foreground">
                 m {activePbr.metalness.toFixed(2)} · r{" "}
                 {activePbr.roughness.toFixed(2)}
                 {activePbr.transmission > 0

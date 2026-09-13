@@ -449,7 +449,7 @@ export const INSERTABLE_DOCUMENTS: CatalogDocument[] = [
     latestRevision: "V3",
     workspaceDirty: false,
     primitive: { kind: "box", size: [2, 0.35, 1.2] },
-    color: "#5b8def",
+    color: "#8b949e",
   },
   {
     id: "d-4",
@@ -463,7 +463,7 @@ export const INSERTABLE_DOCUMENTS: CatalogDocument[] = [
     latestRevision: "V3",
     workspaceDirty: true,
     primitive: { kind: "cylinder", radius: 0.28, height: 0.35, axis: "y" },
-    color: "#38bdf8",
+    color: "#e85d04",
   },
   {
     id: "d-7",
@@ -505,7 +505,7 @@ export const INSERTABLE_DOCUMENTS: CatalogDocument[] = [
     latestRevision: "V2",
     workspaceDirty: true,
     primitive: { kind: "box", size: [0.8, 0.8, 0.8] },
-    color: "#c084fc",
+    color: "#fbbf24",
   },
 ];
 

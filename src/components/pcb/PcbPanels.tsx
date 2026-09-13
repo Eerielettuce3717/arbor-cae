@@ -519,7 +519,7 @@ function ScaffoldBadge({ label = "UI only" }: { label?: string }) {
 }
 
 const inputClass =
-  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-accent";
+  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground";
 
 function Field({
   label,

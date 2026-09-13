@@ -796,6 +796,8 @@ export function AppLayout({
               onClick={() => setPanelCollapsed((v) => !v)}
               className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-hover hover:text-accent"
               title={panelCollapsed ? "Expand panel" : "Collapse panel"}
+              aria-label={panelCollapsed ? "Expand panel" : "Collapse panel"}
+              aria-expanded={!panelCollapsed}
             >
               {panelCollapsed ? "»" : "«"}
             </button>

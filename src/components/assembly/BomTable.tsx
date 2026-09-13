@@ -7,7 +7,7 @@ import {
 } from "../../store/assemblyTypes";
 
 const inputClass =
-  "rounded border border-border bg-background px-1.5 py-0.5 text-[11px] text-foreground outline-none focus:border-accent";
+  "rounded border border-border bg-background px-1.5 py-0.5 text-[11px] text-foreground";
 
 export function BomTable() {
   const bom = useAssemblyStore((s) => s.bom);

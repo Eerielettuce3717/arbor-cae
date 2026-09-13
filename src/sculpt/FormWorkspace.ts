@@ -375,7 +375,7 @@ export class FormWorkspace {
           const edgeHandle = new Mesh(
             new SphereGeometry(0.32, 10, 10),
             new MeshStandardMaterial({
-              color: new Color("#38bdf8"),
+              color: new Color("#e85d04"),
               transparent: true,
               opacity: 0.85,
             }),
@@ -395,7 +395,7 @@ export class FormWorkspace {
         const faceHandle = new Mesh(
           new SphereGeometry(0.38, 10, 10),
           new MeshStandardMaterial({
-            color: new Color("#a78bfa"),
+            color: new Color("#e85d04"),
             transparent: true,
             opacity: 0.75,
           }),

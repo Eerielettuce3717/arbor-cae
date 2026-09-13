@@ -64,6 +64,9 @@ export function SketchToolbar() {
                         ? item.label
                         : `${item.label} (scaffolded)`
                     }
+                    aria-label={item.label}
+                    aria-pressed={active}
+                    aria-disabled={!item.implemented}
                     onClick={() => setActiveTool(item.tool)}
                     className={`rounded px-1.5 py-0.5 text-[10px] ${
                       active
@@ -100,6 +103,8 @@ export function SketchToolbar() {
                   ? item.label
                   : `${item.label} (scaffolded)`
               }
+              aria-label={item.label}
+              aria-pressed={active}
               onClick={() =>
                 setActiveConstraintTool(
                   active ? null : (item.type as SketchConstraintType),

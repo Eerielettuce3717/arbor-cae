@@ -773,7 +773,7 @@ function applyMaterials(
       mat.emissive.set("#334155");
       mat.emissiveIntensity = 0.15;
     } else {
-      mat.color.set("#5b8def");
+      mat.color.set("#8b949e");
       mat.metalness = 0.25;
       mat.roughness = 0.45;
       mat.emissive.set("#000000");

@@ -540,7 +540,7 @@ export function DocumentsPage({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search documents…"
-                className="w-56 rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-foreground placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-56 rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-foreground placeholder:text-faint focus:border-accent focus-visible:outline-none"
               />
             </div>
             <button

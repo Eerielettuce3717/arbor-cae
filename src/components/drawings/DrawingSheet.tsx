@@ -79,7 +79,7 @@ function ViewGeometry({
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`)
     .join(" ");
 
-  const stroke = selected ? "#38bdf8" : view.status === "scaffold" ? "#64748b" : "#0f172a";
+  const stroke = selected ? "#e85d04" : view.status === "scaffold" ? "#64748b" : "#0f172a";
   const dash = view.status === "scaffold" ? "4 3" : undefined;
 
   return (
@@ -181,7 +181,7 @@ function LinearDimGraphic({
   const value =
     dim.valueOverride ??
     formatDimensionValue(geom.distance, units, precision);
-  const stroke = dim.status === "dangling" ? "#f43f5e" : selected ? "#38bdf8" : "#0f172a";
+  const stroke = dim.status === "dangling" ? "#f43f5e" : selected ? "#e85d04" : "#0f172a";
 
   return (
     <g
@@ -360,7 +360,7 @@ export function DrawingSheet({ className }: DrawingSheetProps) {
             cx={draftDimPoint.x}
             cy={draftDimPoint.y}
             r={1.2}
-            fill="#38bdf8"
+            fill="#e85d04"
           />
         )}
 

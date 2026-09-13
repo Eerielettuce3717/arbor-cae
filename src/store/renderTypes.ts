@@ -296,8 +296,8 @@ export const LIGHT_EMISSION_PRESETS: LightEmissionAppearance[] = [
     castLight: true,
   },
   {
-    id: "emit_glow_soft",
-    name: "Soft Glow",
+    id: "emit_led_soft",
+    name: "Soft Fill",
     category: "lightEmission",
     emissiveColor: "#88aaff",
     intensity: 0.6,

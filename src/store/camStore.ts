@@ -303,7 +303,7 @@ export const useCamStore = create<CamState>((set, get) => {
             rapid: false,
           },
         ],
-        color: "#38bdf8",
+        color: "#e85d04",
         visible: true,
       };
 

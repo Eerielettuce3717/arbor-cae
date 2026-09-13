@@ -268,7 +268,7 @@ export function SketchCanvas({ className, viewSize = 220 }: SketchCanvasProps) {
               <>
                 {" "}
                 · snap:{" "}
-                <span className="text-cyan-300">{inference[0].label}</span>
+                <span className="text-accent">{inference[0].label}</span>
               </>
             )}
           </div>
@@ -288,7 +288,7 @@ function EntityGraphic({
   const stroke = entity.construction
     ? "#f59e0b"
     : selected
-      ? "#38bdf8"
+      ? "#e85d04"
       : "#e2e8f0";
   const dash = entity.construction ? "4 3" : undefined;
   const width = selected ? 1.6 : 1.1;
@@ -365,7 +365,7 @@ function EntityGraphic({
             height={12}
             rx={2}
             fill="#0f172a"
-            stroke="#38bdf8"
+            stroke="#e85d04"
             strokeWidth={0.8}
           />
           <text
@@ -398,7 +398,7 @@ function buildPreview(
 ): ReactNode {
   if (!draft || !cursor || draft.points.length === 0) return null;
   const start = draft.points[0];
-  const stroke = "#38bdf8";
+  const stroke = "#e85d04";
   const dash = "3 2";
 
   if (draft.tool === SketchTool.Line) {

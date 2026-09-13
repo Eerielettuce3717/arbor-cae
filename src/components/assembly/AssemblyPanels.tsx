@@ -12,7 +12,7 @@ import {
 import { BomTable } from "./BomTable";
 
 const inputClass =
-  "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent";
+  "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground";
 
 function ScaffoldBadge() {
   return (

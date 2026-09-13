@@ -43,7 +43,7 @@ function ParamField({
 }) {
   const scaffold = field.scaffold && !evaluated;
   const inputClass =
-    "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent";
+    "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground";
 
   if (field.kind === "boolean") {
     return (
@@ -88,7 +88,7 @@ function ParamField({
         <div className="flex items-center gap-2">
           <input
             type="color"
-            value={String(value ?? "#5b8def")}
+            value={String(value ?? "#8b949e")}
             onChange={(e) => onChange(field.key, e.target.value)}
             className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent"
           />
@@ -219,7 +219,7 @@ function MaterialsPanel() {
       </p>
       <FieldLabel>Library material</FieldLabel>
       <select
-        className="mb-2 w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
+        className="mb-2 w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
         value={materialId}
         onChange={(e) => setMaterialId(e.target.value)}
       >
@@ -426,7 +426,7 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
         <div className="min-w-0 flex-1">
           <FieldLabel>Feature name</FieldLabel>
           <input
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
+            className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
             value={feature.name}
             onChange={(e) => renameFeature(feature.id, e.target.value)}
           />
@@ -519,7 +519,7 @@ function InsertFeatureMenu({ onPick }: { onPick: (type: FeatureToolType) => void
           <div className="border-b border-border p-2">
             <input
               autoFocus
-              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
+              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
               placeholder="Search tools…"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}

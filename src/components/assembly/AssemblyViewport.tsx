@@ -664,10 +664,10 @@ function applyInstanceState(
     if (body) {
       const mat = body.material as MeshStandardMaterial;
       if (cid === pendingConnectorId) mat.color.set("#fbbf24");
-      else if (cid === selectedConnectorId) mat.color.set("#38bdf8");
+      else if (cid === selectedConnectorId) mat.color.set("#e85d04");
       else if (cid === hoverConnectorId) mat.color.set("#e2e8f0");
       else mat.color.set("#f8fafc");
-      mat.emissive.set(hot ? "#38bdf8" : "#0f172a");
+      mat.emissive.set(hot ? "#e85d04" : "#0f172a");
       mat.emissiveIntensity = hot ? 0.6 : 0.15;
     }
   }

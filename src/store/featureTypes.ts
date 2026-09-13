@@ -762,7 +762,7 @@ export const FEATURE_TOOL_CATALOG: FeatureToolDef[] = [
     entity("parts", "Parts"),
     bool("closed", "Closed composite"),
   ]),
-  tool("tag", "Tag", "org", "🏷", { tagName: "", color: "#38bdf8" }, [
+  tool("tag", "Tag", "org", "🏷", { tagName: "", color: "#e85d04" }, [
     text("tagName", "Tag name"),
     entity("entities", "Entities"),
   ]),
@@ -888,7 +888,7 @@ export const FEATURE_TOOL_CATALOG: FeatureToolDef[] = [
     "appearance",
     "🎨",
     {
-      color: "#5b8def",
+      color: "#8b949e",
       metalness: 0.35,
       roughness: 0.45,
       opacity: 1,

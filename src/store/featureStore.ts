@@ -117,7 +117,7 @@ const INITIAL_FEATURES: CadFeature[] = (() => {
 })();
 
 const DEFAULT_APPEARANCE: PartAppearance = {
-  color: "#5b8def",
+  color: "#8b949e",
   metalness: 0.35,
   roughness: 0.45,
   opacity: 1,

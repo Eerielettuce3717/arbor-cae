@@ -31,7 +31,7 @@ export function meshFromBuffers(
 ): Mesh {
   const geometry = bufferGeometryFromMesh(mesh);
   const material = new MeshStandardMaterial({
-    color: new Color(options?.color ?? "#5b8def"),
+    color: new Color(options?.color ?? "#8b949e"),
     metalness: 0.25,
     roughness: 0.45,
     side: DoubleSide,

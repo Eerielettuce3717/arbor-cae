@@ -203,7 +203,7 @@ export function AnalysisPanel({
               <input
                 value={pointA}
                 onChange={(e) => setPointA(e.target.value)}
-                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground outline-none focus:border-accent"
+                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground"
               />
             </label>
             <label className="block">
@@ -213,7 +213,7 @@ export function AnalysisPanel({
               <input
                 value={pointB}
                 onChange={(e) => setPointB(e.target.value)}
-                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground outline-none focus:border-accent"
+                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground"
               />
             </label>
             <button
