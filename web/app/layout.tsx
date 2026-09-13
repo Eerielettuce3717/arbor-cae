@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -43,20 +44,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable} h-full`}
     >
-      <head>
+      <body className="min-h-full bg-ink text-paper font-sans antialiased">
         {/*
           TERMLY COOKIE CONSENT — replace YOUR_TERMLY_UUID_HERE with the Website
           UUID from your Termly dashboard (Consent Management → Installation)
           before this site goes to production. The placeholder will not load a banner.
+
+          next/script strategy="beforeInteractive" injects this into <head> (the
+          App Router equivalent of):
+          <script type="text/javascript" src="https://app.termly.io/embed.min.js"
+            data-auto-block="on" data-website-uuid="YOUR_TERMLY_UUID_HERE"></script>
         */}
-        <script
-          type="text/javascript"
+        <Script
           src="https://app.termly.io/embed.min.js"
+          strategy="beforeInteractive"
           data-auto-block="on"
           data-website-uuid="YOUR_TERMLY_UUID_HERE"
         />
-      </head>
-      <body className="min-h-full bg-ink text-paper font-sans antialiased">
         {children}
       </body>
     </html>
