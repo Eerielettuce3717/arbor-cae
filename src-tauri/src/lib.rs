@@ -11,7 +11,6 @@ pub fn run() {
     let cad_db = CadDb::open(&db_root).expect("failed to open .cad_db");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .manage(cad_db)
         .invoke_handler(tauri::generate_handler![
             commands::pdm_create_project,
@@ -53,12 +52,25 @@ pub fn run() {
             commands::write_text_file,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running CAD Engine");
+        .expect("error while running Arbor");
 }
 
 fn resolve_db_root() -> PathBuf {
     if let Ok(custom) = std::env::var("CAD_ENGINE_DB_ROOT") {
-        return PathBuf::from(custom);
+        let path = PathBuf::from(custom.trim());
+        // Operator override only — reject empty, relative `..`, and bare relative paths
+        // that could escape into surprising locations when cwd changes.
+        if path.as_os_str().is_empty()
+            || !path.is_absolute()
+            || path
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            panic!(
+                "CAD_ENGINE_DB_ROOT must be an absolute path without '..' components"
+            );
+        }
+        return path;
     }
     dirs_fallback()
 }

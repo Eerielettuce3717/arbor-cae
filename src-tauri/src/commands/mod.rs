@@ -452,7 +452,14 @@ pub fn pdm_db_path(db: State<'_, CadDb>) -> Result<String, String> {
     Ok(db.path().display().to_string())
 }
 
+/// Allowlisted export folders under `.cad_workspace/`.
+const WRITE_SUBDIRS: &[&str] = &["cam_output", "pcb_output"];
+
 /// Write a text file under `.cad_workspace/<subdir>/` (CAM G-code / NC export).
+///
+/// `subdir` must be one of the allowlisted export folders (or omitted for the
+/// workspace root). `file_name` is stripped to its final path component so
+/// callers cannot escape via `../` or absolute paths.
 #[tauri::command]
 pub fn write_text_file(
     file_name: String,
@@ -461,16 +468,35 @@ pub fn write_text_file(
 ) -> Result<String, String> {
     let cwd = std::env::current_dir().map_err(map_err)?;
     let workspace = cwd.join(".cad_workspace");
-    let dir = match subdir {
-        Some(s) if !s.is_empty() => workspace.join(s),
-        _ => workspace,
+    std::fs::create_dir_all(&workspace).map_err(map_err)?;
+    let workspace_canon = std::fs::canonicalize(&workspace).map_err(map_err)?;
+
+    let dir = match subdir.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        None => workspace_canon.clone(),
+        Some(name) => {
+            if !WRITE_SUBDIRS.contains(&name) {
+                return Err(format!(
+                    "subdir must be one of: {}",
+                    WRITE_SUBDIRS.join(", ")
+                ));
+            }
+            let candidate = workspace_canon.join(name);
+            std::fs::create_dir_all(&candidate).map_err(map_err)?;
+            let canon = std::fs::canonicalize(&candidate).map_err(map_err)?;
+            if !canon.starts_with(&workspace_canon) {
+                return Err("subdir escapes workspace".to_string());
+            }
+            canon
+        }
     };
-    std::fs::create_dir_all(&dir).map_err(map_err)?;
 
     let safe = std::path::Path::new(&file_name)
         .file_name()
         .ok_or_else(|| "invalid file name".to_string())?;
     let path = dir.join(safe);
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return Err("invalid file name".to_string());
+    }
     std::fs::write(&path, contents).map_err(map_err)?;
     Ok(path.display().to_string())
 }
