@@ -33,8 +33,8 @@ const ITEMS = [
     a: "No. This site is a static Next.js export on GitHub Pages. The product is a Tauri 2 desktop window. The marketing viewport is an SVG hex standoff, not the OpenCASCADE renderer.",
   },
   {
-    q: "Why does GitHub also list /arbor-cae/?",
-    a: "Project Pages still exist at eerielettuce3717.github.io/arbor-cae/. Canonical URLs point at the user-site root, eerielettuce3717.github.io/. Nexus IDE is a separate project and only belongs at /nexus/.",
+    q: "Which URL is the real site?",
+    a: "The canonical site is arbor-cae.github.io. A mirror also lives at eerielettuce3717.github.io/. Project Pages still exist at eerielettuce3717.github.io/arbor-cae/. Nexus IDE is a separate project and only belongs at /nexus/.",
   },
   {
     q: "How do I install it?",

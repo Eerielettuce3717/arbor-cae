@@ -6,16 +6,17 @@ Arbor is a Tauri desktop suite. Solids live in OpenCASCADE. History lives in SQL
 
 ## Site
 
-- Home: https://eerielettuce3717.github.io/
-- About: https://eerielettuce3717.github.io/about/
-- Specs: https://eerielettuce3717.github.io/specs/
-- Modules: https://eerielettuce3717.github.io/modules/
-- Download: https://eerielettuce3717.github.io/download/
-- Contribute: https://eerielettuce3717.github.io/contribute/
-- FAQ: https://eerielettuce3717.github.io/faq/
-- License: https://eerielettuce3717.github.io/license/
-- Privacy: https://eerielettuce3717.github.io/privacy-policy/
-- Terms: https://eerielettuce3717.github.io/terms-of-service/
+- Home: https://arbor-cae.github.io/
+- About: https://arbor-cae.github.io/about/
+- Specs: https://arbor-cae.github.io/specs/
+- Modules: https://arbor-cae.github.io/modules/
+- Download: https://arbor-cae.github.io/download/
+- Contribute: https://arbor-cae.github.io/contribute/
+- FAQ: https://arbor-cae.github.io/faq/
+- License: https://arbor-cae.github.io/license/
+- Privacy: https://arbor-cae.github.io/privacy-policy/
+- Terms: https://arbor-cae.github.io/terms-of-service/
+- Mirror: https://eerielettuce3717.github.io/
 - Source: https://github.com/Eerielettuce3717/arbor-cae
 
 ## Product facts

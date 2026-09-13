@@ -80,7 +80,8 @@ npm run dev`}
               inside <code className="font-mono text-paper">web/</code>. GitHub
               Pages serves the <code className="font-mono text-paper">out/</code>{" "}
               folder. Canonical host:{" "}
-              <TextLink href={ROUTES.home}>eerielettuce3717.github.io</TextLink>.
+              <TextLink href={ROUTES.home}>arbor-cae.github.io</TextLink>
+              . A mirror stays at eerielettuce3717.github.io.
             </p>
 
             <h2 className="mt-10 font-display text-h3 text-paper">

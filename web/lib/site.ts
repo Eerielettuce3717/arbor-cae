@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://eerielettuce3717.github.io";
+const DEFAULT_SITE_URL = "https://arbor-cae.github.io";
 
 /** Override with NEXT_PUBLIC_SITE_URL when a custom domain is attached to Pages. */
 export const SITE_URL = (

@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   description:
     "No page exists at this path on the Arbor site. Return home, or open specs, modules, or download.",
   robots: { index: false, follow: true },
-  alternates: { canonical: "https://eerielettuce3717.github.io/404.html" },
+  alternates: { canonical: "https://arbor-cae.github.io/404.html" },
   openGraph: {
     title: "Sheet not found — Arbor",
     description:
       "No page exists at this path on the Arbor site. Return home, or open specs, modules, or download.",
-    url: "https://eerielettuce3717.github.io/404.html",
+    url: "https://arbor-cae.github.io/404.html",
     siteName: "Arbor",
     locale: "en_US",
     type: "website",
