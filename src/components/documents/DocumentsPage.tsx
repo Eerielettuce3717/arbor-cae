@@ -645,7 +645,7 @@ export function DocumentsPage({
               {pdmBusy ? " · loading…" : ""}
             </p>
             {pdmError && (
-              <p className="mt-0.5 text-[11px] text-red-400">{pdmError}</p>
+              <p className="mt-0.5 text-[11px] text-accent">{pdmError}</p>
             )}
           </div>
 
