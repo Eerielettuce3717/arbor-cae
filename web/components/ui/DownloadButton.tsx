@@ -1,41 +1,22 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { AppLink } from "../AppLink";
 import { useOS, type OS } from "@/hooks/useOS";
-import { GITHUB_REPO, GITHUB_URL } from "@/lib/site";
+import { GITHUB_URL, ROUTES } from "@/lib/site";
 
-const ASSETS = {
-  macos: { file: "CAD-Engine.dmg", label: "macOS", ext: ".dmg" },
-  windows: { file: "CAD-Engine.msi", label: "Windows", ext: ".msi" },
-  linux: { file: "CAD-Engine.AppImage", label: "Linux", ext: ".AppImage" },
-} as const;
-
-function downloadUrl(file: string) {
-  return `https://github.com/${GITHUB_REPO}/releases/latest/download/${file}`;
-}
-
-const PRIMARY: Record<OS, { href: string; text: string; icon: OS }> = {
-  macos: {
-    href: downloadUrl(ASSETS.macos.file),
-    text: "Download for macOS",
-    icon: "macos",
-  },
-  windows: {
-    href: downloadUrl(ASSETS.windows.file),
-    text: "Download for Windows",
-    icon: "windows",
-  },
-  linux: {
-    href: downloadUrl(ASSETS.linux.file),
-    text: "Download for Linux",
-    icon: "linux",
-  },
-  other: {
-    href: `${GITHUB_URL}/releases/latest`,
-    text: "Download",
-    icon: "other",
-  },
+const PRIMARY: Record<OS, { text: string; icon: OS }> = {
+  macos: { text: "Build for macOS", icon: "macos" },
+  windows: { text: "Build for Windows", icon: "windows" },
+  linux: { text: "Build for Linux", icon: "linux" },
+  other: { text: "Build from source", icon: "other" },
 };
+
+const MORE = [
+  { href: ROUTES.contribute, label: "Build notes", hint: "local" },
+  { href: GITHUB_URL, label: "Source", hint: "GitHub", external: true },
+  { href: `${GITHUB_URL}/releases`, label: "Releases", hint: "empty", external: true },
+] as const;
 
 export function DownloadButton() {
   const os = useOS();
@@ -64,13 +45,13 @@ export function DownloadButton() {
 
   return (
     <div ref={rootRef} className="relative flex flex-col items-center gap-2">
-      <a
-        href={primary.href}
+      <AppLink
+        href={ROUTES.contribute}
         className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
       >
         <PlatformIcon os={primary.icon} />
         {primary.text}
-      </a>
+      </AppLink>
 
       <button
         type="button"
@@ -79,7 +60,7 @@ export function DownloadButton() {
         onClick={() => setOpen((value) => !value)}
         className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mute hover:text-paper"
       >
-        Other platforms
+        Source and releases
         <Chevron open={open} />
       </button>
 
@@ -89,23 +70,29 @@ export function DownloadButton() {
           role="list"
           className="absolute top-[calc(100%+2px)] z-30 w-[18.5rem] border border-rule bg-ink"
         >
-          {(Object.keys(ASSETS) as Array<keyof typeof ASSETS>).map((key) => {
-            const asset = ASSETS[key];
-            return (
-              <li key={key} className="border-b border-rule last:border-b-0">
+          {MORE.map((item) => (
+            <li key={item.href} className="border-b border-rule last:border-b-0">
+              {"external" in item && item.external ? (
                 <a
-                  href={downloadUrl(asset.file)}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
                   className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <PlatformIcon os={key} />
-                    {asset.label}
-                  </span>
-                  <span className="text-mute">{asset.ext}</span>
+                  <span>{item.label}</span>
+                  <span className="text-mute">{item.hint}</span>
                 </a>
-              </li>
-            );
-          })}
+              ) : (
+                <AppLink
+                  href={item.href}
+                  className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
+                >
+                  <span>{item.label}</span>
+                  <span className="text-mute">{item.hint}</span>
+                </AppLink>
+              )}
+            </li>
+          ))}
         </ul>
       ) : null}
     </div>

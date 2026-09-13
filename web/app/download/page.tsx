@@ -5,9 +5,9 @@ import { pageMeta } from "@/lib/seo";
 import { GITHUB_CLONE, GITHUB_URL, ROUTES } from "@/lib/site";
 
 export const metadata = pageMeta({
-  title: "Download Arbor — macOS, Windows, Linux, or build from source",
+  title: "Download Arbor — build the Tauri desktop app from source",
   description:
-    "Get Arbor for macOS, Windows, or Linux from GitHub Releases, or clone the arbor-cae kernel and compile the Tauri desktop app yourself.",
+    "Arbor has no packaged GitHub Release yet. Clone arbor-cae and compile the Tauri desktop app on macOS, Windows, or Linux.",
   path: ROUTES.download,
 });
 
@@ -16,9 +16,9 @@ export default function DownloadPage() {
     <PageShell crumbs={[{ name: "Download", path: ROUTES.download }]}>
       <main id="main">
         <InteriorHeader
-          kicker="Releases"
+          kicker="Source"
           title="Install Arbor on the machine that cuts"
-          lede="Builds come from GitHub Releases. If a platform asset is missing, clone the kernel and compile. There is no app store account and no cloud activation."
+          lede="No GitHub Release assets exist yet — there is no .dmg, .msi, or AppImage to fetch. Clone the kernel and compile. There is no app store account and no cloud activation."
           aside={
             <p className="text-[0.95rem] text-mute">
               Read the{" "}
@@ -32,16 +32,12 @@ export default function DownloadPage() {
           <Prose>
             <h2 className="font-display text-h3 text-paper">Packaged builds</h2>
             <p>
-              The orange control above picks macOS, Windows, or Linux from the
-              browser. “Other platforms” lists all three installers. Files are
-              served by GitHub, not by this Pages site.
-            </p>
-            <p>
-              Direct latest release:{" "}
-              <TextLink href={`${GITHUB_URL}/releases/latest`} external>
-                github.com/Eerielettuce3717/arbor-cae/releases/latest
-              </TextLink>
-              .
+              Packaged installers will come from{" "}
+              <TextLink href={`${GITHUB_URL}/releases`} external>
+                GitHub Releases
+              </TextLink>{" "}
+              when a tag is cut. That list is empty today. The orange control
+              sends you to build notes, not a missing CAD-Engine.dmg.
             </p>
 
             <h2 className="mt-10 font-display text-h3 text-paper">

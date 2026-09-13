@@ -38,7 +38,7 @@ const ITEMS = [
   },
   {
     q: "How do I install it?",
-    a: "Use a GitHub Release when an installer exists for your OS, or clone arbor-cae and run npm run tauri. There is no app-store listing and no license server.",
+    a: "There is no packaged installer yet. Clone arbor-cae and run npm run tauri. GitHub Releases will host a .dmg / .msi / AppImage only after a tag is cut.",
   },
 ];
 
