@@ -89,7 +89,7 @@ Short names for files and chrome:
 
 ## Mark
 
-`app-icon.svg` — orange Y on mill-control black.
+`app-icon.svg` — orange Y on mill-control black (1024 master with safe-zone padding for macOS/Windows dock icons). Compact 32×32 mark lives in `Logo.tsx` / web favicons.
 
 - Vertical member: arbor shaft / history root
 - 45° member: mechanical edge
