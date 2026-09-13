@@ -33,7 +33,7 @@ export function Logo({
   markClassName?: string;
 }) {
   return (
-    <a href="#top" className={`inline-flex items-center gap-3 ${className}`}>
+    <a href="/" className={`inline-flex items-center gap-3 ${className}`}>
       <Mark className={markClassName} decorative />
       <span className={nameClassName}>Arbor</span>
     </a>

@@ -33,6 +33,42 @@ export function SiteFooter() {
         </a>
       </div>
       </div>
+      <nav
+        aria-label="Legal"
+        className="border-t border-rule"
+      >
+        <div className="mx-auto flex max-w-sheet flex-col gap-4 px-[var(--gutter)] py-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
+            © {new Date().getFullYear()} Arbor Contributors · MIT License
+          </p>
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <li>
+              <a
+                href="/terms-of-service"
+                className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
+              >
+                Terms of Service
+              </a>
+            </li>
+            <li>
+              <a
+                href="/privacy-policy"
+                className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
+              >
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="termly-display-preferences font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
+              >
+                Cookie Preferences
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
     </footer>
   );
 }

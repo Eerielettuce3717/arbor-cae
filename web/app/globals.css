@@ -125,6 +125,14 @@ input[type="range"]::-moz-range-thumb {
   cursor: ew-resize;
 }
 
+.legal-prose a {
+  text-underline-offset: 4px;
+}
+
+.legal-prose ul {
+  margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

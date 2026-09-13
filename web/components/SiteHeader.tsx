@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Logo } from "./Mark";
 
 const LINKS = [
-  { href: "#modules", label: "Modules" },
-  { href: "#kernel", label: "Kernel" },
+  { href: "/#modules", label: "Modules" },
+  { href: "/#kernel", label: "Kernel" },
   { href: "https://github.com/Eerielettuce3717/cad_engine", label: "Source", external: true },
 ];
 

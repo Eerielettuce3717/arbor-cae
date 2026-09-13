@@ -40,8 +40,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable} h-full`}
     >
+      <head>
+        {/*
+          TERMLY COOKIE CONSENT — replace YOUR_TERMLY_UUID_HERE with the Website
+          UUID from your Termly dashboard (Consent Management → Installation)
+          before this site goes to production. The placeholder will not load a banner.
+        */}
+        <script
+          type="text/javascript"
+          src="https://app.termly.io/embed.min.js"
+          data-auto-block="on"
+          data-website-uuid="YOUR_TERMLY_UUID_HERE"
+        />
+      </head>
       <body className="min-h-full bg-ink text-paper font-sans antialiased">
         {children}
       </body>
