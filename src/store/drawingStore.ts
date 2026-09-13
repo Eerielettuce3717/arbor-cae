@@ -85,6 +85,7 @@ interface DrawingState {
   templates: DrawingTemplate[];
   styles: DrawingStyle[];
 
+  loadSampleDrawing: () => void;
   setActiveTool: (tool: DrawingToolId) => void;
   setActivePanel: (panel: DrawingPanelId) => void;
   setActiveSheet: (id: string) => void;
@@ -227,23 +228,10 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
   templateId: "tpl_iso_a3",
   styleId: "sty_iso",
   properties: { ...DEFAULT_DRAWING_PROPERTIES },
-  views: [seedFrontView(), seedTopView()],
-  dimensions: [seedLinearDim()],
+  views: [],
+  dimensions: [],
   annotations: [],
-  tables: [
-    {
-      id: "tbl_rev",
-      name: "Revision",
-      type: "revision",
-      position: { x: 10, y: 10 },
-      columns: ["Rev", "Description", "Date", "By"],
-      rows: [
-        ["A", "Initial release", "2026-09-12", "VG"],
-        ["—", "—", "—", "—"],
-      ],
-      status: "scaffold",
-    },
-  ],
+  tables: [],
   toleranceLibrary: DEFAULT_TOLERANCE_LIBRARY,
   activeToleranceId: "tol_iso_m",
   mbdChecks: emptyMbd(),
@@ -251,19 +239,50 @@ export const useDrawingStore = create<DrawingState>((set, get) => ({
     lastUpdatedAt: Date.now(),
     danglingCount: 0,
     exportFormat: "pdf",
-    printReady: true,
-    message: "Drawing up to date.",
+    printReady: false,
+    message: "Empty drawing — add a projected view or load the sample.",
   },
   activeTool: "select",
   activePanel: "none",
-  selectedViewId: "view_front",
+  selectedViewId: null,
   selectedDimensionId: null,
   selectedAnnotationId: null,
   selectedTableId: null,
-  statusMessage: "Drawing ready — projected views + 2-point linear dims live.",
+  statusMessage: "Empty drawing sheet.",
   draftDimPoint: null,
   templates: DRAWING_TEMPLATES,
   styles: DRAWING_STYLES,
+
+  loadSampleDrawing: () => {
+    set({
+      views: [seedFrontView(), seedTopView()],
+      dimensions: [seedLinearDim()],
+      annotations: [],
+      tables: [
+        {
+          id: "tbl_rev",
+          name: "Revision",
+          type: "revision",
+          position: { x: 10, y: 10 },
+          columns: ["Rev", "Description", "Date", "By"],
+          rows: [
+            ["A", "Initial release", "2026-09-12", "VG"],
+            ["—", "—", "—", "—"],
+          ],
+          status: "scaffold",
+        },
+      ],
+      selectedViewId: "view_front",
+      exportState: {
+        lastUpdatedAt: Date.now(),
+        danglingCount: 0,
+        exportFormat: "pdf",
+        printReady: true,
+        message: "Drawing up to date.",
+      },
+      statusMessage: "Sample drawing — projected views + 2-point linear dims.",
+    });
+  },
 
   setActiveTool: (tool) => {
     const state = get();

@@ -63,7 +63,7 @@ function seedStudy(): SimulationStudy {
 
 interface SimulationState {
   studies: SimulationStudy[];
-  activeStudyId: string;
+  activeStudyId: string | null;
   activeTool: SimulationToolId;
   activePanel: SimulationPanelId;
   selectedNodeId: string | null;
@@ -90,6 +90,7 @@ interface SimulationState {
   updateRestraint: (id: string, patch: Partial<SimulationRestraint>) => void;
   setLastResult: (result: SimulationResultSummary | null) => void;
   setStatusMessage: (message: string) => void;
+  loadSampleSimulation: () => void;
 }
 
 const TOOL_TO_PANEL: Partial<Record<SimulationToolId, SimulationPanelId>> = {
@@ -103,17 +104,27 @@ const TOOL_TO_PANEL: Partial<Record<SimulationToolId, SimulationPanelId>> = {
 };
 
 export const useSimulationStore = create<SimulationState>((set, get) => {
-  const study = seedStudy();
-
   return {
-    studies: [study],
-    activeStudyId: study.id,
+    studies: [],
+    activeStudyId: null,
     activeTool: "study",
     activePanel: "study",
-    selectedNodeId: study.id,
+    selectedNodeId: null,
     lastResult: null,
     statusMessage:
-      "Simulation Studio — define study, then run Modal or Async simulation.",
+      "Simulation Studio — no study yet. Load the sample or define a study.",
+
+    loadSampleSimulation: () => {
+      const study = seedStudy();
+      set({
+        studies: [study],
+        activeStudyId: study.id,
+        selectedNodeId: study.id,
+        lastResult: null,
+        statusMessage:
+          "Sample study loaded — Modal/Async still return scaffold results only.",
+      });
+    },
 
     setActiveTool: (tool) => {
       const panel = TOOL_TO_PANEL[tool];

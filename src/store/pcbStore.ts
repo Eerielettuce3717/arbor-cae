@@ -258,6 +258,7 @@ interface PcbState {
   exportManufacturingFiles: () => Promise<boolean>;
 
   setStatusMessage: (msg: string) => void;
+  loadSamplePcb: () => void;
 }
 
 const TOOL_TO_PANEL: Partial<Record<PcbToolId, PcbPanelId>> = {
@@ -274,19 +275,14 @@ export const usePcbStore = create<PcbState>((set, get) => ({
     ...DEFAULT_OUTLINE,
     points: DEFAULT_OUTLINE.points.map((p) => ({ ...p })),
   },
-  components: seedComponents(),
-  traces: seedTraces(),
-  vias: seedVias(),
+  components: [],
+  traces: [],
+  vias: [],
   layers: PCB_LAYERS.map((l) => ({ ...l })),
   rigidFlex: {
     ...DEFAULT_RIGID_FLEX,
-    regions: DEFAULT_RIGID_FLEX.regions.map((r) => ({
-      ...r,
-      points: r.points.map((p) => ({ ...p })),
-      bendLine: r.bendLine
-        ? { a: { ...r.bendLine.a }, b: { ...r.bendLine.b } }
-        : null,
-    })),
+    enabled: false,
+    regions: [],
   },
   altium365: { ...DEFAULT_ALTIUM365 },
   activeTool: "select",
@@ -299,13 +295,33 @@ export const usePcbStore = create<PcbState>((set, get) => ({
   routePreview: null,
   revision: 1,
   statusMessage:
-    "PCB Studio — route with 45°/90° snap; 3D extrudes on every canvas update.",
+    "PCB Studio — empty board. Place components or load the sample layout.",
   manufacturingType: "standardFab",
   lastDrcResult: null,
   lastGtl: null,
   lastDrl: null,
   lastExportPaths: null,
   exportBlocked: false,
+
+  loadSamplePcb: () => {
+    set({
+      components: seedComponents(),
+      traces: seedTraces(),
+      vias: seedVias(),
+      rigidFlex: {
+        ...DEFAULT_RIGID_FLEX,
+        regions: DEFAULT_RIGID_FLEX.regions.map((r) => ({
+          ...r,
+          points: r.points.map((p) => ({ ...p })),
+          bendLine: r.bendLine
+            ? { a: { ...r.bendLine.a }, b: { ...r.bendLine.b } }
+            : null,
+        })),
+      },
+      revision: get().revision + 1,
+      statusMessage: "Sample PCB layout loaded.",
+    });
+  },
 
   setActiveTool: (tool) => {
     const panel = TOOL_TO_PANEL[tool];

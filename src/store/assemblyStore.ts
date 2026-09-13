@@ -409,6 +409,117 @@ function residualForMate(
 
 const seed = seedDriveAssembly();
 
+function emptyBom(): BomState {
+  return {
+    templateId: "standard",
+    columns: DEFAULT_BOM_COLUMNS.map((c) => ({ ...c })),
+    rows: [],
+    formatting: { ...DEFAULT_BOM_FORMATTING },
+    selectedRowId: null,
+  };
+}
+
+function sampleAssemblySlice() {
+  return {
+    instances: seed.instances,
+    connectors: seed.connectors,
+    mates: seed.mates,
+    relations: [] as AssemblyRelation[],
+    groups: [] as InstanceGroup[],
+    patterns: [] as AssemblyPattern[],
+    links: seed.links,
+    namedPositions: [
+      {
+        id: "pos_home",
+        name: "Home",
+        description: "Shaft at 0°",
+        mateValues: {
+          mate_rev1: { angle: 0, offset: 0 },
+        },
+      },
+      {
+        id: "pos_open",
+        name: "Open",
+        description: "Shaft rotated 90°",
+        mateValues: {
+          mate_rev1: { angle: 90, offset: 0 },
+        },
+      },
+      {
+        id: "pos_service",
+        name: "Service",
+        description: "Shaft rotated 180°",
+        mateValues: {
+          mate_rev1: { angle: 180, offset: 0 },
+        },
+      },
+    ],
+    activeNamedPositionId: "pos_home" as string | null,
+    displayStates: [
+      {
+        id: "ds_default",
+        name: "Default",
+        overrides: seed.instances.map((i) => ({
+          instanceId: i.id,
+          visible: true,
+          opacity: 1,
+          color: null as string | null,
+        })),
+      },
+      {
+        id: "ds_transparent",
+        name: "Transparent bracket",
+        overrides: seed.instances.map((i) => ({
+          instanceId: i.id,
+          visible: true,
+          opacity: i.id === "inst_bracket" ? 0.28 : 1,
+          color: null as string | null,
+        })),
+      },
+      {
+        id: "ds_shaft_only",
+        name: "Shaft only",
+        overrides: seed.instances.map((i) => ({
+          instanceId: i.id,
+          visible: i.id !== "inst_bracket",
+          opacity: 1,
+          color: null as string | null,
+        })),
+      },
+    ],
+    activeDisplayStateId: "ds_default" as string | null,
+    explodedViews: [
+      {
+        id: "exp_service",
+        name: "Service explode",
+        steps: [
+          { instanceId: "inst_shaft", direction: [0, 1, 0] as Vec3, distance: 0.9 },
+          { instanceId: "inst_collar", direction: [0, 1, 0] as Vec3, distance: 1.4 },
+        ],
+      },
+    ],
+    activeExplodedViewId: null as string | null,
+    explodeAmount: 1,
+    inContextStudios: [] as InContextPartStudio[],
+    bom: {
+      templateId: "standard" as const,
+      columns: DEFAULT_BOM_COLUMNS.map((c) => ({ ...c })),
+      rows: buildBomRows(seed.instances, "standard"),
+      formatting: { ...DEFAULT_BOM_FORMATTING },
+      selectedRowId: null as string | null,
+    },
+    selectedInstanceIds: [] as string[],
+    selectedMateId: "mate_rev1" as string | null,
+    selectedConnectorId: null as string | null,
+    pendingConnectorId: null as string | null,
+    activeTool: "fastened" as AssemblyToolId,
+    activePanel: "none" as AssemblyPanelId,
+    snapMode: true,
+    showMatesMode: true,
+    statusMessage: "Drive Assembly · Fastened + Revolute solvers active",
+  };
+}
+
 export type AssemblyPanelId =
   | "none"
   | "insert"
@@ -454,6 +565,8 @@ export interface AssemblyStoreState {
   setActiveTool: (tool: AssemblyToolId) => void;
   setActivePanel: (panel: AssemblyPanelId) => void;
   setStatus: (message: string) => void;
+  /** Replace the workspace with the built-in drive-assembly sample. */
+  loadSampleAssembly: () => void;
   selectInstances: (ids: string[]) => void;
   selectMate: (id: string | null) => void;
   selectConnector: (id: string | null) => void;
@@ -577,103 +690,38 @@ function applyToolSideEffects(
 }
 
 export const useAssemblyStore = create<AssemblyStoreState>((set, get) => ({
-  instances: seed.instances,
-  connectors: seed.connectors,
-  mates: seed.mates,
+  instances: [],
+  connectors: [],
+  mates: [],
   relations: [],
   groups: [],
   patterns: [],
-  links: seed.links,
-  namedPositions: [
-    {
-      id: "pos_home",
-      name: "Home",
-      description: "Shaft at 0°",
-      mateValues: {
-        mate_rev1: { angle: 0, offset: 0 },
-      },
-    },
-    {
-      id: "pos_open",
-      name: "Open",
-      description: "Shaft rotated 90°",
-      mateValues: {
-        mate_rev1: { angle: 90, offset: 0 },
-      },
-    },
-    {
-      id: "pos_service",
-      name: "Service",
-      description: "Shaft rotated 180°",
-      mateValues: {
-        mate_rev1: { angle: 180, offset: 0 },
-      },
-    },
-  ],
-  activeNamedPositionId: "pos_home",
-  displayStates: [
-    {
-      id: "ds_default",
-      name: "Default",
-      overrides: seed.instances.map((i) => ({
-        instanceId: i.id,
-        visible: true,
-        opacity: 1,
-        color: null,
-      })),
-    },
-    {
-      id: "ds_transparent",
-      name: "Transparent bracket",
-      overrides: seed.instances.map((i) => ({
-        instanceId: i.id,
-        visible: true,
-        opacity: i.id === "inst_bracket" ? 0.28 : 1,
-        color: null,
-      })),
-    },
-    {
-      id: "ds_shaft_only",
-      name: "Shaft only",
-      overrides: seed.instances.map((i) => ({
-        instanceId: i.id,
-        visible: i.id !== "inst_bracket",
-        opacity: 1,
-        color: null,
-      })),
-    },
-  ],
-  activeDisplayStateId: "ds_default",
-  explodedViews: [
-    {
-      id: "exp_service",
-      name: "Service explode",
-      steps: [
-        { instanceId: "inst_shaft", direction: [0, 1, 0], distance: 0.9 },
-        { instanceId: "inst_collar", direction: [0, 1, 0], distance: 1.4 },
-      ],
-    },
-  ],
+  links: [],
+  namedPositions: [],
+  activeNamedPositionId: null,
+  displayStates: [],
+  activeDisplayStateId: null,
+  explodedViews: [],
   activeExplodedViewId: null,
   explodeAmount: 1,
   inContextStudios: [],
-  bom: {
-    templateId: "standard",
-    columns: DEFAULT_BOM_COLUMNS.map((c) => ({ ...c })),
-    rows: buildBomRows(seed.instances, "standard"),
-    formatting: { ...DEFAULT_BOM_FORMATTING },
-    selectedRowId: null,
-  },
+  bom: emptyBom(),
 
   selectedInstanceIds: [],
-  selectedMateId: "mate_rev1",
+  selectedMateId: null,
   selectedConnectorId: null,
   pendingConnectorId: null,
-  activeTool: "fastened",
+  activeTool: "insert",
   activePanel: "none",
   snapMode: true,
-  showMatesMode: true,
-  statusMessage: "Drive Assembly · Fastened + Revolute solvers active",
+  showMatesMode: false,
+  statusMessage: "Empty assembly — Insert a part or load the sample drive assembly.",
+
+  loadSampleAssembly: () => {
+    set({
+      ...sampleAssemblySlice(),
+    });
+  },
 
   setActiveTool: (tool) => {
     const extras = applyToolSideEffects(tool);

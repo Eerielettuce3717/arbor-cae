@@ -415,6 +415,7 @@ export function AppLayout({
                   { type: "item", label: "New Render Studio" },
                   { type: "item", label: "New PCB Studio" },
                   { type: "sep", label: "sep-1" },
+                  { type: "item", label: "Load sample data" },
                   { type: "item", label: "Open…" },
                   { type: "item", label: "Save" },
                   { type: "item", label: "Save As…" },
@@ -443,6 +444,15 @@ export function AppLayout({
                       }
                       if (item.label === "Preferences…") {
                         setPrefsOpen(true);
+                      }
+                      if (item.label === "Load sample data") {
+                        useFeatureStore.getState().loadSampleFeatures();
+                        useAssemblyStore.getState().loadSampleAssembly();
+                        useDrawingStore.getState().loadSampleDrawing();
+                        useCamStore.getState().loadSampleCam();
+                        usePcbStore.getState().loadSamplePcb();
+                        useRenderStore.getState().loadSampleRender();
+                        useSimulationStore.getState().loadSampleSimulation();
                       }
                     }}
                   >

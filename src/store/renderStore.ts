@@ -129,6 +129,7 @@ interface RenderState {
   recomputePbr: () => void;
   pushToRenderer: () => void;
   setStatusMessage: (message: string) => void;
+  loadSampleRender: () => void;
 }
 
 const TOOL_TO_PANEL: Partial<Record<RenderToolId, RenderPanelId>> = {
@@ -141,8 +142,8 @@ const TOOL_TO_PANEL: Partial<Record<RenderToolId, RenderPanelId>> = {
 };
 
 export const useRenderStore = create<RenderState>((set, get) => ({
-  sceneNodes: seedScene(),
-  selectedNodeId: "part_bracket",
+  sceneNodes: [],
+  selectedNodeId: null,
   activeTool: "appearances",
   activePanel: "appearances",
   appearanceTab: "functions",
@@ -155,11 +156,19 @@ export const useRenderStore = create<RenderState>((set, get) => ({
   activeEnvironmentId: "env_studio_soft",
   axf: { ...DEFAULT_AXF },
   volume: { ...DEFAULT_VOLUME },
-  lights: seedLights(),
+  lights: [],
   activePbr: { ...DEFAULT_PBR },
   lastUniforms: null,
-  statusMessage:
-    "Render Studio — Appearances / Environments map to WebGL PBR params.",
+  statusMessage: "Render Studio — empty scene. Load the sample or add appearances.",
+
+  loadSampleRender: () => {
+    set({
+      sceneNodes: seedScene(),
+      selectedNodeId: "part_bracket",
+      lights: seedLights(),
+      statusMessage: "Sample render scene loaded.",
+    });
+  },
 
   setActiveTool: (tool) => {
     const panel = TOOL_TO_PANEL[tool];

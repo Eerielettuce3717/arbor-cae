@@ -69,6 +69,7 @@ interface CamState {
   statusMessage: string;
 
   setActiveCamTool: (tool: CamToolId) => void;
+  loadSampleCam: () => void;
   setActivePanel: (panel: CamPanelId) => void;
   selectSetup: (id: string) => void;
   selectNode: (id: string | null) => void;
@@ -84,35 +85,52 @@ interface CamState {
 
 export const useCamStore = create<CamState>((set, get) => {
   const setup = seedSetup();
-  const pocketOp: PocketOperation = {
-    id: "op_pocket_1",
-    name: "2.5D Pocket Clear 1",
-    kind: "pocketClear",
-    setupId: setup.id,
-    faceId: null,
-    toolId: DEFAULT_TOOL.id,
-    params: { ...DEFAULT_POCKET_PARAMS },
-    toolpathId: null,
-    suppressed: false,
-  };
 
   return {
     setups: [setup],
     activeSetupId: setup.id,
-    operations: [pocketOp],
+    operations: [],
     toolpaths: [],
     tools: [{ ...DEFAULT_TOOL }],
     activeToolId: DEFAULT_TOOL.id,
     activeCamTool: "select",
     activePanel: "setup",
     selectedFaceId: null,
-    selectedOperationId: pocketOp.id,
+    selectedOperationId: null,
     selectedToolpathId: null,
     selectedNodeId: setup.id,
     lastGCode: null,
     lastNcPath: null,
     statusMessage:
-      "CAM Studio — select a flat face, then Generate pocket clearing.",
+      "CAM Studio — empty setup. Select a face and add a pocket, or load the sample.",
+
+    loadSampleCam: () => {
+      const sample = seedSetup();
+      const pocketOp: PocketOperation = {
+        id: "op_pocket_1",
+        name: "2.5D Pocket Clear 1",
+        kind: "pocketClear",
+        setupId: sample.id,
+        faceId: null,
+        toolId: DEFAULT_TOOL.id,
+        params: { ...DEFAULT_POCKET_PARAMS },
+        toolpathId: null,
+        suppressed: false,
+      };
+      set({
+        setups: [sample],
+        activeSetupId: sample.id,
+        operations: [pocketOp],
+        toolpaths: [],
+        selectedOperationId: pocketOp.id,
+        selectedNodeId: sample.id,
+        selectedFaceId: null,
+        lastGCode: null,
+        lastNcPath: null,
+        statusMessage:
+          "Sample CAM setup loaded — select a flat face, then Generate pocket clearing.",
+      });
+    },
 
     setActiveCamTool: (tool) => {
       const panelMap: Partial<Record<CamToolId, CamPanelId>> = {

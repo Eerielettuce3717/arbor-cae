@@ -56,7 +56,7 @@ function createFeature(
   };
 }
 
-const INITIAL_FEATURES: CadFeature[] = (() => {
+function buildSampleFeatures(): CadFeature[] {
   const seed: CadFeature[] = [];
   const sk1 = createFeature("sketch", seed, {
     id: "sk1",
@@ -114,7 +114,7 @@ const INITIAL_FEATURES: CadFeature[] = (() => {
   });
   seed.push(fil1);
   return seed;
-})();
+}
 
 const DEFAULT_APPEARANCE: PartAppearance = {
   color: "#8b949e",
@@ -142,12 +142,7 @@ const DEFAULT_CONFIG: PartConfigurationState = {
       unit: "mm",
     },
   ],
-  visibility: INITIAL_FEATURES.map((f) => ({
-    id: `vis_${f.id}`,
-    featureId: f.id,
-    featureName: f.name,
-    visible: !f.suppressed,
-  })),
+  visibility: [],
   columns: [
     { id: "col_name", name: "Configuration", kind: "parameter" },
     { id: "col_depth", name: "extrudeDepth", kind: "variable" },
@@ -213,11 +208,13 @@ export interface FeatureStoreState {
   /** Evaluate Extrude / Fillet / Boolean via CAD worker, or Sculpt via Catmull-Clark. */
   evaluateFeature: (id: string) => Promise<MeshBuffers | null>;
   regenerateTree: () => Promise<void>;
+  /** Replace the feature tree with the built-in sample bracket model. */
+  loadSampleFeatures: () => void;
 }
 
 export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
-  features: INITIAL_FEATURES,
-  selectedFeatureId: "ex1",
+  features: [],
+  selectedFeatureId: null,
   editorOpen: false,
   regenerating: false,
   lastError: null,
@@ -237,6 +234,25 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
     })),
 
   closeEditor: () => set({ editorOpen: false }),
+
+  loadSampleFeatures: () => {
+    const features = buildSampleFeatures();
+    set({
+      features,
+      selectedFeatureId: features.find((f) => f.type === "extrude")?.id ?? features[0]?.id ?? null,
+      lastMesh: null,
+      lastError: null,
+      configurations: {
+        ...DEFAULT_CONFIG,
+        visibility: features.map((f) => ({
+          id: `vis_${f.id}`,
+          featureId: f.id,
+          featureName: f.name,
+          visible: !f.suppressed,
+        })),
+      },
+    });
+  },
 
   addFeature: (type, atIndex) => {
     const features = get().features;
