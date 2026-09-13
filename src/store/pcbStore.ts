@@ -334,7 +334,7 @@ export const usePcbStore = create<PcbState>((set, get) => ({
           : tool === "rigidFlex"
             ? "Rigid-Flex workflow scaffold — enable regions and fold preview."
             : tool === "altium365"
-              ? "Altium 365 integration UI — connect / sync placeholders."
+              ? "Altium 365 — OAuth and sync are not implemented."
               : tool === "manufacturing"
                 ? "Export Manufacturing — run DRC, then save .GTL / .DRL."
                 : `Tool: ${tool}`,
@@ -575,21 +575,14 @@ export const usePcbStore = create<PcbState>((set, get) => ({
     set({
       altium365: {
         ...get().altium365,
-        syncStatus: "syncing",
-        statusMessage: "Syncing with Altium 365… (placeholder)",
+        connected: false,
+        syncStatus: "error",
+        lastSyncAt: null,
+        statusMessage:
+          "Altium 365 sync is not implemented — no remote payload was sent or received.",
       },
+      statusMessage: "Altium 365 sync unavailable.",
     });
-    window.setTimeout(() => {
-      set({
-        altium365: {
-          ...get().altium365,
-          syncStatus: "scaffold",
-          lastSyncAt: new Date().toISOString(),
-          statusMessage: "Sync scaffold complete — no remote payload.",
-        },
-        statusMessage: "Altium 365 sync scaffold finished.",
-      });
-    }, 600);
   },
 
   setManufacturingType: (type) => {

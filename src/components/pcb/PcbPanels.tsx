@@ -340,7 +340,11 @@ function Altium365Panel() {
 
   return (
     <div className="space-y-3">
-      <ScaffoldBadge label="Altium 365" />
+      <ScaffoldBadge label="OAuth not wired" />
+      <p className="text-[11px] leading-relaxed text-faint">
+        Connect and Sync are refused until an Altium 365 OAuth client exists.
+        No fake session or remote sync is simulated.
+      </p>
       <Field label="Workspace URL">
         <input
           className={inputClass}
@@ -375,18 +379,21 @@ function Altium365Panel() {
             updateAltium365({ commentsEnabled: e.target.checked })
           }
         />
-        Web comments (placeholder)
+        Web comments (not available offline)
       </label>
       <div className="flex flex-wrap gap-1.5">
-        {altium.connected ? (
-          <>
-            <ActionBtn label="Sync now" primary onClick={syncAltium365} />
-            <ActionBtn label="Disconnect" onClick={disconnectAltium365} />
-          </>
-        ) : (
-          <ActionBtn label="Connect" primary onClick={connectAltium365} />
-        )}
+        <ActionBtn label="Connect" primary onClick={connectAltium365} />
+        <ActionBtn
+          label="Sync now"
+          disabled
+          title="Requires a live Altium 365 session"
+          onClick={syncAltium365}
+        />
+        <ActionBtn label="Disconnect" onClick={disconnectAltium365} />
       </div>
+      {altium.statusMessage && (
+        <p className="text-[11px] text-accent">{altium.statusMessage}</p>
+      )}
       <p className="text-[11px] leading-relaxed text-faint">
         {altium.statusMessage}
       </p>
@@ -572,16 +579,22 @@ function ActionBtn({
   label,
   onClick,
   primary,
+  disabled,
+  title,
 }: {
   label: string;
   onClick: () => void;
   primary?: boolean;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded px-2.5 py-1.5 text-[11px] font-medium ${
+      disabled={disabled}
+      title={title}
+      className={`rounded px-2.5 py-1.5 text-[11px] font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
         primary
           ? "bg-accent text-accent-foreground hover:bg-accent"
           : "border border-border text-muted-foreground hover:border-accent hover:text-accent"
