@@ -1,5 +1,8 @@
 import { useCallback, useState } from "react";
-import { DocumentsPage } from "./components/documents/DocumentsPage";
+import {
+  DocumentsPage,
+  type OpenDocumentRequest,
+} from "./components/documents/DocumentsPage";
 import { AppLayout, type WorkspaceTab } from "./components/layout/AppLayout";
 import { ReleaseManagement } from "./components/pdm/ReleaseManagement";
 import { VersionManager } from "./components/pdm/VersionManager";
@@ -7,6 +10,30 @@ import { VersionManager } from "./components/pdm/VersionManager";
 type AppRoute = "documents" | "workspace" | "versions" | "releases";
 
 const INITIAL_TABS: WorkspaceTab[] = [];
+
+const SAMPLE_CATALOG: Record<string, WorkspaceTab> = {
+  "d-1": { id: "d-1", title: "Bracket Plate", kind: "part" },
+  "d-2": { id: "d-2", title: "Drive Assembly", kind: "assembly" },
+  "d-3": { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
+  "d-4": { id: "d-4", title: "Shaft Collar", kind: "part" },
+  "d-5": { id: "d-5", title: "PCB Frame", kind: "part" },
+  "d-cam": { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
+  "d-sim": {
+    id: "d-sim",
+    title: "Bracket Simulation Studio",
+    kind: "simulation",
+  },
+  "d-render": {
+    id: "d-render",
+    title: "Bracket Render Studio",
+    kind: "render",
+  },
+  "d-pcb": {
+    id: "d-pcb",
+    title: "Main Board PCB Studio",
+    kind: "pcb",
+  },
+};
 
 export default function App() {
   const [route, setRoute] = useState<AppRoute>("documents");
@@ -18,35 +45,19 @@ export default function App() {
     setProjectId(id);
   }, []);
 
-  function openDocument(documentId: string) {
-    const catalog: Record<string, WorkspaceTab> = {
-      "d-1": { id: "d-1", title: "Bracket Plate", kind: "part" },
-      "d-2": { id: "d-2", title: "Drive Assembly", kind: "assembly" },
-      "d-3": { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
-      "d-4": { id: "d-4", title: "Shaft Collar", kind: "part" },
-      "d-5": { id: "d-5", title: "PCB Frame", kind: "part" },
-      "d-cam": { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
-      "d-sim": {
-        id: "d-sim",
-        title: "Bracket Simulation Studio",
-        kind: "simulation",
-      },
-      "d-render": {
-        id: "d-render",
-        title: "Bracket Render Studio",
-        kind: "render",
-      },
-      "d-pcb": {
-        id: "d-pcb",
-        title: "Main Board PCB Studio",
-        kind: "pcb",
-      },
-    };
-    const tab = catalog[documentId] ?? {
-      id: documentId,
-      title: `Document ${documentId}`,
-      kind: "part" as const,
-    };
+  function openDocument(request: OpenDocumentRequest | string) {
+    const tab: WorkspaceTab =
+      typeof request === "string"
+        ? (SAMPLE_CATALOG[request] ?? {
+            id: request,
+            title: `Document ${request}`,
+            kind: "part",
+          })
+        : {
+            id: request.id,
+            title: request.title,
+            kind: request.kind,
+          };
 
     setTabs((prev) =>
       prev.some((t) => t.id === tab.id) ? prev : [...prev, tab],

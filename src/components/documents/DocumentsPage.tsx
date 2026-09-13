@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { Settings } from "lucide-react";
 import { isTauriRuntime, pdm, type Project } from "../../lib/pdmApi";
 import { PreferencesModal } from "../settings/PreferencesModal";
@@ -21,6 +28,9 @@ type DocumentKind =
   | "render"
   | "pcb"
   | "folder";
+
+type StudioKind = Exclude<DocumentKind, "folder">;
+
 type LengthUnit = "mm" | "in" | "m" | "ft";
 
 interface CadDocument {
@@ -38,6 +48,13 @@ interface FolderNode {
   id: string;
   name: string;
   parentId: string | null;
+}
+
+/** Payload App uses to open the correct studio tab. */
+export interface OpenDocumentRequest {
+  id: string;
+  title: string;
+  kind: StudioKind;
 }
 
 const SAMPLE_FOLDERS: FolderNode[] = [
@@ -190,8 +207,12 @@ function formatModified(iso: string): string {
   });
 }
 
+function isStudioKind(kind: DocumentKind): kind is StudioKind {
+  return kind !== "folder";
+}
+
 export interface DocumentsPageProps {
-  onOpenDocument?: (documentId: string) => void;
+  onOpenDocument?: (request: OpenDocumentRequest | string) => void;
   onOpenVersions?: () => void;
   onOpenReleases?: () => void;
 }
@@ -213,6 +234,7 @@ export function DocumentsPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showUnitsPanel, setShowUnitsPanel] = useState(false);
   const [defaultUnit, setDefaultUnit] = useState<LengthUnit>("mm");
   const [advancedKind, setAdvancedKind] = useState<DocumentKind | "any">("any");
@@ -222,6 +244,9 @@ export function DocumentsPage({
   const [pdmPath, setPdmPath] = useState<string | null>(null);
   const [pdmError, setPdmError] = useState<string | null>(null);
   const [pdmBusy, setPdmBusy] = useState(false);
+
+  const createMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const applyPdmProjects = useCallback((projects: Project[], dbPath: string) => {
     setFolders([PDM_FOLDER]);
@@ -258,6 +283,43 @@ export function DocumentsPage({
     void refreshPdmProjects();
   }, [refreshPdmProjects]);
 
+  useEffect(() => {
+    if (!showCreateMenu && !showMoreMenu) return;
+
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (
+        showCreateMenu &&
+        createMenuRef.current &&
+        !createMenuRef.current.contains(target)
+      ) {
+        setShowCreateMenu(false);
+      }
+      if (
+        showMoreMenu &&
+        moreMenuRef.current &&
+        !moreMenuRef.current.contains(target)
+      ) {
+        setShowMoreMenu(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowCreateMenu(false);
+        setShowMoreMenu(false);
+        setShowAdvancedSearch(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showCreateMenu, showMoreMenu]);
+
   function loadSampleWorkspace() {
     setFolders(SAMPLE_FOLDERS);
     setDocuments(SAMPLE_DOCUMENTS);
@@ -267,6 +329,7 @@ export function DocumentsPage({
     setDataSource("sample");
     setPdmPath(null);
     setPdmError(null);
+    setShowMoreMenu(false);
   }
 
   function clearWorkspace() {
@@ -277,6 +340,7 @@ export function DocumentsPage({
     setSelectedFolderId("f-root");
     setDataSource("empty");
     setPdmPath(null);
+    setShowMoreMenu(false);
   }
 
   async function createPdmProject() {
@@ -323,7 +387,7 @@ export function DocumentsPage({
         nextFolders.some((f) => f.id === selectedFolderId) &&
         selectedFolderId !== "f-root"
           ? selectedFolderId
-          : nextFolders[0]?.id ?? null;
+          : (nextFolders[0]?.id ?? null);
       setFolders([
         ...nextFolders,
         { id, name: `Folder ${nextFolders.length}`, parentId },
@@ -342,12 +406,13 @@ export function DocumentsPage({
       : nextFolders[0].id;
     const id = `d-local-${Date.now()}`;
     const baseDocs = dataSource === "pdm" ? [] : documents;
+    const name = `${label} ${baseDocs.filter((d) => d.kind === kind).length + 1}`;
     setFolders(nextFolders);
     setDocuments([
       ...baseDocs,
       {
         id,
-        name: `${label} ${baseDocs.filter((d) => d.kind === kind).length + 1}`,
+        name,
         kind,
         folderId,
         labels: ["Local"],
@@ -358,14 +423,16 @@ export function DocumentsPage({
     setSelectedFolderId(folderId);
     setPdmPath(null);
     setDataSource("sample");
+    onOpenDocument?.({ id, title: name, kind });
   }
 
-  function handleOpenDocument(documentId: string) {
-    if (dataSource === "pdm") {
+  function handleOpenDocument(doc: CadDocument) {
+    if (doc.kind === "folder" || dataSource === "pdm") {
       onOpenVersions?.();
       return;
     }
-    onOpenDocument?.(documentId);
+    if (!isStudioKind(doc.kind)) return;
+    onOpenDocument?.({ id: doc.id, title: doc.name, kind: doc.kind });
   }
 
   const visibleDocs = useMemo(() => {
@@ -442,29 +509,46 @@ export function DocumentsPage({
     );
   }
 
+  const statusLine =
+    dataSource === "pdm"
+      ? `PDM · SQLite${pdmPath ? ` · ${pdmPath}` : ""}`
+      : dataSource === "sample"
+        ? `Local workspace · ${defaultUnit} · sample`
+        : `Local workspace · ${defaultUnit} · empty`;
+
   return (
     <div className="relative flex h-full min-h-0 bg-background text-foreground">
-      {/* Organization rail */}
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
-        <div className="relative border-b border-border p-3">
+        <div ref={createMenuRef} className="relative z-30 border-b border-border p-3">
           <button
             type="button"
-            onClick={() => setShowCreateMenu((v) => !v)}
+            onClick={() => {
+              setShowMoreMenu(false);
+              setShowCreateMenu((v) => !v);
+            }}
+            aria-haspopup="menu"
+            aria-expanded={showCreateMenu}
             className="flex w-full items-center justify-between rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-accent"
           >
             Create
             <span className="text-xs opacity-80">▾</span>
           </button>
           {showCreateMenu && (
-            <div className="absolute left-3 right-3 z-20 mt-1 overflow-hidden rounded-md border border-border bg-muted">
-              <button
-                type="button"
-                className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent"
-                onClick={() => void createPdmProject()}
-                disabled={pdmBusy}
-              >
-                PDM Project (SQLite)
-              </button>
+            <div
+              role="menu"
+              className="absolute left-3 right-3 z-40 mt-1 overflow-hidden rounded-md border border-border bg-card shadow-lg"
+            >
+              {isTauriRuntime() && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent"
+                  onClick={() => void createPdmProject()}
+                  disabled={pdmBusy}
+                >
+                  PDM Project (SQLite)
+                </button>
+              )}
               {(
                 [
                   ["Part Studio", "part"],
@@ -480,11 +564,11 @@ export function DocumentsPage({
                 <button
                   key={label}
                   type="button"
+                  role="menuitem"
                   className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent"
                   onClick={() => createLocalDocument(kind, label)}
                 >
                   {label}
-                  <span className="ml-1 text-[10px] text-faint">(session)</span>
                 </button>
               ))}
             </div>
@@ -572,8 +656,7 @@ export function DocumentsPage({
           )}
           {orgSection === "trash" && (
             <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-              Deleted documents appear here. Restore or permanently remove from
-              the list view.
+              Deleted documents appear here.
             </p>
           )}
           {orgSection === "integrations" && (
@@ -630,20 +713,13 @@ export function DocumentsPage({
         </div>
       </aside>
 
-      {/* Main dashboard */}
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
-          <div>
-            <div className="mb-1">
-              <Logo className="h-7 w-7" />
-            </div>
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
+          <div className="min-w-0 shrink">
+            <Logo className="h-7 w-7" />
             <h1 className="sr-only">Documents</h1>
-            <p className="text-xs text-muted-foreground">
-              {dataSource === "pdm"
-                ? `PDM · SQLite${pdmPath ? ` · ${pdmPath}` : ""}`
-                : dataSource === "sample"
-                  ? `Local workspace · units ${defaultUnit} · sample data`
-                  : `Local workspace · units ${defaultUnit} · empty`}
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {statusLine}
               {pdmBusy ? " · loading…" : ""}
             </p>
             {pdmError && (
@@ -651,128 +727,125 @@ export function DocumentsPage({
             )}
           </div>
 
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {dataSource === "pdm" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => void refreshPdmProjects()}
-                  disabled={pdmBusy}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50"
-                >
-                  Refresh PDM
-                </button>
-                <button
-                  type="button"
-                  onClick={loadSampleWorkspace}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
-                >
-                  Load sample workspace
-                </button>
-              </>
-            ) : dataSource === "sample" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={clearWorkspace}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
-                >
-                  Clear sample
-                </button>
-                {isTauriRuntime() && (
-                  <button
-                    type="button"
-                    onClick={() => void refreshPdmProjects()}
-                    disabled={pdmBusy}
-                    className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50"
-                  >
-                    Load PDM projects
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={loadSampleWorkspace}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
-                >
-                  Load sample workspace
-                </button>
-                {isTauriRuntime() && (
-                  <button
-                    type="button"
-                    onClick={() => void refreshPdmProjects()}
-                    disabled={pdmBusy}
-                    className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent disabled:opacity-50"
-                  >
-                    Load PDM projects
-                  </button>
-                )}
-              </>
-            )}
-            <button
-              type="button"
-              onClick={onOpenVersions}
-              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
-            >
-              Versions
-            </button>
-            <button
-              type="button"
-              onClick={onOpenReleases}
-              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
-            >
-              Releases
-            </button>
-            <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-0.5">
+          <div className="ml-auto flex min-w-0 items-center gap-2">
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-40 shrink rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-foreground placeholder:text-faint focus:border-accent sm:w-52"
+            />
+
+            <div ref={moreMenuRef} className="relative shrink-0">
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
-                className={`rounded px-2.5 py-1 text-xs font-medium ${
-                  viewMode === "list"
-                    ? "bg-active text-accent"
-                    : "text-muted-foreground hover:text-accent"
-                }`}
+                onClick={() => {
+                  setShowCreateMenu(false);
+                  setShowMoreMenu((v) => !v);
+                }}
+                aria-haspopup="menu"
+                aria-expanded={showMoreMenu}
+                className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
               >
-                List View
+                More ▾
               </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("structure")}
-                className={`rounded px-2.5 py-1 text-xs font-medium ${
-                  viewMode === "structure"
-                    ? "bg-active text-accent"
-                    : "text-muted-foreground hover:text-accent"
-                }`}
-              >
-                Structure View
-              </button>
+              {showMoreMenu && (
+                <div
+                  role="menu"
+                  className="absolute right-0 z-40 mt-1 w-52 overflow-hidden rounded-md border border-border bg-card shadow-lg"
+                >
+                  {dataSource === "pdm" ? (
+                    <>
+                      <MoreItem
+                        label="Refresh PDM"
+                        disabled={pdmBusy}
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          void refreshPdmProjects();
+                        }}
+                      />
+                      <MoreItem
+                        label="Load sample workspace"
+                        onClick={loadSampleWorkspace}
+                      />
+                    </>
+                  ) : dataSource === "sample" ? (
+                    <>
+                      <MoreItem label="Clear sample" onClick={clearWorkspace} />
+                      {isTauriRuntime() && (
+                        <MoreItem
+                          label="Load PDM projects"
+                          disabled={pdmBusy}
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            void refreshPdmProjects();
+                          }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <MoreItem
+                        label="Load sample workspace"
+                        onClick={loadSampleWorkspace}
+                      />
+                      {isTauriRuntime() && (
+                        <MoreItem
+                          label="Load PDM projects"
+                          disabled={pdmBusy}
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            void refreshPdmProjects();
+                          }}
+                        />
+                      )}
+                    </>
+                  )}
+                  <div className="my-1 border-t border-border" />
+                  <MoreItem
+                    label="Versions"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      onOpenVersions?.();
+                    }}
+                  />
+                  <MoreItem
+                    label="Releases"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      onOpenReleases?.();
+                    }}
+                  />
+                  <div className="my-1 border-t border-border" />
+                  <MoreItem
+                    label={
+                      viewMode === "list"
+                        ? "Switch to structure view"
+                        : "Switch to list view"
+                    }
+                    onClick={() => {
+                      setViewMode((v) => (v === "list" ? "structure" : "list"));
+                      setShowMoreMenu(false);
+                    }}
+                  />
+                  <MoreItem
+                    label={
+                      showAdvancedSearch
+                        ? "Hide advanced search"
+                        : "Advanced search"
+                    }
+                    onClick={() => {
+                      setShowAdvancedSearch((v) => !v);
+                      setShowMoreMenu(false);
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="relative">
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search documents…"
-                className="w-56 rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-foreground placeholder:text-faint focus:border-accent"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAdvancedSearch((v) => !v)}
-              className={`rounded-md border px-2.5 py-1.5 text-xs font-medium ${
-                showAdvancedSearch
-                  ? "border-accent bg-accent/10 text-accent"
-                  : "border-border text-muted-foreground hover:border-accent hover:text-accent"
-              }`}
-            >
-              Advanced Search
-            </button>
             <button
               type="button"
               onClick={() => setPrefsOpen(true)}
-              className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-accent hover:text-accent"
+              className="shrink-0 rounded-md border border-border p-1.5 text-muted-foreground hover:border-accent hover:text-accent"
               title="Preferences"
               aria-label="Open preferences"
             >
@@ -828,12 +901,24 @@ export function DocumentsPage({
         )}
 
         <div className="min-h-0 flex-1 overflow-auto p-4">
+          {visibleDocs.length > 0 && (
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              {dataSource === "pdm"
+                ? "Click a project to open Versions."
+                : "Click a row to open it."}
+            </p>
+          )}
           {viewMode === "list" ? (
-            <ListView documents={visibleDocs} onOpen={handleOpenDocument} />
+            <ListView
+              documents={visibleDocs}
+              pdmMode={dataSource === "pdm"}
+              onOpen={handleOpenDocument}
+            />
           ) : (
             <StructureView
               documents={visibleDocs}
               roots={structureRoots}
+              pdmMode={dataSource === "pdm"}
               onOpen={handleOpenDocument}
             />
           )}
@@ -841,23 +926,18 @@ export function DocumentsPage({
             <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
               <p>
                 {documents.length === 0
-                  ? isTauriRuntime()
-                    ? "No PDM projects yet. Create a PDM Project or load the sample workspace."
-                    : "No documents yet. Create one or load the sample workspace."
+                  ? "No documents yet."
                   : "No documents match the current filters."}
               </p>
               {documents.length === 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
-                  {isTauriRuntime() && (
-                    <button
-                      type="button"
-                      onClick={() => void createPdmProject()}
-                      disabled={pdmBusy}
-                      className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-accent hover:text-accent disabled:opacity-50"
-                    >
-                      Create PDM Project
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => createLocalDocument("part", "Part Studio")}
+                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent"
+                  >
+                    Create Part Studio
+                  </button>
                   <button
                     type="button"
                     onClick={loadSampleWorkspace}
@@ -867,12 +947,39 @@ export function DocumentsPage({
                   </button>
                 </div>
               )}
+              {documents.length === 0 && (
+                <p className="text-[11px] text-faint">
+                  After you have documents, click a row to open.
+                </p>
+              )}
             </div>
           )}
         </div>
       </main>
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </div>
+  );
+}
+
+function MoreItem({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      disabled={disabled}
+      onClick={onClick}
+      className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent disabled:opacity-50"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -923,16 +1030,31 @@ function FolderTree({
       ));
   }
 
+  if (folders.length === 0) {
+    return (
+      <p className="px-2 py-1 text-xs text-muted-foreground">No folders yet.</p>
+    );
+  }
+
   return <div className="space-y-0.5">{renderNode(null, 0)}</div>;
 }
 
 function ListView({
   documents,
+  pdmMode,
   onOpen,
 }: {
   documents: CadDocument[];
-  onOpen?: (id: string) => void;
+  pdmMode: boolean;
+  onOpen: (doc: CadDocument) => void;
 }) {
+  function onRowKeyDown(event: ReactKeyboardEvent, doc: CadDocument) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onOpen(doc);
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-border">
       <table className="w-full border-collapse text-left text-sm">
@@ -943,20 +1065,33 @@ function ListView({
             <th className="px-3 py-2 font-medium">Labels</th>
             <th className="px-3 py-2 font-medium">Owner</th>
             <th className="px-3 py-2 font-medium">Modified</th>
+            <th className="px-3 py-2 font-medium">
+              <span className="sr-only">Open</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           {documents.map((doc) => (
             <tr
               key={doc.id}
-              className="cursor-pointer border-t border-border bg-muted/40 hover:bg-hover"
-              onDoubleClick={() => onOpen?.(doc.id)}
+              tabIndex={0}
+              role="button"
+              aria-label={
+                pdmMode || doc.kind === "folder"
+                  ? `Open Versions for ${doc.name}`
+                  : `Open ${doc.name}`
+              }
+              className="cursor-pointer border-t border-border bg-muted/40 hover:bg-hover focus-visible:bg-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+              onClick={() => onOpen(doc)}
+              onKeyDown={(e) => onRowKeyDown(e, doc)}
             >
               <td className="px-3 py-2.5 font-medium text-foreground">
                 <span className="mr-2 text-faint">{KIND_GLYPH[doc.kind]}</span>
                 {doc.name}
               </td>
-              <td className="px-3 py-2.5 capitalize text-muted-foreground">{doc.kind}</td>
+              <td className="px-3 py-2.5 capitalize text-muted-foreground">
+                {pdmMode || doc.kind === "folder" ? "PDM project" : doc.kind}
+              </td>
               <td className="px-3 py-2.5">
                 <div className="flex flex-wrap gap-1">
                   {doc.labels.map((label) => (
@@ -973,6 +1108,11 @@ function ListView({
               <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                 {formatModified(doc.modifiedAt)}
               </td>
+              <td className="px-3 py-2.5 text-right">
+                <span className="text-[11px] font-medium text-accent">
+                  {pdmMode || doc.kind === "folder" ? "Open Versions" : "Open"}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -984,11 +1124,13 @@ function ListView({
 function StructureView({
   documents,
   roots,
+  pdmMode,
   onOpen,
 }: {
   documents: CadDocument[];
   roots: CadDocument[];
-  onOpen?: (id: string) => void;
+  pdmMode: boolean;
+  onOpen: (doc: CadDocument) => void;
 }) {
   const byId = Object.fromEntries(documents.map((d) => [d.id, d]));
 
@@ -1001,7 +1143,7 @@ function StructureView({
       <div key={doc.id}>
         <button
           type="button"
-          onDoubleClick={() => onOpen?.(doc.id)}
+          onClick={() => onOpen(doc)}
           style={{ paddingLeft: 12 + depth * 16 }}
           className="flex w-full items-center gap-2 border-b border-border/60 py-2 text-left text-sm hover:bg-hover"
         >
@@ -1009,7 +1151,12 @@ function StructureView({
             {KIND_GLYPH[doc.kind]}
           </span>
           <span className="font-medium text-foreground">{doc.name}</span>
-          <span className="text-xs capitalize text-muted-foreground">{doc.kind}</span>
+          <span className="text-xs capitalize text-muted-foreground">
+            {pdmMode || doc.kind === "folder" ? "PDM" : doc.kind}
+          </span>
+          <span className="ml-auto pr-2 text-[11px] font-medium text-accent">
+            {pdmMode || doc.kind === "folder" ? "Open Versions" : "Open"}
+          </span>
         </button>
         {children.map((child) => renderDoc(child, depth + 1))}
       </div>
@@ -1018,18 +1165,19 @@ function StructureView({
 
   const topLevel =
     roots.length > 0
-      ? roots.filter(
-          (d) =>
-            d.kind === "assembly" ||
-            !documents.some((parent) => parent.children?.includes(d.id)),
-        )
-      : documents;
+      ? roots
+      : visibleRootsFallback(documents);
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
       {topLevel.map((doc) => renderDoc(doc, 0))}
     </div>
   );
+}
+
+function visibleRootsFallback(documents: CadDocument[]): CadDocument[] {
+  const childIds = new Set(documents.flatMap((d) => d.children ?? []));
+  return documents.filter((d) => !childIds.has(d.id));
 }
 
 export default DocumentsPage;
