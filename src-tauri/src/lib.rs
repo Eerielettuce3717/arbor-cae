@@ -3,12 +3,17 @@ mod db;
 mod pdm;
 
 use db::CadDb;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let db_root = resolve_db_root();
-    let cad_db = CadDb::open(&db_root).expect("failed to open .cad_db");
+    let db_root = resolve_workspace_root();
+    let cad_db = CadDb::open(&db_root).unwrap_or_else(|err| {
+        panic!(
+            "failed to open Arbor database under {}: {err}",
+            db_root.display()
+        )
+    });
 
     tauri::Builder::default()
         .manage(cad_db)
@@ -55,11 +60,13 @@ pub fn run() {
         .expect("error while running Arbor");
 }
 
-fn resolve_db_root() -> PathBuf {
+/// Stable on-disk root for SQLite PDM and CAM/PCB exports.
+///
+/// Finder launches set cwd to `/`, so a cwd-relative `.cad_workspace` fails on
+/// the read-only system volume. Prefer the platform app-data directory.
+pub fn resolve_workspace_root() -> PathBuf {
     if let Ok(custom) = std::env::var("CAD_ENGINE_DB_ROOT") {
         let path = PathBuf::from(custom.trim());
-        // Operator override only — reject empty, relative `..`, and bare relative paths
-        // that could escape into surprising locations when cwd changes.
         if path.as_os_str().is_empty()
             || !path.is_absolute()
             || path
@@ -70,15 +77,41 @@ fn resolve_db_root() -> PathBuf {
                 "CAD_ENGINE_DB_ROOT must be an absolute path without '..' components"
             );
         }
+        let _ = std::fs::create_dir_all(&path);
         return path;
     }
-    dirs_fallback()
+
+    let dir = platform_app_data_dir();
+    let _ = std::fs::create_dir_all(&dir);
+    dir
 }
 
-fn dirs_fallback() -> PathBuf {
-    // Prefer a stable local workspace folder next to the binary / cwd.
+fn platform_app_data_dir() -> PathBuf {
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(home) = std::env::var_os("HOME") {
+            return PathBuf::from(home).join("Library/Application Support/Arbor");
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(base) = std::env::var("LOCALAPPDATA") {
+            return PathBuf::from(base).join("Arbor");
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        if let Some(home) = std::env::var_os("HOME") {
+            return PathBuf::from(home).join(".local/share/Arbor");
+        }
+    }
+
+    // Dev / odd environments: fall back next to cwd when writable.
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let workspace = cwd.join(".cad_workspace");
-    let _ = std::fs::create_dir_all(&workspace);
-    workspace
+    cwd.join(".cad_workspace")
+}
+
+#[allow(dead_code)]
+pub fn workspace_join(relative: impl AsRef<Path>) -> PathBuf {
+    resolve_workspace_root().join(relative)
 }

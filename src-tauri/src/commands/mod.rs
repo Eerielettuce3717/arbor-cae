@@ -452,10 +452,10 @@ pub fn pdm_db_path(db: State<'_, CadDb>) -> Result<String, String> {
     Ok(db.path().display().to_string())
 }
 
-/// Allowlisted export folders under `.cad_workspace/`.
+/// Allowlisted export folders under the Arbor workspace root.
 const WRITE_SUBDIRS: &[&str] = &["cam_output", "pcb_output"];
 
-/// Write a text file under `.cad_workspace/<subdir>/` (CAM G-code / NC export).
+/// Write a text file under `<workspace>/<subdir>/` (CAM G-code / NC export).
 ///
 /// `subdir` must be one of the allowlisted export folders (or omitted for the
 /// workspace root). `file_name` is stripped to its final path component so
@@ -466,8 +466,7 @@ pub fn write_text_file(
     contents: String,
     subdir: Option<String>,
 ) -> Result<String, String> {
-    let cwd = std::env::current_dir().map_err(map_err)?;
-    let workspace = cwd.join(".cad_workspace");
+    let workspace = crate::resolve_workspace_root();
     std::fs::create_dir_all(&workspace).map_err(map_err)?;
     let workspace_canon = std::fs::canonicalize(&workspace).map_err(map_err)?;
 

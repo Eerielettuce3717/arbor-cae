@@ -64,7 +64,7 @@
       "minimumSystemVersion": "10.15",
       "frameworks": [],
       "exceptionDomain": "",
-      "signingIdentity": null,
+      "signingIdentity": "-",
       "providerShortName": null,
       "entitlements": null
     },

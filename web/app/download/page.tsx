@@ -44,7 +44,13 @@ export default function DownloadPage() {
                 <TextLink href={RELEASE_DOWNLOAD.macos} external>
                   {RELEASE_ASSETS.macos}
                 </TextLink>
-                . Unsigned. Gatekeeper will warn; Control-click → Open.
+                . Unsigned pre-release. If macOS says the app is “damaged”, that
+                is Gatekeeper quarantine — not a corrupt download. After
+                installing to Applications, run{" "}
+                <code className="font-mono text-[0.9em] text-signal">
+                  xattr -cr /Applications/Arbor.app
+                </code>
+                , then open the app (or Control-click → Open).
               </li>
               <li>
                 Windows (x64):{" "}

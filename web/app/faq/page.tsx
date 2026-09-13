@@ -14,11 +14,11 @@ export const metadata = pageMeta({
 const ITEMS = [
   {
     q: "Does Arbor upload my designs?",
-    a: "No. Check-in writes a local SQLite database under .cad_workspace. The desktop app does not send BREP, boards, or toolpaths to Arbor Contributors. If you upload a file yourself (GitHub, email, a drive), that is your transfer, not the kernel’s.",
+    a: "No. Check-in writes a local SQLite database in the Arbor app-data folder (on macOS: ~/Library/Application Support/Arbor). The desktop app does not send BREP, boards, or toolpaths to Arbor Contributors. If you upload a file yourself (GitHub, email, a drive), that is your transfer, not the kernel’s.",
   },
   {
     q: "Where do projects live?",
-    a: "On disk. The PDM store is a .cad_db SQLite file. There is no hosted workspace and no account gate.",
+    a: "On disk under the Arbor application support directory (.cad_db SQLite). There is no hosted workspace and no account gate.",
   },
   {
     q: "What file formats can I take out?",
@@ -38,7 +38,7 @@ const ITEMS = [
   },
   {
     q: "How do I install it?",
-    a: "macOS, Windows, and Linux installers are on GitHub Releases as v0.1.0-pre.1 (Arbor.dmg, Arbor.msi, Arbor.AppImage). You can also clone arbor-cae and run npm run tauri. There is no app-store listing and no license server.",
+    a: "macOS, Windows, and Linux installers are on GitHub Releases as v0.1.0-pre.1 (Arbor.dmg, Arbor.msi, Arbor.AppImage). On macOS, if Gatekeeper says the app is damaged, run xattr -cr /Applications/Arbor.app then open it. You can also clone arbor-cae and run npm run tauri.",
   },
 ];
 
