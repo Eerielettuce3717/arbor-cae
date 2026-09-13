@@ -10,6 +10,7 @@ export type PcbToolId =
   | "outline"
   | "rigidFlex"
   | "altium365"
+  | "manufacturing"
   | "measure"
   | "3dPreview";
 
@@ -20,7 +21,11 @@ export type PcbPanelId =
   | "traces"
   | "layers"
   | "rigidFlex"
-  | "altium365";
+  | "altium365"
+  | "manufacturing";
+
+/** Target fab process for DRC + Gerber/Excellon export. */
+export type ManufacturingType = "standardFab" | "additiveInk";
 
 export type PcbLayerId =
   | "topCopper"
@@ -248,6 +253,7 @@ export const PCB_TOOLBAR_GROUPS: {
     tools: [
       { id: "rigidFlex", label: "Rigid-Flex" },
       { id: "altium365", label: "Altium 365" },
+      { id: "manufacturing", label: "Export Mfg" },
     ],
   },
   {

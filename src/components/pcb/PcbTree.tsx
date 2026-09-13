@@ -93,6 +93,16 @@ export function PcbTree() {
               setActiveTool("altium365");
             }}
           />
+          <Row
+            icon="⇪"
+            label="Export Manufacturing"
+            selected={selectedId === "manufacturing"}
+            onClick={() => {
+              select("manufacturing");
+              setActivePanel("manufacturing");
+              setActiveTool("manufacturing");
+            }}
+          />
         </Section>
       </div>
     </div>

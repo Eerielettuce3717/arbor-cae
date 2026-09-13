@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { saveDrlFile, saveGtlFile } from "../lib/pcbFs";
+import { runDrc, type DrcResult, type ManufacturingProfileId } from "../pcb/drc";
+import { generateExcellon, generateGtl } from "../pcb/export";
 import { snapPointToRoute, snapToGrid } from "../pcb/snapRouting";
 import {
   DEFAULT_ALTIUM365,
@@ -7,6 +10,7 @@ import {
   PCB_LAYERS,
   type Altium365Integration,
   type BoardOutline,
+  type ManufacturingType,
   type PcbComponent,
   type PcbLayerDef,
   type PcbLayerId,
@@ -25,6 +29,54 @@ function uid(prefix: string): string {
 }
 
 function seedComponents(): PcbComponent[] {
+  // QFN-32 @ 0.5 mm pitch (passes Additive ≥0.4 mm).
+  const qfnPads = [];
+  const pitch = 0.5;
+  const padW = 0.25;
+  const padH = 0.4;
+  const half = 2.25;
+  for (let i = 0; i < 8; i++) {
+    const t = -1.75 + i * pitch;
+    qfnPads.push(
+      {
+        id: `pad_u1_n${i}`,
+        x: 25 + t,
+        y: 25 + half,
+        widthMm: padW,
+        heightMm: padH,
+        layer: "topCopper" as const,
+        net: null,
+      },
+      {
+        id: `pad_u1_s${i}`,
+        x: 25 + t,
+        y: 25 - half,
+        widthMm: padW,
+        heightMm: padH,
+        layer: "topCopper" as const,
+        net: null,
+      },
+      {
+        id: `pad_u1_w${i}`,
+        x: 25 - half,
+        y: 25 + t,
+        widthMm: padH,
+        heightMm: padW,
+        layer: "topCopper" as const,
+        net: null,
+      },
+      {
+        id: `pad_u1_e${i}`,
+        x: 25 + half,
+        y: 25 + t,
+        widthMm: padH,
+        heightMm: padW,
+        layer: "topCopper" as const,
+        net: null,
+      },
+    );
+  }
+
   return [
     {
       id: "comp_u1",
@@ -38,7 +90,7 @@ function seedComponents(): PcbComponent[] {
       height3dMm: 0.9,
       layer: "top",
       color: "#2d3748",
-      pads: [],
+      pads: qfnPads,
     },
     {
       id: "comp_c1",
@@ -52,7 +104,26 @@ function seedComponents(): PcbComponent[] {
       height3dMm: 0.7,
       layer: "top",
       color: "#1a202c",
-      pads: [],
+      pads: [
+        {
+          id: "pad_c1_a",
+          x: 39.1,
+          y: 18,
+          widthMm: 0.9,
+          heightMm: 1.0,
+          layer: "topCopper",
+          net: "GND",
+        },
+        {
+          id: "pad_c1_b",
+          x: 40.9,
+          y: 18,
+          widthMm: 0.9,
+          heightMm: 1.0,
+          layer: "topCopper",
+          net: "NET_USB_D+",
+        },
+      ],
     },
     {
       id: "comp_j1",
@@ -66,7 +137,16 @@ function seedComponents(): PcbComponent[] {
       height3dMm: 3.2,
       layer: "top",
       color: "#4a5568",
-      pads: [],
+      // 0.5 mm signal pitch — Additive-safe (≥0.4 mm).
+      pads: Array.from({ length: 12 }, (_, i) => ({
+        id: `pad_j1_${i}`,
+        x: 8,
+        y: 25 - 2.75 + i * 0.5,
+        widthMm: 0.3,
+        heightMm: 1.2,
+        layer: "topCopper" as const,
+        net: i === 4 || i === 5 ? "NET_USB_D+" : null,
+      })),
     },
   ];
 }
@@ -90,6 +170,31 @@ function seedTraces(): PcbTrace[] {
   ];
 }
 
+function seedVias(): PcbVia[] {
+  return [
+    {
+      id: "via_1",
+      x: 30,
+      y: 22,
+      drillMm: 0.4,
+      padMm: 0.8,
+      net: "GND",
+      fromLayer: "topCopper",
+      toLayer: "bottomCopper",
+    },
+    {
+      id: "via_2",
+      x: 35,
+      y: 28,
+      drillMm: 0.45,
+      padMm: 0.9,
+      net: "NET_USB_D+",
+      fromLayer: "topCopper",
+      toLayer: "bottomCopper",
+    },
+  ];
+}
+
 interface PcbState {
   outline: BoardOutline;
   components: PcbComponent[];
@@ -109,6 +214,14 @@ interface PcbState {
   routePreview: PcbPoint | null;
   revision: number;
   statusMessage: string;
+
+  /** Manufacturing export / DRC */
+  manufacturingType: ManufacturingType;
+  lastDrcResult: DrcResult | null;
+  lastGtl: string | null;
+  lastDrl: string | null;
+  lastExportPaths: { gtl: string; drl: string } | null;
+  exportBlocked: boolean;
 
   setActiveTool: (tool: PcbToolId) => void;
   setActivePanel: (panel: PcbPanelId) => void;
@@ -140,6 +253,10 @@ interface PcbState {
   updateAltium365: (patch: Partial<Altium365Integration>) => void;
   syncAltium365: () => void;
 
+  setManufacturingType: (type: ManufacturingType) => void;
+  runManufacturingDrc: () => DrcResult;
+  exportManufacturingFiles: () => Promise<boolean>;
+
   setStatusMessage: (msg: string) => void;
 }
 
@@ -149,6 +266,7 @@ const TOOL_TO_PANEL: Partial<Record<PcbToolId, PcbPanelId>> = {
   outline: "board",
   rigidFlex: "rigidFlex",
   altium365: "altium365",
+  manufacturing: "manufacturing",
 };
 
 export const usePcbStore = create<PcbState>((set, get) => ({
@@ -158,7 +276,7 @@ export const usePcbStore = create<PcbState>((set, get) => ({
   },
   components: seedComponents(),
   traces: seedTraces(),
-  vias: [],
+  vias: seedVias(),
   layers: PCB_LAYERS.map((l) => ({ ...l })),
   rigidFlex: {
     ...DEFAULT_RIGID_FLEX,
@@ -182,6 +300,12 @@ export const usePcbStore = create<PcbState>((set, get) => ({
   revision: 1,
   statusMessage:
     "PCB Studio — route with 45°/90° snap; 3D extrudes on every canvas update.",
+  manufacturingType: "standardFab",
+  lastDrcResult: null,
+  lastGtl: null,
+  lastDrl: null,
+  lastExportPaths: null,
+  exportBlocked: false,
 
   setActiveTool: (tool) => {
     const panel = TOOL_TO_PANEL[tool];
@@ -195,7 +319,9 @@ export const usePcbStore = create<PcbState>((set, get) => ({
             ? "Rigid-Flex workflow scaffold — enable regions and fold preview."
             : tool === "altium365"
               ? "Altium 365 integration UI — connect / sync placeholders."
-              : `Tool: ${tool}`,
+              : tool === "manufacturing"
+                ? "Export Manufacturing — run DRC, then save .GTL / .DRL."
+                : `Tool: ${tool}`,
     });
   },
 
@@ -448,6 +574,80 @@ export const usePcbStore = create<PcbState>((set, get) => ({
         statusMessage: "Altium 365 sync scaffold finished.",
       });
     }, 600);
+  },
+
+  setManufacturingType: (type) => {
+    set({
+      manufacturingType: type,
+      lastDrcResult: null,
+      exportBlocked: false,
+      statusMessage: `Manufacturing target: ${type === "additiveInk" ? "Additive / Conductive Ink" : "Standard Fab"}.`,
+    });
+  },
+
+  runManufacturingDrc: () => {
+    const { outline, components, traces, vias, manufacturingType } = get();
+    const result = runDrc(
+      { outline, components, traces, vias },
+      manufacturingType as ManufacturingProfileId,
+    );
+    set({
+      lastDrcResult: result,
+      exportBlocked: !result.passed,
+      statusMessage: result.passed
+        ? `DRC passed (${result.profileName}) — ready to export.`
+        : `DRC failed (${result.violations.length} issue${result.violations.length === 1 ? "" : "s"}) — export blocked.`,
+    });
+    return result;
+  },
+
+  exportManufacturingFiles: async () => {
+    const state = get();
+    const result = state.runManufacturingDrc();
+    if (!result.passed) {
+      set({
+        exportBlocked: true,
+        statusMessage: `Export blocked — fix ${result.violations.length} DRC error(s) first.`,
+      });
+      return false;
+    }
+
+    const boardInput = {
+      outline: state.outline,
+      components: state.components,
+      traces: state.traces,
+      vias: state.vias,
+      partName: state.outline.name,
+    };
+
+    const gtl = generateGtl(boardInput);
+    const drl = generateExcellon({
+      vias: state.vias,
+      partName: state.outline.name,
+    });
+
+    const base =
+      state.outline.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") ||
+      "board";
+
+    try {
+      const gtlPath = await saveGtlFile(base, gtl);
+      const drlPath = await saveDrlFile(base, drl);
+      set({
+        lastGtl: gtl,
+        lastDrl: drl,
+        lastExportPaths: { gtl: gtlPath, drl: drlPath },
+        exportBlocked: false,
+        statusMessage: `Exported ${base}.GTL and ${base}.DRL (${result.profileName}).`,
+      });
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({
+        statusMessage: `Export failed: ${msg}`,
+      });
+      return false;
+    }
   },
 
   setStatusMessage: (msg) => set({ statusMessage: msg }),

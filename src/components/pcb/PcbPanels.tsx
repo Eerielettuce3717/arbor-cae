@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { MANUFACTURING_PROFILE_OPTIONS } from "../../pcb/drc";
 import { usePcbStore } from "../../store/pcbStore";
-import type { PcbPanelId, SnapAngleMode } from "../../store/pcbTypes";
+import type { ManufacturingType, PcbPanelId, SnapAngleMode } from "../../store/pcbTypes";
 
 export function PcbSidePanel() {
   const activePanel = usePcbStore((s) => s.activePanel);
@@ -29,6 +30,7 @@ export function PcbSidePanel() {
         {activePanel === "layers" && <LayersPanel />}
         {activePanel === "rigidFlex" && <RigidFlexPanel />}
         {activePanel === "altium365" && <Altium365Panel />}
+        {activePanel === "manufacturing" && <ManufacturingPanel />}
       </div>
     </aside>
   );
@@ -48,6 +50,8 @@ function panelTitle(id: PcbPanelId): string {
       return "Rigid-Flex";
     case "altium365":
       return "Altium 365";
+    case "manufacturing":
+      return "Export Manufacturing";
     default:
       return "PCB";
   }
@@ -386,6 +390,122 @@ function Altium365Panel() {
       <p className="text-[11px] leading-relaxed text-eng-faint">
         {altium.statusMessage}
       </p>
+    </div>
+  );
+}
+
+/** CAM-style manufacturing export: DRC → Gerber .GTL + Excellon .DRL */
+function ManufacturingPanel() {
+  const manufacturingType = usePcbStore((s) => s.manufacturingType);
+  const setManufacturingType = usePcbStore((s) => s.setManufacturingType);
+  const runManufacturingDrc = usePcbStore((s) => s.runManufacturingDrc);
+  const exportManufacturingFiles = usePcbStore(
+    (s) => s.exportManufacturingFiles,
+  );
+  const lastDrcResult = usePcbStore((s) => s.lastDrcResult);
+  const lastExportPaths = usePcbStore((s) => s.lastExportPaths);
+  const exportBlocked = usePcbStore((s) => s.exportBlocked);
+  const lastGtl = usePcbStore((s) => s.lastGtl);
+  const lastDrl = usePcbStore((s) => s.lastDrl);
+  const profileHint =
+    manufacturingType === "additiveInk"
+      ? "Additive: traces ≥ 0.2 mm, pin pitch ≥ 0.4 mm."
+      : "Standard Fab: 0.15 mm class etch rules.";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] leading-relaxed text-eng-faint">
+        Run Design Rule Check for the selected fab process, then export RS-274X
+        Gerber (<span className="font-mono text-sky-300/80">.GTL</span>) and
+        Excellon (<span className="font-mono text-sky-300/80">.DRL</span>) via
+        Tauri filesystem.
+      </p>
+
+      <Field label="Manufacturing type">
+        <select
+          className={inputClass}
+          value={manufacturingType}
+          onChange={(e) =>
+            setManufacturingType(e.target.value as ManufacturingType)
+          }
+        >
+          {MANUFACTURING_PROFILE_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <p className="text-[11px] text-eng-muted">{profileHint}</p>
+
+      <div className="flex flex-wrap gap-1.5">
+        <ActionBtn label="Run DRC" onClick={() => runManufacturingDrc()} />
+        <ActionBtn
+          label="Export Manufacturing Files"
+          primary
+          onClick={() => void exportManufacturingFiles()}
+        />
+      </div>
+
+      {lastDrcResult && (
+        <div
+          className={`rounded border px-2 py-1.5 text-[11px] ${
+            lastDrcResult.passed
+              ? "border-emerald-800/50 bg-emerald-950/30 text-emerald-300"
+              : "border-rose-800/50 bg-rose-950/30 text-rose-300"
+          }`}
+        >
+          <div className="font-medium">
+            DRC {lastDrcResult.passed ? "passed" : "failed"} —{" "}
+            {lastDrcResult.profileName}
+          </div>
+          {!lastDrcResult.passed && (
+            <ul className="mt-1.5 max-h-36 space-y-1 overflow-y-auto text-[10px] leading-snug text-rose-200/90">
+              {lastDrcResult.violations.map((v) => (
+                <li key={v.id}>• {v.message}</li>
+              ))}
+            </ul>
+          )}
+          {exportBlocked && !lastDrcResult.passed && (
+            <div className="mt-1.5 font-semibold uppercase tracking-wide text-rose-200">
+              Export blocked
+            </div>
+          )}
+        </div>
+      )}
+
+      {lastExportPaths && (
+        <div className="rounded border border-emerald-800/50 bg-emerald-950/30 px-2 py-1.5 text-[11px] text-emerald-300">
+          <div>Saved .GTL: {lastExportPaths.gtl}</div>
+          <div className="mt-0.5">Saved .DRL: {lastExportPaths.drl}</div>
+        </div>
+      )}
+
+      {(lastGtl || lastDrl) && (
+        <div className="space-y-2">
+          {lastGtl && (
+            <div>
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+                .GTL preview
+              </div>
+              <pre className="max-h-28 overflow-auto rounded border border-eng-border bg-eng-bg p-2 font-mono text-[9px] leading-relaxed text-eng-muted">
+                {lastGtl.slice(0, 1200)}
+                {lastGtl.length > 1200 ? "\n…" : ""}
+              </pre>
+            </div>
+          )}
+          {lastDrl && (
+            <div>
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+                .DRL preview
+              </div>
+              <pre className="max-h-28 overflow-auto rounded border border-eng-border bg-eng-bg p-2 font-mono text-[9px] leading-relaxed text-eng-muted">
+                {lastDrl}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
