@@ -2,6 +2,11 @@ name: Bundle Windows and Linux
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to upload the installers to"
+        required: true
+        default: "v0.1.0-pre.2"
 
 permissions:
   contents: write
@@ -93,6 +98,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PREFERRED_ASSET: ${{ matrix.asset }}
           PLATFORM: ${{ matrix.platform }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         shell: bash
         run: |
           set -euo pipefail
@@ -118,5 +124,5 @@ jobs:
             exit 1
           fi
           cp "$src" "$asset"
-          gh release upload v0.1.0-pre.1 "$asset" --clobber --repo "${{ github.repository }}"
-          echo "Uploaded $asset from $src"
+          gh release upload "$RELEASE_TAG" "$asset" --clobber --repo "${{ github.repository }}"
+          echo "Uploaded $asset to $RELEASE_TAG from $src"

@@ -14,7 +14,7 @@ import {
 export const metadata = pageMeta({
   title: "Download Arbor — macOS, Windows, and Linux pre-release",
   description:
-    "Download Arbor v0.1.0-pre.1 for macOS, Windows, or Linux from GitHub Releases, or clone arbor-cae and compile the Tauri desktop app yourself.",
+    "Download Arbor v0.1.0-pre.2 for macOS, Windows, or Linux from GitHub Releases, or clone arbor-cae and compile the Tauri desktop app yourself.",
   path: ROUTES.download,
 });
 

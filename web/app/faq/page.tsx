@@ -38,7 +38,7 @@ const ITEMS = [
   },
   {
     q: "How do I install it?",
-    a: "macOS, Windows, and Linux installers are on GitHub Releases as v0.1.0-pre.1 (Arbor.dmg, Arbor.msi, Arbor.AppImage). On macOS, if Gatekeeper says the app is damaged, run xattr -cr /Applications/Arbor.app then open it. You can also clone arbor-cae and run npm run tauri.",
+    a: "macOS, Windows, and Linux installers are on GitHub Releases as v0.1.0-pre.2 (Arbor.dmg, Arbor.msi, Arbor.AppImage). On macOS, if Gatekeeper says the app is damaged, run xattr -cr /Applications/Arbor.app then open it. You can also clone arbor-cae and run npm run tauri.",
   },
 ];
 
