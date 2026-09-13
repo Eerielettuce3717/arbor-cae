@@ -316,7 +316,9 @@ export default function PrivacyPolicyPage() {
         <p>
           We use HTTPS on this site and keep the CAD workload on-device by
           design. No method of transmission or storage is perfectly secure.
-          Protect your own machine, backups, and `.cad_db` files; we cannot
+          Protect your own machine, backups, and{" "}
+          <code className="font-mono text-[0.9em] text-paper">.cad_db</code>{" "}
+          files; we cannot
           recover local projects we never received.
         </p>
       </LegalSection>

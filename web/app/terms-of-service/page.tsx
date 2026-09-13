@@ -122,8 +122,8 @@ export default function TermsOfServicePage() {
         </p>
         <p>
           You are solely responsible for clearing rights in every design you
-          create or manufacture. {LEGAL.operator} does not review user models and
-          does not grant any license to third-party intellectual property.
+          create or manufacture. We do not review user models and do not grant
+          any license to third-party intellectual property.
         </p>
       </LegalSection>
 
