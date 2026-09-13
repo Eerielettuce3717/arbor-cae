@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Settings } from "lucide-react";
 import { isTauriRuntime, pdm, type Project } from "../../lib/pdmApi";
 import { PreferencesModal } from "../settings/PreferencesModal";
+import { Logo } from "../ui/Logo";
 
 type ViewMode = "list" | "structure";
 type OrgSection =
@@ -633,9 +634,10 @@ export function DocumentsPage({
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
           <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">
-              Documents
-            </h1>
+            <div className="mb-1">
+              <Logo className="h-7 w-7" />
+            </div>
+            <h1 className="sr-only">Documents</h1>
             <p className="text-xs text-muted-foreground">
               {dataSource === "pdm"
                 ? `PDM · SQLite${pdmPath ? ` · ${pdmPath}` : ""}`
