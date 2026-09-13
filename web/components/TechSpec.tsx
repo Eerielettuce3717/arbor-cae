@@ -46,7 +46,7 @@ export function TechSpec() {
       <div className="mx-auto grid max-w-sheet lg:grid-cols-12">
         <header className="px-[var(--gutter)] py-12 lg:col-span-4 lg:border-r lg:border-rule lg:py-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-signal">
-            Bill of materials
+            Runtime stack
           </p>
           <h2 id="kernel-heading" className="mt-4 font-display text-h2">
             What the binary is made of
@@ -57,7 +57,7 @@ export function TechSpec() {
           </p>
           <pre className="mt-8 overflow-x-auto border border-rule bg-panel p-4 font-mono text-[12px] leading-relaxed text-paper">
             {`git clone \\
-  https://github.com/Eerielettuce3717/cad_engine.git`}
+  https://github.com/Eerielettuce3717/arbor-cae.git`}
           </pre>
         </header>
 

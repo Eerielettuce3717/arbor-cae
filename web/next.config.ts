@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoName = "cad_engine";
+const repoName = "arbor-cae";
 const githubPages = process.env.GITHUB_PAGES === "true";
 const basePath = githubPages ? `/${repoName}` : "";
 

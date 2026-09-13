@@ -8,7 +8,7 @@ import { useOS, type OS } from "@/hooks/useOS";
 // PASTE YOUR GITHUB REPO HERE (owner/name). Asset names must match the files
 // attached to the latest GitHub Release (.dmg / .msi / .AppImage).
 // ─────────────────────────────────────────────────────────────────────────────
-const GITHUB_REPO = "Eerielettuce3717/cad_engine";
+const GITHUB_REPO = "Eerielettuce3717/arbor-cae";
 
 const ASSETS = {
   macos: { file: "CAD-Engine.dmg", label: "macOS", ext: ".dmg" },

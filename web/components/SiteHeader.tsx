@@ -6,7 +6,7 @@ import { Logo } from "./Mark";
 const LINKS = [
   { href: "/#modules", label: "Modules" },
   { href: "/#kernel", label: "Kernel" },
-  { href: "https://github.com/Eerielettuce3717/cad_engine", label: "Source", external: true },
+  { href: "https://github.com/Eerielettuce3717/arbor-cae", label: "Source", external: true },
 ];
 
 export function SiteHeader() {

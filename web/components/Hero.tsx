@@ -39,10 +39,10 @@ export function Hero() {
               href="#kernel"
               className="inline-flex min-h-11 items-center justify-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
             >
-              Bill of materials
+              See the stack
             </a>
             <a
-              href="https://github.com/Eerielettuce3717/cad_engine"
+              href="https://github.com/Eerielettuce3717/arbor-cae"
               target="_blank"
               rel="noreferrer"
               className="inline-flex min-h-11 items-center justify-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
@@ -55,7 +55,7 @@ export function Hero() {
         <div className="bg-ink px-[var(--gutter)] py-8 lg:col-span-7 lg:py-10">
           <CadViewport />
           <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
-            Drag thickness, hole, and fillet. Switch Sketch / Solid / Trace / Path.
+            Drag height, bore, and across-flats. Switch Sketch / Solid / Trace / Path.
           </p>
         </div>
       </div>

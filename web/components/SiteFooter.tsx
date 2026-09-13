@@ -23,7 +23,7 @@ export function SiteFooter() {
         <FooterCell label="Scale" value="1:1" />
         <FooterCell label="Rev" value="A" />
         <a
-          href="https://github.com/Eerielettuce3717/cad_engine"
+          href="https://github.com/Eerielettuce3717/arbor-cae"
           target="_blank"
           rel="noreferrer"
           className="bg-ink px-[var(--gutter)] py-8 hover:bg-panel sm:px-6"

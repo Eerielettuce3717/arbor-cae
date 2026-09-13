@@ -1,10 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
 import { useCallback, useMemo, useRef, useState, type PointerEvent } from "react";
 
 type Layer = "sketch" | "solid" | "trace" | "path";
-type Feature = "extrude" | "hole" | "fillet";
+type Feature = "extrude" | "hole" | "size";
+type Pt3 = [number, number, number];
+type Pt2 = { x: number; y: number };
 
 const LAYERS: { id: Layer; label: string }[] = [
   { id: "sketch", label: "Sketch" },
@@ -15,62 +16,106 @@ const LAYERS: { id: Layer; label: string }[] = [
 
 const COS = Math.sqrt(3) / 2;
 const SIN = 0.5;
+const OX = 358;
+const OY = 352;
+const SCALE = 7.15;
+const VIEW = [1, 1.15, 1] as const;
 
-function iso(
-  x: number,
-  y: number,
-  z: number,
-  originX: number,
-  originY: number,
-  scale: number,
-) {
+function iso(x: number, y: number, z: number): Pt2 {
   return {
-    x: originX + (x - z) * COS * scale,
-    y: originY - (y + (x + z) * SIN) * scale,
+    x: OX + (x - z) * COS * SCALE,
+    y: OY - (y + (x + z) * SIN) * SCALE,
   };
 }
 
-function pts(
-  coords: [number, number, number][],
-  ox: number,
-  oy: number,
-  s: number,
-) {
-  return coords.map(([x, y, z]) => iso(x, y, z, ox, oy, s));
-}
-
-function toPath(points: { x: number; y: number }[], close = true) {
+function toPath(points: Pt2[], close = true) {
   return (
-    points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") +
+    points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ") +
     (close ? " Z" : "")
   );
 }
 
-type Geom = {
-  t: number;
-  r: number;
-  holeH: { x: number; y: number };
-  holeV: { x: number; y: number };
-  holeRx: number;
-  holeRy: number;
-};
+function hexRing(af: number): [number, number][] {
+  const r = af / Math.sqrt(3);
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = Math.PI / 6 + (i * Math.PI) / 3;
+    return [r * Math.cos(a), r * Math.sin(a)] as [number, number];
+  });
+}
+
+function normal(face: Pt3[]): Pt3 {
+  const [a, b, c] = face;
+  const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+  const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+  const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const m = Math.hypot(nx, ny, nz) || 1;
+  return [nx / m, ny / m, nz / m];
+}
+
+function facing(face: Pt3[]) {
+  const n = normal(face);
+  return n[0] * VIEW[0] + n[1] * VIEW[1] + n[2] * VIEW[2] > 0.04;
+}
+
+function depth(face: Pt3[]) {
+  const c = face.reduce(
+    (acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + p[2]],
+    [0, 0, 0],
+  );
+  const k = 1 / face.length;
+  return (c[0] * k) * VIEW[0] + (c[1] * k) * VIEW[1] + (c[2] * k) * VIEW[2];
+}
+
+function shade(face: Pt3[]) {
+  const n = normal(face);
+  if (n[1] > 0.7) return "#2A3340";
+  if (n[0] > n[2]) return "#1A222C";
+  return "#121820";
+}
+
+function prismFaces(ring: [number, number][], y0: number, y1: number): Pt3[][] {
+  const top: Pt3[] = ring.map(([x, z]) => [x, y1, z]).reverse();
+  const bottom: Pt3[] = ring.map(([x, z]) => [x, y0, z]);
+  const sides: Pt3[][] = ring.map(([x0, z0], i) => {
+    const [x1, z1] = ring[(i + 1) % ring.length];
+    return [
+      [x0, y0, z0],
+      [x1, y0, z1],
+      [x1, y1, z1],
+      [x0, y1, z0],
+    ];
+  });
+  return [bottom, top, ...sides];
+}
+
+function circlePath(y: number, r: number, steps = 48) {
+  const pts = Array.from({ length: steps }, (_, i) => {
+    const a = (i / steps) * Math.PI * 2;
+    return iso(r * Math.cos(a), y, r * Math.sin(a));
+  });
+  return toPath(pts);
+}
+
+function boreWall(y0: number, y1: number, r: number, steps = 22) {
+  const top: Pt2[] = [];
+  const bot: Pt2[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    // Far side of the bore (away from the camera), visible through the hole.
+    const a = Math.PI * 0.15 + (i / steps) * Math.PI * 0.7;
+    top.push(iso(r * Math.cos(a), y1, r * Math.sin(a)));
+    bot.push(iso(r * Math.cos(a), y0, r * Math.sin(a)));
+  }
+  return toPath([...top, ...bot.reverse()]);
+}
 
 export function CadViewport() {
-  const reduce = useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
   const [layer, setLayer] = useState<Layer>("solid");
   const [feature, setFeature] = useState<Feature>("hole");
-  const [thick, setThick] = useState(8);
-  const [hole, setHole] = useState(6.8);
-  const [fillet, setFillet] = useState(4);
+  const [height, setHeight] = useState(16);
+  const [hole, setHole] = useState(10);
+  const [af, setAf] = useState(24);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
-
-  const L = 80;
-  const H = 54;
-  const W = 50;
-  const ox = 400;
-  const oy = 335;
-  const s = 2.85;
 
   const onMove = useCallback((event: PointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
@@ -87,28 +132,21 @@ export function CadViewport() {
     });
   }, []);
 
-  const geom = useMemo(() => {
-    const t = thick;
-    const r = Math.min(fillet, t + 6);
-    const holeH = iso(52, t, W / 2, ox, oy, s);
-    const holeV = iso(t, 34, W / 2, ox, oy, s);
-    const holeRx = hole * COS * s * 0.78;
-    const holeRy = hole * SIN * s * 1.2;
-    return { t, r, holeH, holeV, holeRx, holeRy };
-  }, [thick, fillet, hole, L, H, W, ox, oy, s]);
+  const maxHole = Math.max(6, af * 0.62);
+  const holeR = Math.min(hole, maxHole) / 2;
+  const ring = useMemo(() => hexRing(af), [af]);
 
-  const sketchPath = useMemo(() => {
-    const t = thick;
-    const r = Math.min(fillet, 12);
-    const px = (mm: number) => 92 + mm * 4.35;
-    const py = (mm: number) => 400 - mm * 4.35;
-    const outer = `M ${px(0)} ${py(0)} L ${px(L)} ${py(0)} L ${px(L)} ${py(t)} L ${px(t + r)} ${py(t)} A ${r * 4.35} ${r * 4.35} 0 0 0 ${px(t)} ${py(t + r)} L ${px(t)} ${py(H)} L ${px(0)} ${py(H)} Z`;
-    return { px, py, outer, t, r };
-  }, [thick, fillet]);
+  const faces = useMemo(() => {
+    return prismFaces(ring, 0, height)
+      .filter(facing)
+      .sort((a, b) => depth(a) - depth(b));
+  }, [ring, height]);
 
   const selectedStroke = "#E85D04";
   const live = "#F3EEE6";
   const dim = "#8B949E";
+  const bodyStroke = feature === "extrude" || feature === "size" ? selectedStroke : live;
+  const holeStroke = feature === "hole" ? selectedStroke : live;
 
   return (
     <div className="flex h-full min-h-[22rem] flex-col border border-rule bg-panel lg:min-h-[34rem]">
@@ -142,9 +180,9 @@ export function CadViewport() {
           <ul className="font-mono text-[11px]">
             {(
               [
-                { id: "extrude" as const, label: `Extrude  ${thick.toFixed(1)} mm` },
-                { id: "hole" as const, label: `Hole Ø   ${hole.toFixed(1)} mm` },
-                { id: "fillet" as const, label: `Fillet R ${fillet.toFixed(1)} mm` },
+                { id: "extrude" as const, label: `Extrude  ${height.toFixed(1)} mm` },
+                { id: "hole" as const, label: `Bore Ø   ${Math.min(hole, maxHole).toFixed(1)} mm` },
+                { id: "size" as const, label: `Hex AF   ${af.toFixed(1)} mm` },
               ] as const
             ).map((item, index) => (
               <li key={item.id}>
@@ -156,10 +194,7 @@ export function CadViewport() {
                   }`}
                 >
                   {feature === item.id ? (
-                    <motion.span
-                      layoutId={reduce ? undefined : "feature-rail"}
-                      className="absolute inset-y-0 left-0 w-[3px] bg-signal"
-                    />
+                    <span className="absolute inset-y-0 left-0 w-[3px] bg-signal" />
                   ) : null}
                   <span>
                     <span className="mr-2 text-mute">{String(index + 1).padStart(2, "0")}</span>
@@ -171,36 +206,36 @@ export function CadViewport() {
           </ul>
           <div className="space-y-4 p-3">
             <Param
-              id="thick"
-              label="Thickness"
-              value={thick}
-              min={4}
-              max={14}
+              id="height"
+              label="Height"
+              value={height}
+              min={8}
+              max={22}
               onChange={(v) => {
                 setFeature("extrude");
-                setThick(v);
+                setHeight(v);
               }}
             />
             <Param
               id="hole"
-              label="Hole Ø"
-              value={hole}
-              min={4}
-              max={12}
+              label="Bore Ø"
+              value={Math.min(hole, maxHole)}
+              min={6}
+              max={18}
               onChange={(v) => {
                 setFeature("hole");
                 setHole(v);
               }}
             />
             <Param
-              id="fillet"
-              label="Fillet R"
-              value={fillet}
-              min={0}
-              max={12}
+              id="af"
+              label="Across flats"
+              value={af}
+              min={16}
+              max={32}
               onChange={(v) => {
-                setFeature("fillet");
-                setFillet(v);
+                setFeature("size");
+                setAf(v);
               }}
             />
           </div>
@@ -212,7 +247,7 @@ export function CadViewport() {
             viewBox="0 0 720 460"
             className="h-full w-full touch-none"
             role="img"
-            aria-label="Parametric L-bracket. Drag the thickness, hole, or fillet sliders to edit."
+            aria-label="Parametric hex standoff. Drag height, bore, or across-flats to edit."
             onPointerMove={onMove}
             onPointerLeave={() => setCursor(null)}
           >
@@ -227,31 +262,98 @@ export function CadViewport() {
 
             {layer === "sketch" ? (
               <SketchLayer
-                sketchPath={sketchPath}
-                hole={hole}
+                af={af}
+                hole={Math.min(hole, maxHole)}
                 feature={feature}
                 live={live}
                 selectedStroke={selectedStroke}
                 dim={dim}
-                L={L}
-                H={H}
               />
             ) : (
-              <SolidLayer
-                geom={geom}
-                layer={layer}
-                feature={feature}
-                live={live}
-                selectedStroke={selectedStroke}
-                dim={dim}
-                hole={hole}
-                W={W}
-                thick={thick}
-                ox={ox}
-                oy={oy}
-                s={s}
-                L={L}
-              />
+              <g>
+                {faces.map((face, i) => (
+                  <path
+                    key={i}
+                    d={toPath(face.map(([x, y, z]) => iso(x, y, z)))}
+                    fill={shade(face)}
+                    stroke={bodyStroke}
+                    strokeWidth="1.35"
+                    strokeLinejoin="miter"
+                  />
+                ))}
+                <path
+                  d={circlePath(0, holeR)}
+                  fill="none"
+                  stroke={holeStroke}
+                  strokeWidth="1"
+                  opacity="0.35"
+                />
+                <path d={boreWall(0, height, holeR)} fill="#0E1319" stroke="none" />
+                <path
+                  d={circlePath(height, holeR)}
+                  fill="#0A0C0F"
+                  stroke={holeStroke}
+                  strokeWidth="1.5"
+                />
+                {layer === "trace" ? (
+                  <g fill="none">
+                    <path
+                      d={circlePath(height + 0.05, holeR + 2.4)}
+                      stroke={selectedStroke}
+                      strokeWidth="2.2"
+                    />
+                    <path
+                      d={toPath(
+                        [
+                          iso(holeR + 2.4, height + 0.05, 0),
+                          iso(af * 0.42, height + 0.05, 0),
+                          iso(af * 0.48, height + 0.05, af * 0.18),
+                        ],
+                        false,
+                      )}
+                      stroke={selectedStroke}
+                      strokeWidth="2"
+                    />
+                    <circle
+                      cx={iso(af * 0.48, height, af * 0.18).x}
+                      cy={iso(af * 0.48, height, af * 0.18).y}
+                      r="4.5"
+                      stroke={selectedStroke}
+                      strokeWidth="1.4"
+                    />
+                  </g>
+                ) : null}
+                {layer === "path" ? (
+                  <path
+                    d={zigzagPath(af, height, holeR)}
+                    fill="none"
+                    stroke={selectedStroke}
+                    strokeWidth="1.15"
+                  />
+                ) : null}
+                <text
+                  x={iso(0, height, 0).x + 16}
+                  y={iso(0, height, 0).y - 10}
+                  fill={holeStroke}
+                  fontFamily="IBM Plex Mono, ui-monospace, monospace"
+                  fontSize="11"
+                >
+                  Ø{Math.min(hole, maxHole).toFixed(1)}
+                </text>
+                <text
+                  x="488"
+                  y="372"
+                  fill={dim}
+                  fontFamily="IBM Plex Mono, ui-monospace, monospace"
+                  fontSize="10"
+                >
+                  {layer === "trace"
+                    ? "PAD · RING"
+                    : layer === "path"
+                      ? "FACE CLEAR"
+                      : `H ${height.toFixed(1)}  AF ${af.toFixed(1)}`}
+                </text>
+              </g>
             )}
 
             {cursor ? (
@@ -279,7 +381,7 @@ export function CadViewport() {
 
             <g fontFamily="IBM Plex Mono, ui-monospace, monospace" fontSize="10" fill="#8B949E">
               <text x="28" y="36">
-                BRACKET PLATE · ISO
+                HEX STANDOFF · ISO
               </text>
               <text x="28" y="430">
                 {cursor
@@ -287,16 +389,74 @@ export function CadViewport() {
                   : "X —     Y —"}
               </text>
               <text x="520" y="412">
-                CAD ENGINE
+                ARBOR
               </text>
               <text x="520" y="428">
-                REV 14  ·  SCALE 1:2
+                REV 14  ·  SCALE 2:1
               </text>
             </g>
           </svg>
         </div>
       </div>
     </div>
+  );
+}
+
+function zigzagPath(af: number, y: number, holeR: number) {
+  const r0 = holeR + 2.2;
+  const r1 = af * 0.42;
+  const pts: Pt2[] = [];
+  const rings = 4;
+  const steps = 28;
+  for (let ring = 0; ring < rings; ring += 1) {
+    const r = r0 + ((r1 - r0) * ring) / (rings - 1);
+    for (let i = 0; i <= steps; i += 1) {
+      const a = (i / steps) * Math.PI * 2 + ring * 0.18;
+      const rr = r + (i % 2 === 0 ? 0.35 : -0.35);
+      pts.push(iso(rr * Math.cos(a), y + 0.06, rr * Math.sin(a)));
+    }
+  }
+  return toPath(pts, false);
+}
+
+function SketchLayer({
+  af,
+  hole,
+  feature,
+  live,
+  selectedStroke,
+  dim,
+}: {
+  af: number;
+  hole: number;
+  feature: Feature;
+  live: string;
+  selectedStroke: string;
+  dim: string;
+}) {
+  const k = 7.2;
+  const cx = 360;
+  const cy = 236;
+  const px = (x: number) => cx + x * k;
+  const py = (z: number) => cy - z * k;
+  const hex = hexRing(af).map(([x, z]) => ({ x: px(x), y: py(z) }));
+  const r = (hole / 2) * k;
+  const hexStroke = feature === "extrude" || feature === "size" ? selectedStroke : live;
+  const holeStroke = feature === "hole" ? selectedStroke : live;
+  const left = px(-af / 2);
+  const right = px(af / 2);
+
+  return (
+    <g>
+      <line x1={cx} y1={cy - af * k} x2={cx} y2={cy + af * k} stroke={dim} strokeDasharray="3 4" />
+      <line x1={cx - af * k} y1={cy} x2={cx + af * k} y2={cy} stroke={dim} strokeDasharray="3 4" />
+      <path d={toPath(hex)} fill="none" stroke={hexStroke} strokeWidth="1.6" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={holeStroke} strokeWidth="1.6" />
+      <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} stroke={holeStroke} strokeWidth="0.8" />
+      <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} stroke={holeStroke} strokeWidth="0.8" />
+      <Dim x1={left} x2={right} y={cy + af * k * 0.72} label={`${af.toFixed(1)} AF`} color={feature === "size" ? selectedStroke : dim} />
+      <Dim x1={cx - r} x2={cx + r} y={cy - r - 18} label={`Ø${hole.toFixed(1)}`} color={feature === "hole" ? selectedStroke : dim} />
+    </g>
   );
 }
 
@@ -326,311 +486,11 @@ function Param({
         type="range"
         min={min}
         max={max}
-        step={0.1}
+        step="0.1"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </label>
-  );
-}
-
-function SketchLayer({
-  sketchPath,
-  hole,
-  feature,
-  live,
-  selectedStroke,
-  dim,
-  L,
-  H,
-}: {
-  sketchPath: {
-    px: (mm: number) => number;
-    py: (mm: number) => number;
-    outer: string;
-    t: number;
-    r: number;
-  };
-  hole: number;
-  feature: Feature;
-  live: string;
-  selectedStroke: string;
-  dim: string;
-  L: number;
-  H: number;
-}) {
-  const { px, py, outer, t } = sketchPath;
-  const hx = 56;
-  const hy = t / 2 + 18;
-  return (
-    <g>
-      <line x1={px(0)} y1={py(-8)} x2={px(0)} y2={py(H + 8)} stroke={dim} strokeDasharray="3 4" />
-      <line x1={px(-8)} y1={py(0)} x2={px(L + 8)} y2={py(0)} stroke={dim} strokeDasharray="3 4" />
-      <path d={outer} fill="none" stroke={feature === "extrude" || feature === "fillet" ? selectedStroke : live} strokeWidth="1.6" />
-      <circle
-        cx={px(hx)}
-        cy={py(hy)}
-        r={(hole / 2) * 4.35}
-        fill="none"
-        stroke={feature === "hole" ? selectedStroke : live}
-        strokeWidth="1.6"
-      />
-      <line
-        x1={px(hx) - 10}
-        y1={py(hy)}
-        x2={px(hx) + 10}
-        y2={py(hy)}
-        stroke={feature === "hole" ? selectedStroke : dim}
-        strokeWidth="0.8"
-      />
-      <line
-        x1={px(hx)}
-        y1={py(hy) - 10}
-        x2={px(hx)}
-        y2={py(hy) + 10}
-        stroke={feature === "hole" ? selectedStroke : dim}
-        strokeWidth="0.8"
-      />
-      <Dim
-        x1={px(0)}
-        x2={px(L)}
-        y={py(-14)}
-        label="80.0"
-        color={feature === "extrude" ? selectedStroke : dim}
-      />
-      <Dim
-        x1={px(hx) - (hole / 2) * 4.35}
-        x2={px(hx) + (hole / 2) * 4.35}
-        y={py(hy + 16)}
-        label={`Ø${hole.toFixed(1)}`}
-        color={feature === "hole" ? selectedStroke : dim}
-      />
-    </g>
-  );
-}
-
-function IsoFace({
-  corners,
-  ox,
-  oy,
-  s,
-  fill,
-  stroke,
-}: {
-  corners: [number, number, number][];
-  ox: number;
-  oy: number;
-  s: number;
-  fill: string;
-  stroke: string;
-}) {
-  return (
-    <path
-      d={toPath(pts(corners, ox, oy, s))}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth="1.35"
-      strokeLinejoin="miter"
-    />
-  );
-}
-
-function SolidLayer({
-  geom,
-  layer,
-  feature,
-  live,
-  selectedStroke,
-  dim,
-  hole,
-  W,
-  thick,
-  ox,
-  oy,
-  s,
-  L,
-}: {
-  geom: Geom;
-  layer: Layer;
-  feature: Feature;
-  live: string;
-  selectedStroke: string;
-  dim: string;
-  hole: number;
-  W: number;
-  thick: number;
-  ox: number;
-  oy: number;
-  s: number;
-  L: number;
-}) {
-  const t = thick;
-  const H = 54;
-  const bodyStroke = feature === "extrude" || feature === "fillet" ? selectedStroke : live;
-  const holeStroke = feature === "hole" ? selectedStroke : live;
-  const traces = layer === "trace";
-  const path = layer === "path";
-  const shadeA = "#12171F";
-  const shadeB = "#1A222C";
-  const shadeC = "#242C38";
-
-  const zig: [number, number, number][] = [];
-  for (let i = 0; i < 8; i += 1) {
-    const z = 8 + i * ((W - 16) / 7);
-    zig.push([t + 10, t + 0.4, z]);
-    zig.push([L - 10, t + 0.4, z]);
-  }
-
-  return (
-    <g>
-      <IsoFace
-        corners={[[0, 0, W], [L, 0, W], [L, t, W], [0, t, W]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeA}
-        stroke={dim}
-      />
-      <IsoFace
-        corners={[[0, 0, 0], [0, H, 0], [0, H, W], [0, 0, W]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeA}
-        stroke={bodyStroke}
-      />
-      <IsoFace
-        corners={[[t, 0, 0], [L, 0, 0], [L, t, 0], [t, t, 0]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeB}
-        stroke={bodyStroke}
-      />
-      <IsoFace
-        corners={[[L, 0, 0], [L, 0, W], [L, t, W], [L, t, 0]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeC}
-        stroke={bodyStroke}
-      />
-      <IsoFace
-        corners={[[t, t, 0], [L, t, 0], [L, t, W], [t, t, W]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeC}
-        stroke={bodyStroke}
-      />
-      <IsoFace
-        corners={[[0, t, 0], [t, t, 0], [t, H, 0], [0, H, 0]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeB}
-        stroke={feature === "fillet" ? selectedStroke : bodyStroke}
-      />
-      <IsoFace
-        corners={[[t, t, 0], [t, H, 0], [t, H, W], [t, t, W]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeB}
-        stroke={feature === "fillet" ? selectedStroke : bodyStroke}
-      />
-      <IsoFace
-        corners={[[0, H, 0], [t, H, 0], [t, H, W], [0, H, W]]}
-        ox={ox}
-        oy={oy}
-        s={s}
-        fill={shadeC}
-        stroke={bodyStroke}
-      />
-      <ellipse
-        cx={geom.holeH.x}
-        cy={geom.holeH.y}
-        rx={geom.holeRx}
-        ry={geom.holeRy}
-        fill="#0A0C0F"
-        stroke={holeStroke}
-        strokeWidth="1.5"
-      />
-      <ellipse
-        cx={geom.holeV.x}
-        cy={geom.holeV.y}
-        rx={geom.holeRy * 0.9}
-        ry={geom.holeRx * 1.1}
-        fill="#0A0C0F"
-        stroke={holeStroke}
-        strokeWidth="1.5"
-      />
-      {traces ? (
-        <g>
-          <IsoFace
-            corners={[
-              [t + 6, t + 0.5, 6],
-              [L - 8, t + 0.5, 6],
-              [L - 8, t + 0.5, W - 6],
-              [t + 6, t + 0.5, W - 6],
-            ]}
-            ox={ox}
-            oy={oy}
-            s={s}
-            fill="none"
-            stroke={selectedStroke}
-          />
-          <path
-            d={toPath(
-              pts(
-                [
-                  [t + 14, t + 0.5, 12],
-                  [40, t + 0.5, 22],
-                  [L - 16, t + 0.5, W / 2],
-                ],
-                ox,
-                oy,
-                s,
-              ),
-              false,
-            )}
-            fill="none"
-            stroke={selectedStroke}
-            strokeWidth="2"
-          />
-        </g>
-      ) : null}
-      {path ? (
-        <path
-          d={toPath(pts(zig, ox, oy, s), false)}
-          fill="none"
-          stroke={selectedStroke}
-          strokeWidth="1.15"
-        />
-      ) : null}
-      <text
-        x={geom.holeH.x + 14}
-        y={geom.holeH.y - 12}
-        fill={holeStroke}
-        fontFamily="IBM Plex Mono, ui-monospace, monospace"
-        fontSize="11"
-      >
-        Ø{hole.toFixed(1)}
-      </text>
-      <text
-        x={ox + 90}
-        y={oy + 36}
-        fill={dim}
-        fontFamily="IBM Plex Mono, ui-monospace, monospace"
-        fontSize="10"
-      >
-        {layer === "trace"
-          ? "COPPER · VOLTERA"
-          : layer === "path"
-            ? "ZIGZAG POCKET"
-            : `THK ${thick.toFixed(1)}`}
-      </text>
-    </g>
   );
 }
 
