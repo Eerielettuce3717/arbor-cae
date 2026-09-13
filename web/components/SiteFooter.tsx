@@ -1,71 +1,58 @@
+import Link from "next/link";
 import { DownloadStrip } from "./ui/DownloadButton";
 import { Logo } from "./Mark";
+import { FOOTER_SITEMAP, GITHUB_URL } from "@/lib/site";
 
 export function SiteFooter() {
   return (
     <footer className="bg-ink">
       <DownloadStrip />
       <div className="mx-auto grid max-w-sheet lg:grid-cols-12">
-      <div className="flex items-start gap-3 border-b border-rule px-[var(--gutter)] py-10 lg:col-span-5 lg:border-b-0 lg:border-r lg:py-12">
-        <div>
-          <Logo
-            markClassName="h-8 w-8 shrink-0"
-            nameClassName="font-display text-[1.15rem] font-medium tracking-[-0.02em] text-paper"
-          />
-          <p className="mt-2 max-w-[34ch] pl-11 text-[0.95rem] text-mute">
-            Open-source desktop CAD, CAM, and ECAD. Built to stay on the bench,
-            not in someone else&apos;s region.
-          </p>
+        <div className="flex items-start gap-3 border-b border-rule px-[var(--gutter)] py-10 lg:col-span-5 lg:border-b-0 lg:border-r lg:py-12">
+          <div>
+            <Logo
+              markClassName="h-8 w-8 shrink-0"
+              nameClassName="font-display text-[1.15rem] font-medium tracking-[-0.02em] text-paper"
+            />
+            <p className="mt-2 max-w-[34ch] pl-11 text-[0.95rem] text-mute">
+              Open-source desktop CAD, CAM, and ECAD. Built to stay on the bench,
+              not in someone else&apos;s region.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-px bg-rule sm:grid-cols-4 lg:col-span-7">
+          <FooterCell label="Sheet" value="1 / 1" />
+          <FooterCell label="Scale" value="1:1" />
+          <FooterCell label="Rev" value="A" />
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="bg-ink px-[var(--gutter)] py-8 hover:bg-panel sm:px-6"
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
+              Source
+            </p>
+            <p className="mt-2 font-display text-paper">GitHub ↗</p>
+          </a>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-px bg-rule sm:grid-cols-4 lg:col-span-7">
-        <FooterCell label="Sheet" value="1 / 1" />
-        <FooterCell label="Scale" value="1:1" />
-        <FooterCell label="Rev" value="A" />
-        <a
-          href="https://github.com/Eerielettuce3717/arbor-cae"
-          target="_blank"
-          rel="noreferrer"
-          className="bg-ink px-[var(--gutter)] py-8 hover:bg-panel sm:px-6"
-        >
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute">Source</p>
-          <p className="mt-2 font-display text-paper">GitHub ↗</p>
-        </a>
-      </div>
-      </div>
-      <nav
-        aria-label="Legal"
-        className="border-t border-rule"
-      >
+      <nav aria-label="Site" className="border-t border-rule">
         <div className="mx-auto flex max-w-sheet flex-col gap-4 px-[var(--gutter)] py-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
-            © {new Date().getFullYear()} Arbor Contributors · MIT License
+            © 2026 Arbor Contributors · MIT License
           </p>
           <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <li>
-              <a
-                href="/terms-of-service"
-                className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
-              >
-                Terms of Service
-              </a>
-            </li>
-            <li>
-              <a
-                href="/privacy-policy"
-                className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
-              >
-                Privacy Policy
-              </a>
-            </li>
-            <li>
-              <button
-                type="button"
-                className="termly-display-preferences font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
-              >
-                Cookie Preferences
-              </button>
-            </li>
+            {FOOTER_SITEMAP.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </nav>

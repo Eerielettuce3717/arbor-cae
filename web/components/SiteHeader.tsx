@@ -1,13 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "./Mark";
-
-const LINKS = [
-  { href: "/#modules", label: "Modules" },
-  { href: "/#kernel", label: "Kernel" },
-  { href: "https://github.com/Eerielettuce3717/arbor-cae", label: "Source", external: true },
-];
+import { GITHUB_URL, NAV } from "@/lib/site";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -15,29 +11,30 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-rule bg-ink">
       <div className="mx-auto flex max-w-sheet items-stretch">
-        <Logo className="flex min-h-11 items-center border-r border-rule px-[var(--gutter)] py-3 hover:text-signal" />
+        <Logo className="min-h-11 items-center border-r border-rule px-[var(--gutter)] py-3 hover:text-signal" />
 
         <p className="hidden flex-1 items-center px-5 font-mono text-[11px] uppercase tracking-[0.16em] text-mute md:flex">
           DWG AR-001 · A3 · LOCAL
         </p>
 
-        <nav
-          aria-label="Main"
-          className="ml-auto hidden items-stretch md:flex"
-        >
-          {LINKS.map((link) => (
-            <a
+        <nav aria-label="Main" className="ml-auto hidden items-stretch md:flex">
+          {NAV.map((link) => (
+            <Link
               key={link.href}
               href={link.href}
-              {...(link.external
-                ? { target: "_blank", rel: "noreferrer" }
-                : {})}
               className="flex min-h-11 items-center border-l border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper transition-colors hover:bg-panel hover:text-signal"
             >
               {link.label}
-              {link.external ? " ↗" : ""}
-            </a>
+            </Link>
           ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-11 items-center border-l border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper transition-colors hover:bg-panel hover:text-signal"
+          >
+            Source ↗
+          </a>
         </nav>
 
         <button
@@ -60,20 +57,27 @@ export function SiteHeader() {
           aria-label="Mobile"
           className="border-t border-rule bg-panel md:hidden"
         >
-          {LINKS.map((link) => (
-            <a
+          {NAV.map((link) => (
+            <Link
               key={link.href}
               href={link.href}
-              {...(link.external
-                ? { target: "_blank", rel: "noreferrer" }
-                : {})}
               onClick={() => setOpen(false)}
               className="flex min-h-11 items-center justify-between border-b border-rule px-[var(--gutter)] font-mono text-xs uppercase tracking-[0.16em]"
             >
               {link.label}
-              <span className="text-signal">{link.external ? "↗" : "→"}</span>
-            </a>
+              <span className="text-signal">→</span>
+            </Link>
           ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setOpen(false)}
+            className="flex min-h-11 items-center justify-between border-b border-rule px-[var(--gutter)] font-mono text-xs uppercase tracking-[0.16em]"
+          >
+            Source
+            <span className="text-signal">↗</span>
+          </a>
         </nav>
       ) : null}
     </header>

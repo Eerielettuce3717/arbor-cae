@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
+import { ROUTES } from "@/lib/site";
 import { LegalCallout, LegalDoc, LegalSection } from "@/components/LegalDoc";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Terms of Service — Arbor",
+export const metadata = pageMeta({
+  title: "Terms of Service — Arbor CAD, CAM, and ECAD",
   description:
-    "Acceptable use, intellectual-property rules, and limitation of liability for Arbor, the local-first CAD/CAM/ECAD suite.",
-};
+    "Acceptable use, intellectual-property rules, and limitation of liability for Arbor, the local-first CAD, CAM, and ECAD suite.",
+  path: ROUTES.terms,
+});
 
 const TOC = [
   { id: "agreement", label: "Agreement" },
@@ -31,6 +33,7 @@ export default function TermsOfServicePage() {
       title="Terms of Service"
       lede={`${LEGAL.product} is a local-first CAD, CAM, and ECAD suite. These terms govern the website, downloads, and software. If you cannot accept them, do not use ${LEGAL.product}.`}
       toc={TOC}
+      crumbHref={ROUTES.terms}
     >
       <LegalSection id="agreement" title="1. Agreement">
         <p>
@@ -46,7 +49,7 @@ export default function TermsOfServicePage() {
         <p>
           By visiting this site, downloading a build, cloning the repository, or
           running {LEGAL.product}, you agree to these Terms, the{" "}
-          <a href="/privacy-policy" className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
+          <a href={ROUTES.privacy} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
             Privacy Policy
           </a>
           , the MIT License in the repository, and{" "}
@@ -288,14 +291,10 @@ export default function TermsOfServicePage() {
         <p>
           Legal notices:{" "}
           <a
-            href={`mailto:${LEGAL.privacyEmail}`}
+            href={LEGAL.issues}
             className="text-paper underline decoration-rule underline-offset-4 hover:text-signal"
           >
-            {LEGAL.privacyEmail}
-          </a>{" "}
-          (replace this placeholder before launch) or an issue on{" "}
-          <a href={LEGAL.issues} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
-            the public repository
+            GitHub issues
           </a>
           .
         </p>

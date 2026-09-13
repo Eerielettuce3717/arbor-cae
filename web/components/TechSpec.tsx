@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ROUTES } from "@/lib/site";
+
 const ROWS = [
   {
     layer: "Window",
@@ -54,6 +57,11 @@ export function TechSpec() {
           <p className="mt-5 max-w-[36ch] text-mute">
             The landing page is Next.js. The product is not. Arbor runs as a
             Tauri desktop app with a Rust sidecar and an OpenCASCADE worker.
+            Full numeric limits and schema notes:{" "}
+            <Link href={ROUTES.specs} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
+              specifications
+            </Link>
+            .
           </p>
           <pre className="mt-8 overflow-x-auto border border-rule bg-panel p-4 font-mono text-[12px] leading-relaxed text-paper">
             {`git clone \\

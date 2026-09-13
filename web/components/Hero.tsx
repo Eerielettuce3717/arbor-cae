@@ -1,7 +1,24 @@
 "use client";
 
-import { CadViewport } from "./CadViewport";
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { DownloadStrip } from "./ui/DownloadButton";
+import { GITHUB_URL, ROUTES } from "@/lib/site";
+
+const CadViewport = dynamic(
+  () => import("./CadViewport").then((mod) => mod.CadViewport),
+  {
+    ssr: true,
+    loading: () => (
+      <div
+        className="flex min-h-[22rem] items-center justify-center border border-rule bg-panel font-mono text-[11px] uppercase tracking-[0.16em] text-mute lg:min-h-[34rem]"
+        role="status"
+      >
+        Loading viewport
+      </div>
+    ),
+  },
+);
 
 export function Hero() {
   return (
@@ -35,14 +52,14 @@ export function Hero() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-            <a
-              href="#kernel"
+            <Link
+              href={ROUTES.specs}
               className="inline-flex min-h-11 items-center justify-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
             >
               See the stack
-            </a>
+            </Link>
             <a
-              href="https://github.com/Eerielettuce3717/arbor-cae"
+              href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
               className="inline-flex min-h-11 items-center justify-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
@@ -55,7 +72,8 @@ export function Hero() {
         <div className="bg-ink px-[var(--gutter)] py-8 lg:col-span-7 lg:py-10">
           <CadViewport />
           <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
-            Drag height, bore, and across-flats. Switch Sketch / Solid / Trace / Path.
+            Drag height, bore, and across-flats. Switch Sketch / Solid / Trace /
+            Path.
           </p>
         </div>
       </div>

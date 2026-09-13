@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { SiteFooter } from "./SiteFooter";
-import { SiteHeader } from "./SiteHeader";
+import { PageShell } from "./PageShell";
 import { LEGAL } from "@/lib/legal";
 
 export type LegalTocItem = { id: string; label: string };
@@ -11,6 +10,7 @@ export function LegalDoc({
   title,
   lede,
   toc,
+  crumbHref,
   children,
 }: {
   docId: string;
@@ -18,14 +18,11 @@ export function LegalDoc({
   title: string;
   lede: string;
   toc: LegalTocItem[];
+  crumbHref: string;
   children: ReactNode;
 }) {
   return (
-    <div className="sheet-grid min-h-full">
-      <a href="#main" className="skip-link">
-        Skip to content
-      </a>
-      <SiteHeader />
+    <PageShell crumbs={[{ name: title, path: crumbHref }]}>
       <main id="main">
         <header className="border-b border-rule bg-ink">
           <div className="mx-auto grid max-w-sheet lg:grid-cols-12">
@@ -77,8 +74,7 @@ export function LegalDoc({
           </article>
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </PageShell>
   );
 }
 

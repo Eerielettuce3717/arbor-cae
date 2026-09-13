@@ -488,6 +488,7 @@ function Param({
         max={max}
         step="0.1"
         value={value}
+        aria-valuetext={`${value.toFixed(1)} millimetres`}
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </label>

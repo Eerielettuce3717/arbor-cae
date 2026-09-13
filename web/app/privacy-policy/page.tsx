@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
+import { ROUTES } from "@/lib/site";
 import { LegalCallout, LegalDoc, LegalSection } from "@/components/LegalDoc";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Arbor",
+export const metadata = pageMeta({
+  title: "Privacy Policy — Arbor website and desktop app",
   description:
-    "How Arbor handles website analytics, cookies, and CCPA/GDPR rights — and why the desktop CAD app does not upload your designs.",
-};
+    "Arbor does not upload CAD designs. This policy covers GitHub Pages logs, GitHub issues, and California / GDPR rights for the project website.",
+  path: ROUTES.privacy,
+});
 
 const TOC = [
   { id: "local-first", label: "Local-first advantage" },
@@ -31,8 +33,9 @@ export default function PrivacyPolicyPage() {
       docId="AR-PRIV-001"
       kicker="Privacy · CCPA / GDPR · Rev A"
       title="Privacy Policy"
-      lede={`${LEGAL.product} is built so your geometry never needs a cloud. This policy explains the small amount of website and diagnostic data we may process, your California and European rights, and how to opt out.`}
+      lede={`${LEGAL.product} is built so your geometry never needs a cloud. This policy explains the small amount of GitHub Pages log data that may exist, your California and European rights, and how to reach the project.`}
       toc={TOC}
+      crumbHref={ROUTES.privacy}
     >
       <LegalSection id="local-first" title="1. The local-first advantage">
         <LegalCallout
@@ -54,7 +57,7 @@ export default function PrivacyPolicyPage() {
         </LegalCallout>
         <p>
           This policy is therefore mostly about the <em>website</em> (this
-          marketing site, downloads, and consent tooling), not about the contents
+          marketing site and GitHub-hosted downloads), not about the contents
           of your part studios.
         </p>
       </LegalSection>
@@ -64,21 +67,13 @@ export default function PrivacyPolicyPage() {
           Controller: {LEGAL.operator}, operators of the {LEGAL.product} project
           and this website. Contact:{" "}
           <a
-            href={`mailto:${LEGAL.privacyEmail}`}
+            href={LEGAL.issues}
             className="text-paper underline decoration-rule underline-offset-4 hover:text-signal"
           >
-            {LEGAL.privacyEmail}
-          </a>{" "}
-          or{" "}
-          <a href={LEGAL.issues} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
             GitHub issues
           </a>
-          .
-        </p>
-        <p>
-          Replace the placeholder email with a monitored inbox before production.
-          We do not appoint a Data Protection Officer; privacy requests go to the
-          contact above.
+          . We do not appoint a Data Protection Officer; privacy requests go to
+          that repository.
         </p>
       </LegalSection>
 
@@ -90,33 +85,15 @@ export default function PrivacyPolicyPage() {
         </p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            <strong className="font-medium text-paper">Website analytics</strong>{" "}
-            from Google Analytics and/or Vercel Analytics — for example pages
-            viewed, referrer, approximate location derived from IP, browser and
-            device type, and aggregated traffic. This runs only after consent
-            where required (see Cookies).
-          </li>
-          <li>
-            <strong className="font-medium text-paper">IP address</strong> for
-            security, abuse prevention, and download regionality (serving or
-            measuring which region a release was fetched from). GitHub, Vercel,
-            or a CDN may log the same when you hit a release asset.
-          </li>
-          <li>
-            <strong className="font-medium text-paper">Minimal crash logs</strong>{" "}
-            if diagnostic reporting is enabled — operating-system version, app
-            version, and error codes or stack frames. Crash logs are not supposed
-            to include part geometry or design IP. If a log accidentally contains
-            a file path you consider sensitive, request deletion.
-          </li>
-          <li>
-            <strong className="font-medium text-paper">Consent records</strong>{" "}
-            from Termly (your cookie choices, timestamp, and a consent proof).
+            <strong className="font-medium text-paper">Host access logs</strong>{" "}
+            from GitHub Pages and GitHub Releases — IP address, user agent,
+            requested path, and time. GitHub operates that infrastructure; we do
+            not run a separate analytics product on this site.
           </li>
           <li>
             <strong className="font-medium text-paper">Communications</strong> you
-            send us (issues, emails, pull requests), which are subject to
-            GitHub’s or your email provider’s policies as well as ours.
+            send us (issues, pull requests, emails), which are also subject to
+            GitHub’s or your email provider’s policies.
           </li>
         </ul>
         <p>
@@ -130,23 +107,15 @@ export default function PrivacyPolicyPage() {
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong className="font-medium text-paper">Operate the website</strong>{" "}
-            — deliver pages, assets, and downloads (legitimate interests /
-            contract).
+            — GitHub Pages delivers HTML, CSS, and fonts (legitimate interests).
           </li>
           <li>
-            <strong className="font-medium text-paper">Understand traffic and improve stability</strong>{" "}
-            — analytics and crash metadata so we can see which platforms fail and
-            whether the site works (consent where required; otherwise legitimate
-            interests in a strictly necessary subset).
-          </li>
-          <li>
-            <strong className="font-medium text-paper">Security and regionality</strong>{" "}
-            — IP-derived signals to rate-limit abuse and understand download
-            geography (legitimate interests).
+            <strong className="font-medium text-paper">Distribute binaries</strong>{" "}
+            — GitHub Releases logs who fetched an asset (legitimate interests).
           </li>
           <li>
             <strong className="font-medium text-paper">Comply with law</strong>{" "}
-            — keep consent records and respond to rights requests (legal
+            — respond to rights requests sent through GitHub issues (legal
             obligation).
           </li>
         </ul>
@@ -158,42 +127,23 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="cookies" title="5. Cookies and consent">
         <p>
-          This site uses Termly as its consent management platform. Non-essential
-          cookies and similar technologies (including analytics) are blocked until
-          you accept them, where auto-block is enabled.
+          This marketing site is a static GitHub Pages export. It does not set
+          a first-party analytics cookie, does not load a consent banner, and
+          does not run Google Analytics, Vercel Analytics, or Termly.
         </p>
         <p>
-          You can reopen the banner at any time via{" "}
-          <button
-            type="button"
-            className="termly-display-preferences text-paper underline decoration-rule underline-offset-4 hover:text-signal"
-          >
-            Cookie Preferences
-          </button>
-          . In the EEA/UK we rely on consent for non-essential cookies. In
-          California, that control is also how you opt out of “sharing” for
-          cross-context analytics, to the extent those laws apply.
-        </p>
-        <p>
-          Strictly necessary cookies may be set to remember your choice and keep
-          the site working. Termly, Vercel, and Google publish their own notices
-          for their processing.
+          GitHub may set cookies on github.com when you follow a Source or
+          Download link. Those cookies are GitHub’s, not Arbor’s. The desktop
+          application stores local project files and optional UI preferences on
+          disk; that is not website tracking.
         </p>
       </LegalSection>
 
       <LegalSection id="retention" title="6. How long we keep it">
         <p>
-          Analytics events are kept on a standard product cycle of{" "}
-          <strong className="font-medium text-paper">14–26 months</strong>, then
-          deleted or aggregated, unless a shorter period is configured in Google
-          Analytics / Vercel. Consent records are kept as long as needed to show
-          we asked. Crash logs are kept only as long as useful to fix a defect
-          (typically under 12 months). Server access logs follow our host’s
-          default (often 30 days or less, plus backups).
-        </p>
-        <p>
-          We do not retain CAD designs because we never receive them from the
-          app.
+          GitHub Pages and GitHub Releases retain access logs on GitHub’s
+          schedule. We do not operate a separate analytics warehouse. We do not
+          retain CAD designs because we never receive them from the app.
         </p>
       </LegalSection>
 
@@ -203,10 +153,7 @@ export default function PrivacyPolicyPage() {
           under their terms:
         </p>
         <ul className="list-disc space-y-2 pl-5">
-          <li>Vercel — website hosting and optional web analytics</li>
-          <li>Google — Google Analytics, if enabled after consent</li>
-          <li>Termly — cookie consent and preference storage</li>
-          <li>GitHub — source hosting, issues, and release downloads</li>
+          <li>GitHub — Pages hosting, source, issues, and release downloads</li>
         </ul>
         <p>
           We may disclose information if required by law, to prevent harm or
@@ -221,7 +168,7 @@ export default function PrivacyPolicyPage() {
           erase (“right to be forgotten”), restrict, or object to processing,
           and to data portability, subject to legal limits. Where processing is
           based on consent, you may withdraw it at any time without affecting
-          prior lawful processing — use Cookie Preferences or contact us.
+          prior lawful processing. This site does not run a consent banner.
         </p>
         <p>
           You may lodge a complaint with your local supervisory authority (for
@@ -231,8 +178,7 @@ export default function PrivacyPolicyPage() {
         <p>
           Because the desktop app holds your designs locally, a deletion request
           cannot reach files on your disk — you already control those. Deletion
-          applies to data we actually hold (analytics identifiers, emails, issue
-          content we can edit, consent logs).
+          applies to data we actually hold (GitHub issue content we can edit).
         </p>
       </LegalSection>
 
@@ -256,9 +202,8 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong className="font-medium text-paper">Opt out</strong> of sale or
             sharing of personal information, including sharing for cross-context
-            behavioral advertising. We do not sell PI for money. Analytics cookies
-            may be “sharing” under CPRA — opt out via Cookie Preferences or a
-            Global Privacy Control (GPC) signal where Termly honors it.
+            behavioral advertising. We do not sell PI for money and we do not run
+            advertising or analytics cookies on this site.
           </li>
           <li>
             <strong className="font-medium text-paper">Limit</strong> use of
@@ -271,19 +216,11 @@ export default function PrivacyPolicyPage() {
           </li>
         </ul>
         <p>
-          Categories we may collect: identifiers (IP address, cookie IDs),
-          internet activity (page views), and coarse geolocation derived from IP.
-          We do not collect CAD files or government IDs.
+          Categories we may collect: identifiers (IP address in GitHub logs) and
+          requested URLs. We do not collect CAD files or government IDs.
         </p>
         <p>
-          To submit a request, email{" "}
-          <a
-            href={`mailto:${LEGAL.privacyEmail}`}
-            className="text-paper underline decoration-rule underline-offset-4 hover:text-signal"
-          >
-            {LEGAL.privacyEmail}
-          </a>{" "}
-          or open a GitHub issue titled “Privacy Request.” We will verify you
+          To submit a request, open a GitHub issue titled “Privacy Request.” We will verify you
           using the contact channel and information reasonably necessary (we have
           no account system). An authorized agent may submit a request with proof
           of authority.
@@ -296,11 +233,9 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="transfers" title="10. International transfers">
         <p>
-          Our processors are often in the United States. If we transfer personal
-          data from the EEA/UK, we rely on appropriate safeguards such as Standard
-          Contractual Clauses implemented by those vendors, plus your consent for
-          optional analytics cookies. U.S. law may allow public-authority access
-          in ways that differ from EU law.
+          Our host (GitHub) is in the United States. Access logs for this site
+          are processed under GitHub’s terms. U.S. law may allow public-authority
+          access in ways that differ from EU law.
         </p>
       </LegalSection>
 
@@ -326,9 +261,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection id="changes" title="13. Changes">
         <p>
           We may update this policy by posting a new version with a new
-          effective date. Material changes to website tracking will also be
-          reflected in Termly’s cookie inventory when you next review
-          preferences.
+          effective date. Check this page for the current text.
         </p>
       </LegalSection>
 
@@ -336,18 +269,11 @@ export default function PrivacyPolicyPage() {
         <p>
           Privacy requests (access, deletion, opt-out, do not sell/share):{" "}
           <a
-            href={`mailto:${LEGAL.privacyEmail}`}
+            href={LEGAL.issues}
             className="text-paper underline decoration-rule underline-offset-4 hover:text-signal"
           >
-            {LEGAL.privacyEmail}
+            GitHub issues
           </a>
-          . Cookie choices:{" "}
-          <button
-            type="button"
-            className="termly-display-preferences text-paper underline decoration-rule underline-offset-4 hover:text-signal"
-          >
-            Cookie Preferences
-          </button>
           . Source and issues:{" "}
           <a href={LEGAL.github} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
             {LEGAL.github}

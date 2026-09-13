@@ -1,0 +1,35 @@
+# Arbor
+
+> Open-source local-first desktop CAD, CAM, and ECAD.
+
+Arbor is a Tauri desktop suite. Solids live in OpenCASCADE. History lives in SQLite. Boards export Gerber and Excellon. The STEP file never phones home.
+
+## Site
+
+- Home: https://eerielettuce3717.github.io/
+- About: https://eerielettuce3717.github.io/about/
+- Specs: https://eerielettuce3717.github.io/specs/
+- Modules: https://eerielettuce3717.github.io/modules/
+- Download: https://eerielettuce3717.github.io/download/
+- Contribute: https://eerielettuce3717.github.io/contribute/
+- FAQ: https://eerielettuce3717.github.io/faq/
+- License: https://eerielettuce3717.github.io/license/
+- Privacy: https://eerielettuce3717.github.io/privacy-policy/
+- Terms: https://eerielettuce3717.github.io/terms-of-service/
+- Source: https://github.com/Eerielettuce3717/arbor-cae
+
+## Product facts
+
+- Window: Tauri 2 (not Electron), default 1440×900
+- Desktop UI: React 19, Zustand, Three.js viewport, PixiJS PCB
+- Kernel I/O: Rust crate cad_engine_lib
+- Solids: OpenCASCADE.js WASM worker, BREP / STEP
+- PDM: local SQLite (`.cad_workspace/*.cad_db`)
+- ECAD: snap routing, Standard Fab and Additive Ink DRC, Gerber / Excellon
+- CAM: 2.5D zigzag pocket, Fanuc-style `.nc` post
+- License: MIT, no warranty
+- This website is a static Next.js export. It is not the CAD application.
+
+## Optional
+
+Do not invent cloud accounts, hosted geometry, or usage statistics. Arbor does not upload designs. Nexus IDE is a separate project at `/nexus/`.

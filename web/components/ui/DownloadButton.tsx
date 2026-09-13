@@ -1,14 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
 import { useOS, type OS } from "@/hooks/useOS";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PASTE YOUR GITHUB REPO HERE (owner/name). Asset names must match the files
-// attached to the latest GitHub Release (.dmg / .msi / .AppImage).
-// ─────────────────────────────────────────────────────────────────────────────
-const GITHUB_REPO = "Eerielettuce3717/arbor-cae";
+import { GITHUB_REPO, GITHUB_URL } from "@/lib/site";
 
 const ASSETS = {
   macos: { file: "CAD-Engine.dmg", label: "macOS", ext: ".dmg" },
@@ -20,10 +14,7 @@ function downloadUrl(file: string) {
   return `https://github.com/${GITHUB_REPO}/releases/latest/download/${file}`;
 }
 
-const PRIMARY: Record<
-  OS,
-  { href: string; text: string; icon: OS }
-> = {
+const PRIMARY: Record<OS, { href: string; text: string; icon: OS }> = {
   macos: {
     href: downloadUrl(ASSETS.macos.file),
     text: "Download for macOS",
@@ -40,7 +31,7 @@ const PRIMARY: Record<
     icon: "linux",
   },
   other: {
-    href: `https://github.com/${GITHUB_REPO}/releases/latest`,
+    href: `${GITHUB_URL}/releases/latest`,
     text: "Download",
     icon: "other",
   },
@@ -48,7 +39,6 @@ const PRIMARY: Record<
 
 export function DownloadButton() {
   const os = useOS();
-  const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -74,15 +64,13 @@ export function DownloadButton() {
 
   return (
     <div ref={rootRef} className="relative flex flex-col items-center gap-2">
-      <motion.a
+      <a
         href={primary.href}
-        whileHover={reduce ? undefined : { y: -1 }}
-        whileTap={reduce ? undefined : { y: 0 }}
         className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
       >
         <PlatformIcon os={primary.icon} />
         {primary.text}
-      </motion.a>
+      </a>
 
       <button
         type="button"
@@ -95,37 +83,31 @@ export function DownloadButton() {
         <Chevron open={open} />
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.ul
-            id={menuId}
-            role="list"
-            initial={reduce ? false : { opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? undefined : { opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-[calc(100%+2px)] z-30 w-[18.5rem] border border-rule bg-ink"
-          >
-            {(Object.keys(ASSETS) as Array<keyof typeof ASSETS>).map((key) => {
-              const asset = ASSETS[key];
-              return (
-                <li key={key} className="border-b border-rule last:border-b-0">
-                  <a
-                    href={downloadUrl(asset.file)}
-                    className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-ink hover:text-signal"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <PlatformIcon os={key} />
-                      {asset.label}
-                    </span>
-                    <span className="text-mute">{asset.ext}</span>
-                  </a>
-                </li>
-              );
-            })}
-          </motion.ul>
-        ) : null}
-      </AnimatePresence>
+      {open ? (
+        <ul
+          id={menuId}
+          role="list"
+          className="absolute top-[calc(100%+2px)] z-30 w-[18.5rem] border border-rule bg-ink"
+        >
+          {(Object.keys(ASSETS) as Array<keyof typeof ASSETS>).map((key) => {
+            const asset = ASSETS[key];
+            return (
+              <li key={key} className="border-b border-rule last:border-b-0">
+                <a
+                  href={downloadUrl(asset.file)}
+                  className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <PlatformIcon os={key} />
+                    {asset.label}
+                  </span>
+                  <span className="text-mute">{asset.ext}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }

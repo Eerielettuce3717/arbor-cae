@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ROUTES } from "@/lib/site";
+
 export function FeatureBento() {
   return (
     <section id="modules" className="scroll-mt-14 border-b border-rule" aria-labelledby="modules-heading">
@@ -13,8 +16,11 @@ export function FeatureBento() {
           </h2>
           <p className="mt-5 max-w-[36ch] text-mute">
             Part studios, assemblies, drawings, CAM, simulation, render, and PCB
-            sit in the same local project. Check-in writes a SQLite revision, not
-            a cloud commit.
+            sit in the same local project. The{" "}
+            <Link href={ROUTES.modules} className="text-paper underline decoration-rule underline-offset-4 hover:text-signal">
+              full module map
+            </Link>{" "}
+            lists every studio, including scaffolds.
           </p>
         </header>
 
@@ -99,7 +105,7 @@ function PdmGraph() {
 
 function TraceMark() {
   return (
-    <svg viewBox="0 0 180 88" className="mt-8 h-20 w-full text-paper" aria-hidden>
+    <svg viewBox="0 0 180 88" className="mt-8 h-20 w-full text-paper" role="img" aria-label="Two-pad board with an orange signal trace and a mute return trace.">
       <rect x="8" y="12" width="164" height="64" fill="none" stroke="currentColor" strokeWidth="1" />
       <circle cx="36" cy="44" r="8" fill="none" stroke="#E85D04" />
       <circle cx="144" cy="44" r="8" fill="none" stroke="#E85D04" />
@@ -111,7 +117,7 @@ function TraceMark() {
 
 function MateMark() {
   return (
-    <svg viewBox="0 0 160 80" className="mt-8 h-16 w-full" aria-hidden>
+    <svg viewBox="0 0 160 80" className="mt-8 h-16 w-full" role="img" aria-label="Two blocks snapped concentric at a shared hole.">
       <rect x="10" y="18" width="54" height="44" fill="none" stroke="#F3EEE6" />
       <rect x="86" y="18" width="54" height="44" fill="none" stroke="#F3EEE6" />
       <circle cx="64" cy="40" r="7" fill="none" stroke="#E85D04" />
@@ -126,7 +132,7 @@ function MateMark() {
 
 function SplineMark() {
   return (
-    <svg viewBox="0 0 280 92" className="mt-8 h-[4.5rem] w-full" aria-hidden>
+    <svg viewBox="0 0 280 92" className="mt-8 h-[4.5rem] w-full" role="img" aria-label="T-spline control cage in orange over a vellum surface.">
       <path
         d="M12 70 C 48 70, 48 18, 92 18 S 140 70, 180 70 S 240 18, 268 28"
         fill="none"
