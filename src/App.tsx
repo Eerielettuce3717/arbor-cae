@@ -149,11 +149,11 @@ function PdmNav({
   onReleases: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-eng-border bg-eng-elevated px-3 py-1.5">
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted px-3 py-1.5">
       <button
         type="button"
         onClick={onBack}
-        className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+        className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
       >
         ← Documents
       </button>
@@ -162,8 +162,8 @@ function PdmNav({
         onClick={onVersions}
         className={`rounded px-2.5 py-1 text-[11px] font-medium ${
           active === "versions"
-            ? "bg-eng-active text-sky-300"
-            : "text-eng-muted hover:bg-eng-hover"
+            ? "bg-active text-accent"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
         }`}
       >
         Versions
@@ -173,8 +173,8 @@ function PdmNav({
         onClick={onReleases}
         className={`rounded px-2.5 py-1 text-[11px] font-medium ${
           active === "releases"
-            ? "bg-eng-active text-sky-300"
-            : "text-eng-muted hover:bg-eng-hover"
+            ? "bg-active text-accent"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
         }`}
       >
         Releases

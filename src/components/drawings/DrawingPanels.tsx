@@ -13,11 +13,11 @@ import {
 } from "../../store/drawingTypes";
 
 const inputClass =
-  "w-full rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs text-eng-text outline-none focus:border-sky-600";
+  "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent";
 
 function ScaffoldBadge() {
   return (
-    <span className="rounded bg-eng-elevated px-1 py-0.5 text-[9px] uppercase tracking-wide text-eng-faint">
+    <span className="rounded bg-muted px-1 py-0.5 text-[9px] uppercase tracking-wide text-faint">
       UI only
     </span>
   );
@@ -32,7 +32,7 @@ function mbdColor(status: MbdCheckStatus): string {
     case "fail":
       return "text-rose-400";
     default:
-      return "text-eng-faint";
+      return "text-faint";
   }
 }
 
@@ -43,7 +43,7 @@ export function DrawingSidePanel() {
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-start justify-end bg-black/40 p-4 backdrop-blur-[1px]"
+      className="absolute inset-0 z-40 flex items-start justify-end bg-black/40 p-4"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
@@ -53,15 +53,15 @@ export function DrawingSidePanel() {
         if (e.key === "Escape") setActivePanel("none");
       }}
     >
-      <div className="flex max-h-[calc(100%-2rem)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-eng-border bg-eng-panel shadow-2xl">
-        <header className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-          <h2 className="text-sm font-semibold text-eng-text">
+      <div className="flex max-h-[calc(100%-2rem)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-border bg-card">
+        <header className="flex items-center justify-between border-b border-border px-3 py-2">
+          <h2 className="text-sm font-semibold text-foreground">
             {panelTitle(panel)}
           </h2>
           <button
             type="button"
             onClick={() => setActivePanel("none")}
-            className="rounded px-2 py-1 text-sm text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+            className="rounded px-2 py-1 text-sm text-muted-foreground hover:bg-hover hover:text-accent"
             aria-label="Close"
           >
             ×
@@ -121,7 +121,7 @@ function TemplatesPanel() {
 
   return (
     <div className="space-y-2 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Apply a custom title-block template. Format, projection, and company fields
         update the active sheet.
       </p>
@@ -132,12 +132,12 @@ function TemplatesPanel() {
           onClick={() => applyTemplate(tpl.id)}
           className={`flex w-full flex-col rounded border px-2 py-2 text-left ${
             templateId === tpl.id
-              ? "border-sky-600 bg-sky-900/30"
-              : "border-eng-border hover:bg-eng-hover"
+              ? "border-accent bg-accent/10"
+              : "border-border hover:bg-hover"
           }`}
         >
-          <span className="font-medium text-eng-text">{tpl.name}</span>
-          <span className="text-[10px] text-eng-faint">
+          <span className="font-medium text-foreground">{tpl.name}</span>
+          <span className="text-[10px] text-faint">
             {SHEET_FORMATS[tpl.format].label} ·{" "}
             {tpl.landscape ? "Landscape" : "Portrait"} · {tpl.projection} ·{" "}
             {tpl.titleBlockStyle}
@@ -145,7 +145,7 @@ function TemplatesPanel() {
         </button>
       ))}
       {templates.length === 0 && (
-        <p className="text-eng-faint">No templates available.</p>
+        <p className="text-faint">No templates available.</p>
       )}
     </div>
   );
@@ -160,13 +160,13 @@ function SheetsPanel() {
 
   return (
     <div className="flex h-full flex-col p-3 text-xs">
-      <p className="mb-2 text-[11px] text-eng-faint">
+      <p className="mb-2 text-[11px] text-faint">
         Manage multi-sheet drawings. Each sheet carries format and template.
       </p>
       <button
         type="button"
         onClick={() => addSheet()}
-        className="mb-2 rounded bg-sky-700 px-2 py-1.5 text-xs text-white hover:bg-sky-600"
+        className="mb-2 rounded bg-accent px-2 py-1.5 text-xs text-accent-foreground hover:bg-accent"
       >
         + Add Sheet
       </button>
@@ -176,18 +176,18 @@ function SheetsPanel() {
             key={sh.id}
             className={`rounded border p-2 ${
               activeSheetId === sh.id
-                ? "border-sky-600 bg-sky-900/20"
-                : "border-eng-border"
+                ? "border-accent bg-accent/10"
+                : "border-border"
             }`}
           >
             <button
               type="button"
-              className="w-full text-left font-medium text-eng-text"
+              className="w-full text-left font-medium text-foreground"
               onClick={() => setActiveSheet(sh.id)}
             >
               {sh.name}
             </button>
-            <div className="mt-1 text-[10px] text-eng-faint">
+            <div className="mt-1 text-[10px] text-faint">
               {sh.format} · {sh.landscape ? "Land" : "Port"}
             </div>
             <input
@@ -209,7 +209,7 @@ function StylesPanel() {
 
   return (
     <div className="space-y-2 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Drafting styles control line weight, font, and dimension appearance.
       </p>
       {styles.map((sty) => (
@@ -219,12 +219,12 @@ function StylesPanel() {
           onClick={() => setStyle(sty.id)}
           className={`flex w-full flex-col rounded border px-2 py-2 text-left ${
             styleId === sty.id
-              ? "border-sky-600 bg-sky-900/30"
-              : "border-eng-border hover:bg-eng-hover"
+              ? "border-accent bg-accent/10"
+              : "border-border hover:bg-hover"
           }`}
         >
-          <span className="font-medium text-eng-text">{sty.name}</span>
-          <span className="text-[10px] text-eng-faint">
+          <span className="font-medium text-foreground">{sty.name}</span>
+          <span className="text-[10px] text-faint">
             {sty.lineWeightMm} mm · {sty.fontSizeMm} pt · arrow {sty.dimArrowSize}
           </span>
         </button>
@@ -239,7 +239,7 @@ function PropertiesPanel() {
 
   return (
     <div className="space-y-3 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Units, precision, annotations visibility, and sheet formats feed the title
         block.
       </p>
@@ -271,7 +271,7 @@ function PropertiesPanel() {
       </Field>
 
       <Field label="Annotations">
-        <label className="flex items-center gap-2 text-eng-text">
+        <label className="flex items-center gap-2 text-foreground">
           <input
             type="checkbox"
             checked={properties.annotationsVisible}
@@ -375,7 +375,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-faint">
         {label}
       </span>
       {children}
@@ -391,8 +391,8 @@ function ViewsPanel() {
 
   return (
     <div className="flex h-full flex-col text-xs">
-      <div className="border-b border-eng-border p-3">
-        <p className="mb-2 text-[11px] text-eng-faint">
+      <div className="border-b border-border p-3">
+        <p className="mb-2 text-[11px] text-faint">
           Target views — Projected is live; others are scaffolded.
         </p>
         <div className="flex flex-wrap gap-1">
@@ -401,12 +401,12 @@ function ViewsPanel() {
               key={v.type}
               type="button"
               onClick={() => setActiveTool(v.type)}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
               title={v.description}
             >
               {v.label}
               {!v.implemented && (
-                <span className="ml-1 text-[9px] text-eng-faint">·</span>
+                <span className="ml-1 text-[9px] text-faint">·</span>
               )}
             </button>
           ))}
@@ -420,13 +420,13 @@ function ViewsPanel() {
             onClick={() => selectView(view.id)}
             className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left ${
               selectedViewId === view.id
-                ? "border-sky-600 bg-sky-900/30"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/10"
+                : "border-border hover:bg-hover"
             }`}
           >
             <span>
-              <span className="text-eng-text">{view.name}</span>
-              <span className="ml-2 text-[10px] text-eng-faint">
+              <span className="text-foreground">{view.name}</span>
+              <span className="ml-2 text-[10px] text-faint">
                 {view.type} · {view.orientation}
               </span>
             </span>
@@ -446,8 +446,8 @@ function DimensionsPanel() {
 
   return (
     <div className="flex h-full flex-col text-xs">
-      <div className="border-b border-eng-border p-3">
-        <p className="mb-2 text-[11px] text-eng-faint">
+      <div className="border-b border-border p-3">
+        <p className="mb-2 text-[11px] text-faint">
           2 Point Linear is implemented; remaining dimension types are UI scaffolds.
         </p>
         <div className="flex flex-wrap gap-1">
@@ -456,11 +456,11 @@ function DimensionsPanel() {
               key={d.type}
               type="button"
               onClick={() => setActiveTool(d.type)}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               {d.label}
               {!d.implemented && (
-                <span className="ml-1 text-[9px] text-eng-faint">·</span>
+                <span className="ml-1 text-[9px] text-faint">·</span>
               )}
             </button>
           ))}
@@ -468,7 +468,7 @@ function DimensionsPanel() {
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
         {dimensions.length === 0 && (
-          <p className="p-2 text-eng-faint">No dimensions yet.</p>
+          <p className="p-2 text-faint">No dimensions yet.</p>
         )}
         {dimensions.map((dim) => (
           <button
@@ -477,20 +477,20 @@ function DimensionsPanel() {
             onClick={() => selectDimension(dim.id)}
             className={`flex w-full items-center justify-between rounded border px-2 py-1.5 text-left ${
               selectedDimensionId === dim.id
-                ? "border-sky-600 bg-sky-900/30"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/10"
+                : "border-border hover:bg-hover"
             }`}
           >
             <span>
-              <span className="text-eng-text">{dim.name}</span>
-              <span className="ml-2 text-[10px] text-eng-faint">{dim.type}</span>
+              <span className="text-foreground">{dim.name}</span>
+              <span className="ml-2 text-[10px] text-faint">{dim.type}</span>
             </span>
             {(dim.status === "scaffold" || dim.status === "dangling") && (
               <span
                 className={`rounded px-1 py-0.5 text-[9px] uppercase ${
                   dim.status === "dangling"
                     ? "bg-rose-900/40 text-rose-300"
-                    : "bg-eng-elevated text-eng-faint"
+                    : "bg-muted text-faint"
                 }`}
               >
                 {dim.status}
@@ -509,8 +509,8 @@ function AnnotationsPanel() {
 
   return (
     <div className="flex h-full flex-col text-xs">
-      <div className="border-b border-eng-border p-3">
-        <p className="mb-2 text-[11px] text-eng-faint">
+      <div className="border-b border-border p-3">
+        <p className="mb-2 text-[11px] text-faint">
           Hole/Thread, Datum, GTOL, Surface Finish, Weld, Note, Balloon — scaffolded.
         </p>
         <div className="flex flex-wrap gap-1">
@@ -519,7 +519,7 @@ function AnnotationsPanel() {
               key={a.type}
               type="button"
               onClick={() => setActiveTool(a.type)}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               {a.label} <ScaffoldBadge />
             </button>
@@ -528,16 +528,16 @@ function AnnotationsPanel() {
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
         {annotations.length === 0 && (
-          <p className="p-2 text-eng-faint">No annotations yet.</p>
+          <p className="p-2 text-faint">No annotations yet.</p>
         )}
         {annotations.map((ann) => (
           <div
             key={ann.id}
-            className="flex items-center justify-between rounded border border-eng-border px-2 py-1.5"
+            className="flex items-center justify-between rounded border border-border px-2 py-1.5"
           >
             <span>
-              <span className="text-eng-text">{ann.name}</span>
-              <span className="ml-2 text-[10px] text-eng-faint">{ann.type}</span>
+              <span className="text-foreground">{ann.name}</span>
+              <span className="ml-2 text-[10px] text-faint">{ann.type}</span>
             </span>
             <ScaffoldBadge />
           </div>
@@ -553,8 +553,8 @@ function TablesPanel() {
 
   return (
     <div className="flex h-full flex-col text-xs">
-      <div className="border-b border-eng-border p-3">
-        <p className="mb-2 text-[11px] text-eng-faint">
+      <div className="border-b border-border p-3">
+        <p className="mb-2 text-[11px] text-faint">
           BOM, Cut List, Hole, Custom, Revision tables — scaffolded.
         </p>
         <div className="flex flex-wrap gap-1">
@@ -563,7 +563,7 @@ function TablesPanel() {
               key={t.type}
               type="button"
               onClick={() => setActiveTool(t.type)}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               {t.label}
             </button>
@@ -574,18 +574,18 @@ function TablesPanel() {
         {tables.map((tbl) => (
           <div
             key={tbl.id}
-            className="rounded border border-eng-border bg-eng-bg/40 p-2"
+            className="rounded border border-border bg-background/40 p-2"
           >
             <div className="mb-1 flex items-center justify-between">
-              <span className="font-medium text-eng-text">{tbl.name}</span>
+              <span className="font-medium text-foreground">{tbl.name}</span>
               <ScaffoldBadge />
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-[10px] text-eng-muted">
+              <table className="w-full text-[10px] text-muted-foreground">
                 <thead>
                   <tr>
                     {tbl.columns.map((c) => (
-                      <th key={c} className="border-b border-eng-border px-1 py-0.5 text-left">
+                      <th key={c} className="border-b border-border px-1 py-0.5 text-left">
                         {c}
                       </th>
                     ))}
@@ -617,14 +617,14 @@ function MbdPanel() {
 
   return (
     <div className="space-y-3 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Model-Based Definition status checks for datums, dimensions, tolerances,
         GD&T coverage, and dangling entities.
       </p>
       <button
         type="button"
         onClick={() => runMbdChecks()}
-        className="rounded bg-sky-700 px-2 py-1.5 text-xs text-white hover:bg-sky-600"
+        className="rounded bg-accent px-2 py-1.5 text-xs text-accent-foreground hover:bg-accent"
       >
         Run MBD Check
       </button>
@@ -632,15 +632,15 @@ function MbdPanel() {
         {mbdChecks.map((c) => (
           <li
             key={c.id}
-            className="rounded border border-eng-border bg-eng-bg/40 px-2 py-2"
+            className="rounded border border-border bg-background/40 px-2 py-2"
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-eng-text">{c.label}</span>
+              <span className="font-medium text-foreground">{c.label}</span>
               <span className={`text-[10px] uppercase ${mbdColor(c.status)}`}>
                 {c.status}
               </span>
             </div>
-            <p className="mt-1 text-[10px] text-eng-faint">{c.detail}</p>
+            <p className="mt-1 text-[10px] text-faint">{c.detail}</p>
           </li>
         ))}
       </ul>
@@ -655,7 +655,7 @@ function TolerancesPanel() {
 
   return (
     <div className="space-y-2 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Default Tolerances Library — applied as general note on the sheet.
       </p>
       {library.map((tol) => (
@@ -665,16 +665,16 @@ function TolerancesPanel() {
           onClick={() => setActiveTolerance(tol.id)}
           className={`flex w-full flex-col rounded border px-2 py-2 text-left ${
             activeToleranceId === tol.id
-              ? "border-sky-600 bg-sky-900/30"
-              : "border-eng-border hover:bg-eng-hover"
+              ? "border-accent bg-accent/10"
+              : "border-border hover:bg-hover"
           }`}
         >
-          <span className="font-medium text-eng-text">{tol.name}</span>
-          <span className="text-[10px] text-eng-faint">
+          <span className="font-medium text-foreground">{tol.name}</span>
+          <span className="text-[10px] text-faint">
             {tol.standard} · F {tol.linearFine} · M {tol.linearMedium} · C{" "}
             {tol.linearCoarse} · ∠ {tol.angular}
           </span>
-          <span className="mt-1 text-[10px] text-eng-muted">{tol.description}</span>
+          <span className="mt-1 text-[10px] text-muted-foreground">{tol.description}</span>
         </button>
       ))}
     </div>
@@ -695,51 +695,51 @@ function ExportPanel() {
 
   return (
     <div className="space-y-3 overflow-y-auto p-3 text-xs">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Update drawing from model, scan dangling entities, then export or print.
       </p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => updateDrawing()}
-          className="rounded bg-sky-700 px-2 py-1.5 text-white hover:bg-sky-600"
+          className="rounded bg-accent px-2 py-1.5 text-accent-foreground hover:bg-accent"
         >
           Update
         </button>
         <button
           type="button"
           onClick={() => scanDangling()}
-          className="rounded border border-eng-border px-2 py-1.5 text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          className="rounded border border-border px-2 py-1.5 text-muted-foreground hover:border-accent hover:text-accent"
         >
           Scan Dangling
         </button>
         <button
           type="button"
           onClick={() => exportDrawing("pdf")}
-          className="rounded border border-eng-border px-2 py-1.5 text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          className="rounded border border-border px-2 py-1.5 text-muted-foreground hover:border-accent hover:text-accent"
         >
           Export PDF
         </button>
         <button
           type="button"
           onClick={() => exportDrawing("dxf")}
-          className="rounded border border-eng-border px-2 py-1.5 text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          className="rounded border border-border px-2 py-1.5 text-muted-foreground hover:border-accent hover:text-accent"
         >
           Export DXF
         </button>
         <button
           type="button"
           onClick={() => printDrawing()}
-          className="rounded border border-eng-border px-2 py-1.5 text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          className="rounded border border-border px-2 py-1.5 text-muted-foreground hover:border-accent hover:text-accent"
         >
           Print
         </button>
       </div>
 
-      <div className="rounded border border-eng-border bg-eng-bg/40 p-2">
-        <div className="text-[10px] uppercase text-eng-faint">Status</div>
-        <p className="mt-1 text-eng-text">{exportState.message}</p>
-        <p className="mt-1 text-[10px] text-eng-faint">
+      <div className="rounded border border-border bg-background/40 p-2">
+        <div className="text-[10px] uppercase text-faint">Status</div>
+        <p className="mt-1 text-foreground">{exportState.message}</p>
+        <p className="mt-1 text-[10px] text-faint">
           Dangling: {exportState.danglingCount} · Print ready:{" "}
           {exportState.printReady ? "yes" : "no"} · Format:{" "}
           {exportState.exportFormat.toUpperCase()}

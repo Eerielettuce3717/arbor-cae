@@ -14,9 +14,9 @@ function statusDot(status: AssemblyMate["status"]): string {
     case "error":
       return "text-rose-400";
     case "suppressed":
-      return "text-eng-faint";
+      return "text-faint";
     default:
-      return "text-eng-faint";
+      return "text-faint";
   }
 }
 
@@ -39,8 +39,8 @@ export function InstanceTree() {
 
   return (
     <div className="flex h-full min-h-0 flex-col text-xs">
-      <div className="flex items-center gap-1 border-b border-eng-border px-2 py-1 text-[10px] text-eng-faint">
-        <span className={snapMode ? "text-sky-300" : ""}>
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1 text-[10px] text-faint">
+        <span className={snapMode ? "text-accent" : ""}>
           {snapMode ? "Snap on" : "Snap off"}
         </span>
         <span>·</span>
@@ -120,7 +120,7 @@ function Section({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-eng-faint">
+      <div className="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
         {label}
       </div>
       {children}
@@ -149,16 +149,16 @@ function Row({
       onClick={onClick}
       className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left ${
         selected
-          ? "bg-eng-active text-sky-300"
+          ? "bg-active text-accent"
           : muted
-            ? "text-eng-faint"
-            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+            ? "text-faint"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
       }`}
     >
       <span className="w-3 text-center text-[10px]">{icon}</span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge && (
-        <span className="text-[9px] uppercase tracking-wide text-eng-faint">{badge}</span>
+        <span className="text-[9px] uppercase tracking-wide text-faint">{badge}</span>
       )}
     </button>
   );
@@ -184,7 +184,7 @@ function InstanceRow({
   return (
     <div
       className={`group flex w-full items-center gap-1 rounded ${
-        selected ? "bg-eng-active text-sky-300" : "text-eng-muted hover:bg-eng-hover"
+        selected ? "bg-active text-accent" : "text-muted-foreground hover:bg-hover"
       }`}
     >
       <button
@@ -204,17 +204,17 @@ function InstanceRow({
           <span className="text-[9px] uppercase text-amber-300">fix</span>
         )}
         {inst.derived && (
-          <span className="text-[9px] uppercase text-eng-faint">pat</span>
+          <span className="text-[9px] uppercase text-faint">pat</span>
         )}
       </button>
-      <span className="text-[9px] text-eng-faint" title="Mate connectors">
+      <span className="text-[9px] text-faint" title="Mate connectors">
         ⊕{connectorCount}
       </span>
       <button
         type="button"
         title={inst.grounded ? "Unground" : "Ground"}
         onClick={onGround}
-        className="rounded px-1 text-[10px] text-eng-faint opacity-0 hover:text-amber-300 group-hover:opacity-100"
+        className="rounded px-1 text-[10px] text-faint opacity-0 hover:text-amber-300 group-hover:opacity-100"
       >
         ⚓
       </button>
@@ -222,7 +222,7 @@ function InstanceRow({
         type="button"
         title={inst.visible ? "Hide" : "Show"}
         onClick={onVisible}
-        className="rounded px-1 text-[10px] text-eng-faint opacity-0 hover:text-eng-text group-hover:opacity-100"
+        className="rounded px-1 text-[10px] text-faint opacity-0 hover:text-accent group-hover:opacity-100"
       >
         {inst.visible ? "◉" : "○"}
       </button>
@@ -230,7 +230,7 @@ function InstanceRow({
         type="button"
         title={inst.suppressed ? "Unsuppress" : "Suppress"}
         onClick={onSuppress}
-        className="rounded px-1 text-[10px] text-eng-faint opacity-0 hover:text-eng-text group-hover:opacity-100"
+        className="rounded px-1 text-[10px] text-faint opacity-0 hover:text-accent group-hover:opacity-100"
       >
         {inst.suppressed ? "☑" : "☐"}
       </button>
@@ -254,7 +254,7 @@ function MateRow({
   return (
     <div
       className={`group flex w-full items-center gap-1 rounded ${
-        selected ? "bg-eng-active text-sky-300" : "text-eng-muted hover:bg-eng-hover"
+        selected ? "bg-active text-accent" : "text-muted-foreground hover:bg-hover"
       }`}
     >
       <button
@@ -271,14 +271,14 @@ function MateRow({
           {mate.name}
         </span>
         {!implemented && (
-          <span className="text-[9px] uppercase text-eng-faint">UI</span>
+          <span className="text-[9px] uppercase text-faint">UI</span>
         )}
       </button>
       <button
         type="button"
         title={mate.suppressed ? "Unsuppress" : "Suppress"}
         onClick={onSuppress}
-        className="rounded px-1 text-[10px] text-eng-faint opacity-0 hover:text-eng-text group-hover:opacity-100"
+        className="rounded px-1 text-[10px] text-faint opacity-0 hover:text-accent group-hover:opacity-100"
       >
         {mate.suppressed ? "☑" : "☐"}
       </button>

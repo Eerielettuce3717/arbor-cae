@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Settings } from "lucide-react";
+import { PreferencesModal } from "../settings/PreferencesModal";
 
 type ViewMode = "list" | "structure";
 type OrgSection =
@@ -189,6 +191,7 @@ export function DocumentsPage({
   const [defaultUnit, setDefaultUnit] = useState<LengthUnit>("mm");
   const [advancedKind, setAdvancedKind] = useState<DocumentKind | "any">("any");
   const [advancedOwner, setAdvancedOwner] = useState("");
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   const visibleDocs = useMemo(() => {
     const inTrash = orgSection === "trash";
@@ -263,20 +266,20 @@ export function DocumentsPage({
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-eng-bg text-eng-text">
+    <div className="relative flex h-full min-h-0 bg-background text-foreground">
       {/* Organization rail */}
-      <aside className="flex w-60 shrink-0 flex-col border-r border-eng-border bg-eng-panel">
-        <div className="relative border-b border-eng-border p-3">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
+        <div className="relative border-b border-border p-3">
           <button
             type="button"
             onClick={() => setShowCreateMenu((v) => !v)}
-            className="flex w-full items-center justify-between rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500"
+            className="flex w-full items-center justify-between rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-accent"
           >
             Create
             <span className="text-xs opacity-80">▾</span>
           </button>
           {showCreateMenu && (
-            <div className="absolute left-3 right-3 z-20 mt-1 overflow-hidden rounded-md border border-eng-border bg-eng-elevated shadow-xl">
+            <div className="absolute left-3 right-3 z-20 mt-1 overflow-hidden rounded-md border border-border bg-muted">
               {[
                 ["Part Studio", "part"],
                 ["Assembly", "assembly"],
@@ -290,7 +293,7 @@ export function DocumentsPage({
                 <button
                   key={label}
                   type="button"
-                  className="block w-full px-3 py-2 text-left text-sm text-eng-text hover:bg-eng-hover"
+                  className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent"
                   onClick={() => setShowCreateMenu(false)}
                 >
                   {label}
@@ -316,8 +319,8 @@ export function DocumentsPage({
               onClick={() => setOrgSection(id)}
               className={`rounded-md px-2.5 py-1.5 text-left text-sm ${
                 orgSection === id
-                  ? "bg-eng-active font-medium text-sky-300"
-                  : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                  ? "bg-active font-medium text-accent"
+                  : "text-muted-foreground hover:bg-hover hover:text-accent"
               }`}
             >
               {label}
@@ -325,7 +328,7 @@ export function DocumentsPage({
           ))}
         </nav>
 
-        <div className="min-h-0 flex-1 overflow-y-auto border-t border-eng-border p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto border-t border-border p-2">
           {orgSection === "folders" && (
             <FolderTree
               folders={MOCK_FOLDERS}
@@ -342,8 +345,8 @@ export function DocumentsPage({
                     onClick={() => toggleLabel(label)}
                     className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm ${
                       activeLabels.includes(label)
-                        ? "bg-eng-active text-sky-300"
-                        : "text-eng-muted hover:bg-eng-hover"
+                        ? "bg-active text-accent"
+                        : "text-muted-foreground hover:bg-hover"
                     }`}
                   >
                     <span>{label}</span>
@@ -364,8 +367,8 @@ export function DocumentsPage({
                     onClick={() => toggleFilter(filter.id)}
                     className={`w-full rounded-md px-2 py-1.5 text-left text-sm ${
                       activeFilterIds.includes(filter.id)
-                        ? "bg-eng-active text-sky-300"
-                        : "text-eng-muted hover:bg-eng-hover"
+                        ? "bg-active text-accent"
+                        : "text-muted-foreground hover:bg-hover"
                     }`}
                   >
                     {filter.name}
@@ -375,7 +378,7 @@ export function DocumentsPage({
             </ul>
           )}
           {orgSection === "trash" && (
-            <p className="px-2 py-1 text-xs leading-relaxed text-eng-muted">
+            <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
               Deleted documents appear here. Restore or permanently remove from
               the list view.
             </p>
@@ -386,7 +389,7 @@ export function DocumentsPage({
                 (name) => (
                   <li
                     key={name}
-                    className="rounded-md border border-dashed border-eng-border px-2 py-2 text-sm text-eng-muted"
+                    className="rounded-md border border-dashed border-border px-2 py-2 text-sm text-muted-foreground"
                   >
                     {name}
                     <div className="mt-1 text-[10px] uppercase tracking-wide text-amber-400/90">
@@ -399,14 +402,14 @@ export function DocumentsPage({
           )}
         </div>
 
-        <div className="border-t border-eng-border p-3">
+        <div className="border-t border-border p-3">
           <button
             type="button"
             onClick={() => setShowUnitsPanel((v) => !v)}
-            className="flex w-full items-center justify-between rounded-md border border-eng-border bg-eng-elevated px-2.5 py-2 text-left text-xs text-eng-muted hover:border-sky-700 hover:text-eng-text"
+            className="flex w-full items-center justify-between rounded-md border border-border bg-muted px-2.5 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:text-accent"
           >
             <span>Default units</span>
-            <span className="font-mono font-semibold text-sky-300">
+            <span className="font-mono font-semibold text-accent">
               {defaultUnit}
             </span>
           </button>
@@ -422,8 +425,8 @@ export function DocumentsPage({
                   }}
                   className={`rounded px-2 py-1.5 font-mono text-xs ${
                     defaultUnit === unit
-                      ? "bg-sky-600 text-white"
-                      : "bg-eng-hover text-eng-muted hover:text-eng-text"
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-hover text-muted-foreground hover:text-accent"
                   }`}
                 >
                   {unit}
@@ -436,12 +439,12 @@ export function DocumentsPage({
 
       {/* Main dashboard */}
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-center gap-3 border-b border-eng-border bg-eng-panel px-4 py-3">
+        <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
           <div>
-            <h1 className="text-base font-semibold tracking-tight text-eng-text">
+            <h1 className="text-base font-semibold tracking-tight text-foreground">
               Documents
             </h1>
-            <p className="text-xs text-eng-muted">
+            <p className="text-xs text-muted-foreground">
               Local workspace · units {defaultUnit}
             </p>
           </div>
@@ -450,25 +453,25 @@ export function DocumentsPage({
             <button
               type="button"
               onClick={onOpenVersions}
-              className="rounded-md border border-eng-border px-2.5 py-1.5 text-xs font-medium text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
             >
               Versions
             </button>
             <button
               type="button"
               onClick={onOpenReleases}
-              className="rounded-md border border-eng-border px-2.5 py-1.5 text-xs font-medium text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
             >
               Releases
             </button>
-            <div className="flex items-center gap-1 rounded-md border border-eng-border bg-eng-elevated p-0.5">
+            <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-0.5">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
                 className={`rounded px-2.5 py-1 text-xs font-medium ${
                   viewMode === "list"
-                    ? "bg-eng-active text-sky-300"
-                    : "text-eng-muted hover:text-eng-text"
+                    ? "bg-active text-accent"
+                    : "text-muted-foreground hover:text-accent"
                 }`}
               >
                 List View
@@ -478,8 +481,8 @@ export function DocumentsPage({
                 onClick={() => setViewMode("structure")}
                 className={`rounded px-2.5 py-1 text-xs font-medium ${
                   viewMode === "structure"
-                    ? "bg-eng-active text-sky-300"
-                    : "text-eng-muted hover:text-eng-text"
+                    ? "bg-active text-accent"
+                    : "text-muted-foreground hover:text-accent"
                 }`}
               >
                 Structure View
@@ -491,7 +494,7 @@ export function DocumentsPage({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search documents…"
-                className="w-56 rounded-md border border-eng-border bg-eng-elevated px-3 py-1.5 text-sm text-eng-text placeholder:text-eng-faint focus:border-sky-600 focus:outline-none focus:ring-1 focus:ring-sky-600"
+                className="w-56 rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-foreground placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             <button
@@ -499,25 +502,34 @@ export function DocumentsPage({
               onClick={() => setShowAdvancedSearch((v) => !v)}
               className={`rounded-md border px-2.5 py-1.5 text-xs font-medium ${
                 showAdvancedSearch
-                  ? "border-sky-600 bg-sky-950/50 text-sky-300"
-                  : "border-eng-border text-eng-muted hover:border-sky-800 hover:text-eng-text"
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "border-border text-muted-foreground hover:border-accent hover:text-accent"
               }`}
             >
               Advanced Search
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrefsOpen(true)}
+              className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-accent hover:text-accent"
+              title="Preferences"
+              aria-label="Open preferences"
+            >
+              <Settings className="h-3.5 w-3.5" strokeWidth={1.75} />
             </button>
           </div>
         </header>
 
         {showAdvancedSearch && (
-          <div className="flex flex-wrap items-end gap-3 border-b border-eng-border bg-eng-elevated/60 px-4 py-3">
-            <label className="flex flex-col gap-1 text-xs text-eng-muted">
+          <div className="flex flex-wrap items-end gap-3 border-b border-border bg-muted/60 px-4 py-3">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Kind
               <select
                 value={advancedKind}
                 onChange={(e) =>
                   setAdvancedKind(e.target.value as DocumentKind | "any")
                 }
-                className="rounded border border-eng-border bg-eng-panel px-2 py-1.5 text-sm text-eng-text"
+                className="rounded border border-border bg-card px-2 py-1.5 text-sm text-foreground"
               >
                 <option value="any">Any</option>
                 <option value="part">Part</option>
@@ -529,12 +541,12 @@ export function DocumentsPage({
                 <option value="pcb">PCB</option>
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-xs text-eng-muted">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Owner contains
               <input
                 value={advancedOwner}
                 onChange={(e) => setAdvancedOwner(e.target.value)}
-                className="rounded border border-eng-border bg-eng-panel px-2 py-1.5 text-sm text-eng-text"
+                className="rounded border border-border bg-card px-2 py-1.5 text-sm text-foreground"
                 placeholder="e.g. Chen"
               />
             </label>
@@ -547,7 +559,7 @@ export function DocumentsPage({
                 setActiveLabels([]);
                 setActiveFilterIds([]);
               }}
-              className="rounded border border-eng-border px-3 py-1.5 text-xs text-eng-muted hover:text-eng-text"
+              className="rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-accent"
             >
               Clear all
             </button>
@@ -565,12 +577,13 @@ export function DocumentsPage({
             />
           )}
           {visibleDocs.length === 0 && (
-            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-eng-border text-sm text-eng-muted">
+            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
               No documents match the current filters.
             </div>
           )}
         </div>
       </main>
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </div>
   );
 }
@@ -606,8 +619,8 @@ function FolderTree({
             style={{ paddingLeft: 8 + depth * 12 }}
             className={`flex w-full items-center gap-1.5 rounded-md py-1.5 pr-2 text-left text-sm ${
               selectedId === folder.id
-                ? "bg-eng-active text-sky-300"
-                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                ? "bg-active text-accent"
+                : "text-muted-foreground hover:bg-hover hover:text-accent"
             }`}
           >
             <span className="text-[10px] opacity-70">▦</span>
@@ -629,9 +642,9 @@ function ListView({
   onOpen?: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-eng-border">
+    <div className="overflow-hidden rounded-lg border border-border">
       <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-eng-panel text-xs uppercase tracking-wide text-eng-muted">
+        <thead className="bg-card text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Name</th>
             <th className="px-3 py-2 font-medium">Type</th>
@@ -644,28 +657,28 @@ function ListView({
           {documents.map((doc) => (
             <tr
               key={doc.id}
-              className="cursor-pointer border-t border-eng-border bg-eng-elevated/40 hover:bg-eng-hover"
+              className="cursor-pointer border-t border-border bg-muted/40 hover:bg-hover"
               onDoubleClick={() => onOpen?.(doc.id)}
             >
-              <td className="px-3 py-2.5 font-medium text-eng-text">
-                <span className="mr-2 text-eng-faint">{KIND_GLYPH[doc.kind]}</span>
+              <td className="px-3 py-2.5 font-medium text-foreground">
+                <span className="mr-2 text-faint">{KIND_GLYPH[doc.kind]}</span>
                 {doc.name}
               </td>
-              <td className="px-3 py-2.5 capitalize text-eng-muted">{doc.kind}</td>
+              <td className="px-3 py-2.5 capitalize text-muted-foreground">{doc.kind}</td>
               <td className="px-3 py-2.5">
                 <div className="flex flex-wrap gap-1">
                   {doc.labels.map((label) => (
                     <span
                       key={label}
-                      className="rounded border border-eng-border bg-eng-panel px-1.5 py-0.5 text-[10px] text-eng-muted"
+                      className="rounded border border-border bg-card px-1.5 py-0.5 text-[10px] text-muted-foreground"
                     >
                       {label}
                     </span>
                   ))}
                 </div>
               </td>
-              <td className="px-3 py-2.5 text-eng-muted">{doc.owner}</td>
-              <td className="px-3 py-2.5 font-mono text-xs text-eng-muted">
+              <td className="px-3 py-2.5 text-muted-foreground">{doc.owner}</td>
+              <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
                 {formatModified(doc.modifiedAt)}
               </td>
             </tr>
@@ -698,13 +711,13 @@ function StructureView({
           type="button"
           onDoubleClick={() => onOpen?.(doc.id)}
           style={{ paddingLeft: 12 + depth * 16 }}
-          className="flex w-full items-center gap-2 border-b border-eng-border/60 py-2 text-left text-sm hover:bg-eng-hover"
+          className="flex w-full items-center gap-2 border-b border-border/60 py-2 text-left text-sm hover:bg-hover"
         >
-          <span className="w-4 text-center text-eng-faint">
+          <span className="w-4 text-center text-faint">
             {KIND_GLYPH[doc.kind]}
           </span>
-          <span className="font-medium text-eng-text">{doc.name}</span>
-          <span className="text-xs capitalize text-eng-muted">{doc.kind}</span>
+          <span className="font-medium text-foreground">{doc.name}</span>
+          <span className="text-xs capitalize text-muted-foreground">{doc.kind}</span>
         </button>
         {children.map((child) => renderDoc(child, depth + 1))}
       </div>
@@ -721,7 +734,7 @@ function StructureView({
       : documents;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-eng-border bg-eng-elevated/30">
+    <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
       {topLevel.map((doc) => renderDoc(doc, 0))}
     </div>
   );

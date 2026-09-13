@@ -43,14 +43,14 @@ export function SketchToolbar() {
   const setActive = useSketchStore((s) => s.setActive);
 
   return (
-    <div className="pointer-events-auto flex max-w-full flex-col gap-1 border-b border-eng-border bg-eng-panel/95 px-2 py-1.5 backdrop-blur">
+    <div className="pointer-events-auto flex max-w-full flex-col gap-1 border-b border-border bg-card/95 px-2 py-1.5">
       <div className="flex flex-wrap items-center gap-3">
         {GROUP_ORDER.map((group) => {
           const items = SKETCH_TOOLBAR_ITEMS.filter((t) => t.group === group);
           if (items.length === 0) return null;
           return (
             <div key={group} className="flex items-center gap-0.5">
-              <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-eng-faint">
+              <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
                 {GROUP_LABEL[group]}
               </span>
               {items.map((item) => {
@@ -67,15 +67,15 @@ export function SketchToolbar() {
                     onClick={() => setActiveTool(item.tool)}
                     className={`rounded px-1.5 py-0.5 text-[10px] ${
                       active
-                        ? "bg-sky-700 text-white"
+                        ? "bg-accent text-accent-foreground"
                         : item.implemented
-                          ? "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                          : "text-eng-faint/80 hover:bg-eng-hover hover:text-eng-muted"
+                          ? "text-muted-foreground hover:bg-hover hover:text-accent"
+                          : "text-faint/80 hover:bg-hover hover:text-muted-foreground"
                     } ${!item.implemented ? "opacity-70" : ""}`}
                   >
                     {shortLabel(item.label)}
                     {!item.implemented && (
-                      <span className="ml-0.5 text-[8px] text-eng-faint">·</span>
+                      <span className="ml-0.5 text-[8px] text-faint">·</span>
                     )}
                   </button>
                 );
@@ -86,7 +86,7 @@ export function SketchToolbar() {
       </div>
 
       <div className="flex flex-wrap items-center gap-1">
-        <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-eng-faint">
+        <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
           Constraints
         </span>
         {CONSTRAINT_TOOLBAR_ITEMS.map((item) => {
@@ -109,8 +109,8 @@ export function SketchToolbar() {
                 active
                   ? "bg-emerald-700 text-white"
                   : item.implemented
-                    ? "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
-                    : "text-eng-faint/80 hover:bg-eng-hover"
+                    ? "text-muted-foreground hover:bg-hover hover:text-accent"
+                    : "text-faint/80 hover:bg-hover"
               }`}
             >
               {item.label}
@@ -125,7 +125,7 @@ export function SketchToolbar() {
             className={`rounded border px-2 py-0.5 text-[10px] ${
               constructionMode
                 ? "border-amber-600 bg-amber-900/40 text-amber-200"
-                : "border-eng-border text-eng-muted hover:text-eng-text"
+                : "border-border text-muted-foreground hover:text-accent"
             }`}
           >
             Construction
@@ -133,21 +133,21 @@ export function SketchToolbar() {
           <button
             type="button"
             onClick={() => setActiveTool(SketchTool.Select)}
-            className="rounded border border-eng-border px-2 py-0.5 text-[10px] text-eng-muted hover:text-eng-text"
+            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-accent"
           >
             Select
           </button>
           <button
             type="button"
             onClick={clearSketch}
-            className="rounded border border-eng-border px-2 py-0.5 text-[10px] text-eng-muted hover:text-rose-300"
+            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-rose-300"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={() => setActive(false)}
-            className="rounded border border-eng-border px-2 py-0.5 text-[10px] text-eng-muted hover:text-eng-text"
+            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-accent"
           >
             Exit sketch
           </button>

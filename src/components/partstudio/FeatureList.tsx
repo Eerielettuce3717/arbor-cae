@@ -38,7 +38,7 @@ function statusGlyph(status: FeatureStatus, suppressed: boolean): string {
 }
 
 function statusColor(status: FeatureStatus, suppressed: boolean): string {
-  if (suppressed) return "text-eng-faint";
+  if (suppressed) return "text-faint";
   switch (status) {
     case "ok":
       return "text-emerald-400";
@@ -47,9 +47,9 @@ function statusColor(status: FeatureStatus, suppressed: boolean): string {
     case "error":
       return "text-rose-400";
     case "scaffold":
-      return "text-eng-faint";
+      return "text-faint";
     default:
-      return "text-eng-faint";
+      return "text-faint";
   }
 }
 
@@ -126,7 +126,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-1 border-b border-eng-border px-1 py-1">
+      <div className="flex items-center gap-1 border-b border-border px-1 py-1">
         <button
           type="button"
           title="Regenerate feature tree"
@@ -137,7 +137,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
               if (mesh) onMeshReady?.(mesh);
             });
           }}
-          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-eng-text disabled:opacity-40"
+          className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-hover hover:text-accent disabled:opacity-40"
         >
           {regenerating ? "…" : "↻ Regen"}
         </button>
@@ -145,7 +145,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
           type="button"
           title="Add Extrude"
           onClick={() => addFeature("extrude")}
-          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-hover hover:text-accent"
         >
           + Extrude
         </button>
@@ -153,7 +153,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
           type="button"
           title="Add Fillet"
           onClick={() => addFeature("fillet")}
-          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-hover hover:text-accent"
         >
           + Fillet
         </button>
@@ -161,7 +161,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
           type="button"
           title="Add Boolean"
           onClick={() => addFeature("boolean")}
-          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-hover hover:text-accent"
         >
           + Boolean
         </button>
@@ -169,7 +169,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
           type="button"
           title="Add Sculpt (Form Workspace)"
           onClick={() => addFeature("sculpt")}
-          className="rounded px-1.5 py-0.5 text-[10px] text-eng-muted hover:bg-eng-hover hover:text-sky-300"
+          className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-hover hover:text-accent"
         >
           + Sculpt
         </button>
@@ -179,14 +179,14 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
         {SYSTEM_NODES.map((node) => (
           <div
             key={node.id}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-eng-faint"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-faint"
           >
             <span className="w-3 text-center text-[10px]">{node.icon}</span>
             {node.label}
           </div>
         ))}
 
-        <div className="my-1 border-t border-eng-border/60" />
+        <div className="my-1 border-t border-border/60" />
 
         {features.map((feature, index) => {
           const def = FEATURE_TOOL_BY_TYPE[feature.type];
@@ -204,16 +204,16 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
               onDragEnd={onDragEnd}
               className={`group flex w-full items-center gap-1 rounded border border-transparent text-left text-xs ${
                 selected
-                  ? "bg-eng-active text-sky-300"
-                  : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                  ? "bg-active text-accent"
+                  : "text-muted-foreground hover:bg-hover hover:text-accent"
               } ${isDragging ? "opacity-40" : ""} ${
-                isOver ? "border-sky-600 border-dashed" : ""
+                isOver ? "border-accent border-dashed" : ""
               }`}
             >
               <button
                 type="button"
                 aria-label="Drag to reorder"
-                className="cursor-grab px-1 text-[10px] text-eng-faint active:cursor-grabbing"
+                className="cursor-grab px-1 text-[10px] text-faint active:cursor-grabbing"
                 tabIndex={-1}
               >
                 ⠿
@@ -233,7 +233,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                 >
                   {statusGlyph(feature.status, feature.suppressed)}
                 </span>
-                <span className="w-3 text-center text-[10px] text-eng-faint">
+                <span className="w-3 text-center text-[10px] text-faint">
                   {def?.icon ?? "▣"}
                 </span>
                 <span
@@ -245,7 +245,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                 </span>
                 {!isEvaluatedTool(feature.type) &&
                   feature.type !== "sketch" && (
-                    <span className="ml-auto shrink-0 text-[9px] uppercase tracking-wide text-eng-faint">
+                    <span className="ml-auto shrink-0 text-[9px] uppercase tracking-wide text-faint">
                       UI
                     </span>
                   )}
@@ -254,7 +254,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                 type="button"
                 title={feature.suppressed ? "Unsuppress" : "Suppress"}
                 onClick={() => suppressFeature(feature.id, !feature.suppressed)}
-                className="rounded px-1 py-0.5 text-[10px] text-eng-faint opacity-0 hover:bg-eng-active hover:text-eng-text group-hover:opacity-100"
+                className="rounded px-1 py-0.5 text-[10px] text-faint opacity-0 hover:bg-active hover:text-accent group-hover:opacity-100"
               >
                 {feature.suppressed ? "☑" : "☐"}
               </button>
@@ -262,7 +262,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                 type="button"
                 title="Edit feature"
                 onClick={() => openEditor(feature.id)}
-                className="rounded px-1 py-0.5 text-[10px] text-eng-faint opacity-0 hover:bg-eng-active hover:text-eng-text group-hover:opacity-100"
+                className="rounded px-1 py-0.5 text-[10px] text-faint opacity-0 hover:bg-active hover:text-accent group-hover:opacity-100"
               >
                 ✎
               </button>
@@ -276,7 +276,7 @@ export function FeatureList({ onActivateSketch, onMeshReady }: FeatureListProps)
                       if (mesh) onMeshReady?.(mesh);
                     });
                   }}
-                  className="rounded px-1 py-0.5 text-[10px] text-eng-faint opacity-0 hover:bg-eng-active hover:text-sky-300 group-hover:opacity-100 disabled:opacity-30"
+                  className="rounded px-1 py-0.5 text-[10px] text-faint opacity-0 hover:bg-active hover:text-accent group-hover:opacity-100 disabled:opacity-30"
                 >
                   ▶
                 </button>

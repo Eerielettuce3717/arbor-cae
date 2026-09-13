@@ -15,8 +15,8 @@ import {
 function FieldLabel({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-0.5 flex items-baseline justify-between gap-2">
-      <label className="text-[11px] font-medium text-eng-muted">{children}</label>
-      {hint && <span className="text-[9px] text-eng-faint">{hint}</span>}
+      <label className="text-[11px] font-medium text-muted-foreground">{children}</label>
+      {hint && <span className="text-[9px] text-faint">{hint}</span>}
     </div>
   );
 }
@@ -24,7 +24,7 @@ function FieldLabel({ children, hint }: { children: ReactNode; hint?: string }) 
 function ScaffoldBadge({ show }: { show?: boolean }) {
   if (!show) return null;
   return (
-    <span className="rounded bg-eng-elevated px-1 py-0.5 text-[9px] uppercase tracking-wide text-eng-faint">
+    <span className="rounded bg-muted px-1 py-0.5 text-[9px] uppercase tracking-wide text-faint">
       UI only
     </span>
   );
@@ -43,17 +43,17 @@ function ParamField({
 }) {
   const scaffold = field.scaffold && !evaluated;
   const inputClass =
-    "w-full rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs text-eng-text outline-none focus:border-sky-600";
+    "w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent";
 
   if (field.kind === "boolean") {
     return (
       <div className="mb-2">
-        <label className="flex items-center gap-2 text-xs text-eng-muted">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"
             checked={Boolean(value)}
             onChange={(e) => onChange(field.key, e.target.checked)}
-            className="accent-sky-600"
+            className="accent-accent"
           />
           {field.label}
           <ScaffoldBadge show={scaffold} />
@@ -90,7 +90,7 @@ function ParamField({
             type="color"
             value={String(value ?? "#5b8def")}
             onChange={(e) => onChange(field.key, e.target.value)}
-            className="h-8 w-10 cursor-pointer rounded border border-eng-border bg-transparent"
+            className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent"
           />
           <input
             type="text"
@@ -146,8 +146,8 @@ function AppearancePanel() {
   const setAppearance = useFeatureStore((s) => s.setAppearance);
 
   return (
-    <section className="mb-4 rounded border border-eng-border bg-eng-bg/40 p-3">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-sky-300">
+    <section className="mb-4 rounded border border-border bg-background/40 p-3">
+      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-accent">
         Customizing Appearance
       </h3>
       <ParamField
@@ -181,7 +181,7 @@ function AppearancePanel() {
         evaluated
       />
       <div
-        className="mt-2 h-10 rounded border border-eng-border"
+        className="mt-2 h-10 rounded border border-border"
         style={{
           background: appearance.color,
           opacity: appearance.opacity,
@@ -210,16 +210,16 @@ function MaterialsPanel() {
   }, []);
 
   return (
-    <section className="mb-4 rounded border border-eng-border bg-eng-bg/40 p-3">
-      <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sky-300">
+    <section className="mb-4 rounded border border-border bg-background/40 p-3">
+      <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
         Customizing Part Materials
       </h3>
-      <p className="mb-2 text-[10px] text-eng-faint">
+      <p className="mb-2 text-[10px] text-faint">
         Onshape Material Library — density drives mass properties.
       </p>
       <FieldLabel>Library material</FieldLabel>
       <select
-        className="mb-2 w-full rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs text-eng-text outline-none focus:border-sky-600"
+        className="mb-2 w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
         value={materialId}
         onChange={(e) => setMaterialId(e.target.value)}
       >
@@ -234,14 +234,14 @@ function MaterialsPanel() {
         ))}
       </select>
       {material && (
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-eng-muted">
-          <dt className="text-eng-faint">Library</dt>
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <dt className="text-faint">Library</dt>
           <dd>{material.library}</dd>
-          <dt className="text-eng-faint">Category</dt>
+          <dt className="text-faint">Category</dt>
           <dd>{material.category}</dd>
-          <dt className="text-eng-faint">Density</dt>
+          <dt className="text-faint">Density</dt>
           <dd>{material.density} kg/m³</dd>
-          <dt className="text-eng-faint">Description</dt>
+          <dt className="text-faint">Description</dt>
           <dd className="col-span-1">{material.description}</dd>
         </dl>
       )}
@@ -257,19 +257,19 @@ function ConfigurationsPanel() {
   const [newVarName, setNewVarName] = useState("");
 
   return (
-    <section className="mb-4 space-y-3 rounded border border-eng-border bg-eng-bg/40 p-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-sky-300">
+    <section className="mb-4 space-y-3 rounded border border-border bg-background/40 p-3">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-accent">
         Configurations
       </h3>
 
       {/* Variables */}
       <div>
-        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-eng-muted">
+        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Variables
         </h4>
         <table className="w-full border-collapse text-[11px]">
           <thead>
-            <tr className="text-left text-eng-faint">
+            <tr className="text-left text-faint">
               <th className="pb-1 font-medium">Name</th>
               <th className="pb-1 font-medium">Expression</th>
               <th className="pb-1 font-medium">Value</th>
@@ -277,18 +277,18 @@ function ConfigurationsPanel() {
           </thead>
           <tbody>
             {configurations.variables.map((v) => (
-              <tr key={v.id} className="border-t border-eng-border/50">
-                <td className="py-1 text-eng-text">{v.name}</td>
+              <tr key={v.id} className="border-t border-border/50">
+                <td className="py-1 text-foreground">{v.name}</td>
                 <td className="py-1">
                   <input
-                    className="w-full rounded border border-eng-border bg-eng-bg px-1 py-0.5 text-eng-text"
+                    className="w-full rounded border border-border bg-background px-1 py-0.5 text-foreground"
                     value={v.expression}
                     onChange={(e) =>
                       upsertConfigVariable({ ...v, expression: e.target.value })
                     }
                   />
                 </td>
-                <td className="py-1 text-eng-muted">
+                <td className="py-1 text-muted-foreground">
                   {v.value} {v.unit}
                 </td>
               </tr>
@@ -297,14 +297,14 @@ function ConfigurationsPanel() {
         </table>
         <div className="mt-1 flex gap-1">
           <input
-            className="flex-1 rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs"
+            className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
             placeholder="New variable name"
             value={newVarName}
             onChange={(e) => setNewVarName(e.target.value)}
           />
           <button
             type="button"
-            className="rounded bg-eng-elevated px-2 py-1 text-[10px] text-eng-muted hover:text-eng-text"
+            className="rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground hover:text-accent"
             onClick={() => {
               if (!newVarName.trim()) return;
               upsertConfigVariable({
@@ -324,20 +324,20 @@ function ConfigurationsPanel() {
 
       {/* Visibility */}
       <div>
-        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-eng-muted">
+        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Visibility
         </h4>
         <ul className="max-h-32 space-y-1 overflow-y-auto">
           {configurations.visibility.map((row) => (
             <li key={row.id}>
-              <label className="flex items-center gap-2 text-[11px] text-eng-muted">
+              <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={row.visible}
                   onChange={(e) =>
                     setFeatureVisibility(row.featureId, e.target.checked)
                   }
-                  className="accent-sky-600"
+                  className="accent-accent"
                 />
                 {row.featureName}
               </label>
@@ -348,19 +348,19 @@ function ConfigurationsPanel() {
 
       {/* Configuration table */}
       <div>
-        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-eng-muted">
+        <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           Tables
         </h4>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[11px]">
             <thead>
-              <tr className="text-left text-eng-faint">
+              <tr className="text-left text-faint">
                 {configurations.columns.map((col) => (
-                  <th key={col.id} className="border-b border-eng-border px-2 py-1 font-medium">
+                  <th key={col.id} className="border-b border-border px-2 py-1 font-medium">
                     {col.name}
                   </th>
                 ))}
-                <th className="border-b border-eng-border px-2 py-1" />
+                <th className="border-b border-border px-2 py-1" />
               </tr>
             </thead>
             <tbody>
@@ -369,11 +369,11 @@ function ConfigurationsPanel() {
                 return (
                   <tr
                     key={row.id}
-                    className={active ? "bg-eng-active/60" : "hover:bg-eng-hover/40"}
+                    className={active ? "bg-active/60" : "hover:bg-hover/40"}
                   >
-                    <td className="px-2 py-1 text-eng-text">{row.configurationName}</td>
+                    <td className="px-2 py-1 text-foreground">{row.configurationName}</td>
                     {configurations.columns.slice(1).map((col) => (
-                      <td key={col.id} className="px-2 py-1 text-eng-muted">
+                      <td key={col.id} className="px-2 py-1 text-muted-foreground">
                         {String(row.values[col.id] ?? "")}
                       </td>
                     ))}
@@ -382,8 +382,8 @@ function ConfigurationsPanel() {
                         type="button"
                         className={`rounded px-1.5 py-0.5 text-[10px] ${
                           active
-                            ? "bg-sky-700 text-white"
-                            : "text-sky-300 hover:bg-eng-hover"
+                            ? "bg-accent text-accent-foreground"
+                            : "text-accent hover:bg-hover"
                         }`}
                         onClick={() => setActiveConfiguration(row.id)}
                       >
@@ -414,7 +414,7 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
 
   if (!def) {
     return (
-      <p className="text-xs text-eng-muted">Unknown feature type: {feature.type}</p>
+      <p className="text-xs text-muted-foreground">Unknown feature type: {feature.type}</p>
     );
   }
 
@@ -426,28 +426,28 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
         <div className="min-w-0 flex-1">
           <FieldLabel>Feature name</FieldLabel>
           <input
-            className="w-full rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs text-eng-text outline-none focus:border-sky-600"
+            className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
             value={feature.name}
             onChange={(e) => renameFeature(feature.id, e.target.value)}
           />
         </div>
-        <label className="mt-5 flex items-center gap-1 text-[11px] text-eng-muted">
+        <label className="mt-5 flex items-center gap-1 text-[11px] text-muted-foreground">
           <input
             type="checkbox"
             checked={feature.suppressed}
             onChange={(e) => suppressFeature(feature.id, e.target.checked)}
-            className="accent-sky-600"
+            className="accent-accent"
           />
           Suppress
         </label>
       </div>
 
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-[10px] uppercase tracking-wide text-eng-faint">
+        <span className="text-[10px] uppercase tracking-wide text-faint">
           {def.category}
         </span>
         {isSculpt ? (
-          <span className="rounded bg-sky-900/50 px-1.5 py-0.5 text-[9px] text-sky-300">
+          <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] text-accent">
             Form Workspace
           </span>
         ) : evaluated ? (
@@ -455,7 +455,7 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
             Worker evaluated
           </span>
         ) : (
-          <span className="rounded bg-eng-elevated px-1.5 py-0.5 text-[9px] text-eng-faint">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] text-faint">
             UI scaffolding
           </span>
         )}
@@ -476,7 +476,7 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
           type="button"
           disabled={regenerating || feature.suppressed}
           onClick={() => void evaluateFeature(feature.id)}
-          className="mt-2 w-full rounded bg-sky-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-600 disabled:opacity-40"
+          className="mt-2 w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent disabled:opacity-40"
         >
           {regenerating
             ? "Evaluating…"
@@ -510,16 +510,16 @@ function InsertFeatureMenu({ onPick }: { onPick: (type: FeatureToolType) => void
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+        className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
       >
         + Insert feature
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 max-h-80 w-72 overflow-hidden rounded-md border border-eng-border bg-eng-elevated shadow-2xl">
-          <div className="border-b border-eng-border p-2">
+        <div className="absolute right-0 top-full z-50 mt-1 max-h-80 w-72 overflow-hidden rounded-md border border-border bg-muted">
+          <div className="border-b border-border p-2">
             <input
               autoFocus
-              className="w-full rounded border border-eng-border bg-eng-bg px-2 py-1 text-xs text-eng-text outline-none focus:border-sky-600"
+              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-accent"
               placeholder="Search tools…"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -528,28 +528,28 @@ function InsertFeatureMenu({ onPick }: { onPick: (type: FeatureToolType) => void
           <div className="max-h-64 overflow-y-auto p-1">
             {grouped.map((group) => (
               <div key={group.id} className="mb-2">
-                <div className="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-eng-faint">
+                <div className="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
                   {group.label}
                 </div>
                 {group.tools.map((tool) => (
                   <button
                     key={tool.type}
                     type="button"
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-hover hover:text-accent"
                     onClick={() => {
                       onPick(tool.type);
                       setOpen(false);
                       setFilter("");
                     }}
                   >
-                    <span className="w-4 text-center text-[10px] text-eng-faint">
+                    <span className="w-4 text-center text-[10px] text-faint">
                       {tool.icon}
                     </span>
                     <span className="flex-1">{tool.label}</span>
                     {tool.evaluated ? (
                       <span className="text-[9px] text-emerald-400">eval</span>
                     ) : (
-                      <span className="text-[9px] text-eng-faint">UI</span>
+                      <span className="text-[9px] text-faint">UI</span>
                     )}
                   </button>
                 ))}
@@ -580,7 +580,7 @@ export function FeatureEditor() {
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-start justify-end bg-black/40 p-4 backdrop-blur-[1px]"
+      className="absolute inset-0 z-50 flex items-start justify-end bg-black/40 p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Feature editor"
@@ -591,11 +591,11 @@ export function FeatureEditor() {
         if (e.key === "Escape") closeEditor();
       }}
     >
-      <div className="flex max-h-[calc(100%-2rem)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-eng-border bg-eng-panel shadow-2xl">
-        <header className="flex items-center justify-between border-b border-eng-border px-3 py-2">
+      <div className="flex max-h-[calc(100%-2rem)] w-full max-w-md flex-col overflow-hidden rounded-lg border border-border bg-card">
+        <header className="flex items-center justify-between border-b border-border px-3 py-2">
           <div>
-            <h2 className="text-sm font-semibold text-eng-text">Feature Editor</h2>
-            <p className="text-[10px] text-eng-faint">
+            <h2 className="text-sm font-semibold text-foreground">Feature Editor</h2>
+            <p className="text-[10px] text-faint">
               {feature
                 ? `${FEATURE_TOOL_BY_TYPE[feature.type]?.label ?? feature.type} properties`
                 : "Studio settings"}
@@ -611,7 +611,7 @@ export function FeatureEditor() {
             <button
               type="button"
               onClick={closeEditor}
-              className="rounded px-2 py-1 text-sm text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+              className="rounded px-2 py-1 text-sm text-muted-foreground hover:bg-hover hover:text-accent"
               aria-label="Close"
             >
               ×
@@ -619,7 +619,7 @@ export function FeatureEditor() {
           </div>
         </header>
 
-        <nav className="flex shrink-0 gap-1 border-b border-eng-border px-2 py-1.5">
+        <nav className="flex shrink-0 gap-1 border-b border-border px-2 py-1.5">
           {(
             [
               ["feature", "Feature"],
@@ -634,8 +634,8 @@ export function FeatureEditor() {
               onClick={() => setStudioTab(id)}
               className={`rounded px-2 py-1 text-[11px] ${
                 studioTab === id
-                  ? "bg-sky-700 text-white"
-                  : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-hover hover:text-accent"
               }`}
             >
               {label}
@@ -657,14 +657,14 @@ export function FeatureEditor() {
               {feature ? (
                 <FeatureParamsForm feature={feature} />
               ) : (
-                <p className="text-xs text-eng-muted">
+                <p className="text-xs text-muted-foreground">
                   Select a feature in the tree, or insert one from the catalog.
                 </p>
               )}
 
               {features.length > 0 && (
-                <div className="mt-4 border-t border-eng-border pt-3">
-                  <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+                <div className="mt-4 border-t border-border pt-3">
+                  <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-faint">
                     Tree selection
                   </h4>
                   <div className="flex flex-wrap gap-1">
@@ -675,8 +675,8 @@ export function FeatureEditor() {
                         onClick={() => selectFeature(f.id)}
                         className={`rounded px-1.5 py-0.5 text-[10px] ${
                           f.id === selectedFeatureId
-                            ? "bg-eng-active text-sky-300"
-                            : "bg-eng-elevated text-eng-muted hover:text-eng-text"
+                            ? "bg-active text-accent"
+                            : "bg-muted text-muted-foreground hover:text-accent"
                         }`}
                       >
                         {f.name}

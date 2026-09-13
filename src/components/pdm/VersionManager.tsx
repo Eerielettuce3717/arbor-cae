@@ -10,7 +10,7 @@ import {
   pdm,
 } from "../../lib/pdmApi";
 
-const BRANCH_COLORS = ["#38bdf8", "#34d399", "#fbbf24", "#f472b6", "#a78bfa"];
+const BRANCH_COLORS = ["#e85d04", "#8b949e", "#f3eee6", "#2c3642", "#64748b"];
 
 export interface VersionManagerProps {
   projectId: string | null;
@@ -264,25 +264,25 @@ export function VersionManager({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-eng-bg text-eng-text">
-      <header className="flex flex-wrap items-center gap-3 border-b border-eng-border bg-eng-panel px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
         <div>
           <h1 className="text-base font-semibold tracking-tight">Version Manager</h1>
-          <p className="text-xs text-eng-muted">
+          <p className="text-xs text-muted-foreground">
             Branches, history, compare / repair / merge / restore
           </p>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2 text-[11px] text-eng-muted">
+        <div className="ml-auto flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
           {offline && (
             <span className="rounded border border-amber-700/60 bg-amber-950/40 px-2 py-0.5 text-amber-300">
               Offline demo
             </span>
           )}
-          <span className="font-mono text-eng-faint">{status}</span>
+          <span className="font-mono text-faint">{status}</span>
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded border border-eng-border px-2 py-1 hover:border-sky-700 hover:text-sky-300"
+            className="rounded border border-border px-2 py-1 hover:border-accent hover:text-accent"
           >
             Refresh
           </button>
@@ -296,16 +296,16 @@ export function VersionManager({
       )}
 
       <div className="flex min-h-0 flex-1">
-        <aside className="flex w-72 shrink-0 flex-col border-r border-eng-border bg-eng-panel">
-          <section className="border-b border-eng-border p-3">
-            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+        <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-card">
+          <section className="border-b border-border p-3">
+            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Branches
             </h2>
             <ul className="space-y-1">
               {graph?.branches.map((b, i) => (
                 <li
                   key={b.id}
-                  className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-eng-hover"
+                  className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-hover"
                 >
                   <span className="flex items-center gap-2">
                     <span
@@ -323,7 +323,7 @@ export function VersionManager({
                     <button
                       type="button"
                       onClick={() => void toggleProtection(b)}
-                      className="text-[10px] text-eng-faint hover:text-sky-300"
+                      className="text-[10px] text-faint hover:text-accent"
                     >
                       {b.isProtected ? "Unprotect" : "Protect"}
                     </button>
@@ -336,47 +336,47 @@ export function VersionManager({
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
                 placeholder="new-branch"
-                className="min-w-0 flex-1 rounded border border-eng-border bg-eng-elevated px-2 py-1 text-xs"
+                className="min-w-0 flex-1 rounded border border-border bg-muted px-2 py-1 text-xs"
               />
               <button
                 type="button"
                 disabled={offline}
                 onClick={() => void handleCreateBranch()}
-                className="rounded bg-sky-700 px-2 py-1 text-xs text-white disabled:opacity-40"
+                className="rounded bg-accent px-2 py-1 text-xs text-accent-foreground disabled:opacity-40"
               >
                 Create
               </button>
             </div>
           </section>
 
-          <section className="border-b border-eng-border p-3">
-            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+          <section className="border-b border-border p-3">
+            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Commit
             </h2>
             <input
               value={commitMessage}
               onChange={(e) => setCommitMessage(e.target.value)}
               placeholder="Commit message"
-              className="mb-2 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-xs"
+              className="mb-2 w-full rounded border border-border bg-muted px-2 py-1.5 text-xs"
             />
             <button
               type="button"
               disabled={offline}
               onClick={() => void handleCommit()}
-              className="w-full rounded bg-sky-700 px-2 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+              className="w-full rounded bg-accent px-2 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-40"
             >
               Save revision
             </button>
           </section>
 
-          <section className="border-b border-eng-border p-3">
-            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+          <section className="border-b border-border p-3">
+            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Merge into main
             </h2>
             <select
               value={mergeSource}
               onChange={(e) => setMergeSource(e.target.value)}
-              className="mb-2 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-xs"
+              className="mb-2 w-full rounded border border-border bg-muted px-2 py-1.5 text-xs"
             >
               <option value="">Source branch…</option>
               {graph?.branches
@@ -391,14 +391,14 @@ export function VersionManager({
               type="button"
               disabled={offline || !mergeSource}
               onClick={() => void handleMerge()}
-              className="w-full rounded border border-eng-border px-2 py-1.5 text-xs hover:border-sky-700 hover:text-sky-300 disabled:opacity-40"
+              className="w-full rounded border border-border px-2 py-1.5 text-xs hover:border-accent hover:text-accent disabled:opacity-40"
             >
               Merge
             </button>
           </section>
 
           <section className="min-h-0 flex-1 overflow-y-auto p-3">
-            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Workspace protections
             </h2>
             <div className="mb-2 flex flex-wrap gap-1">
@@ -406,7 +406,7 @@ export function VersionManager({
                 type="button"
                 disabled={offline}
                 onClick={() => void handleLock()}
-                className="rounded border border-eng-border px-2 py-1 text-[11px] hover:border-sky-700 disabled:opacity-40"
+                className="rounded border border-border px-2 py-1 text-[11px] hover:border-accent disabled:opacity-40"
               >
                 Lock Drive Assembly
               </button>
@@ -414,26 +414,26 @@ export function VersionManager({
                 type="button"
                 disabled={offline}
                 onClick={() => void handleTransfer()}
-                className="rounded border border-eng-border px-2 py-1 text-[11px] hover:border-sky-700 disabled:opacity-40"
+                className="rounded border border-border px-2 py-1 text-[11px] hover:border-accent disabled:opacity-40"
               >
                 Transfer ownership
               </button>
             </div>
-            <ul className="space-y-1 text-xs text-eng-muted">
+            <ul className="space-y-1 text-xs text-muted-foreground">
               {locks.map((l) => (
-                <li key={l.id} className="rounded bg-eng-elevated/50 px-2 py-1">
+                <li key={l.id} className="rounded bg-muted/50 px-2 py-1">
                   {l.documentId} · {l.ownerName} ({l.lockKind})
                 </li>
               ))}
-              {locks.length === 0 && <li className="text-eng-faint">No active locks</li>}
+              {locks.length === 0 && <li className="text-faint">No active locks</li>}
             </ul>
             {transfers.length > 0 && (
               <div className="mt-3">
-                <h3 className="mb-1 text-[10px] uppercase text-eng-faint">Transfers</h3>
+                <h3 className="mb-1 text-[10px] uppercase text-faint">Transfers</h3>
                 {transfers.slice(0, 5).map((t) => (
                   <div
                     key={t.id}
-                    className="mb-1 flex items-center justify-between rounded bg-eng-elevated/40 px-2 py-1 text-[11px]"
+                    className="mb-1 flex items-center justify-between rounded bg-muted/40 px-2 py-1 text-[11px]"
                   >
                     <span>
                       {t.documentId} → {t.toOwnerName} · {t.status}
@@ -478,15 +478,15 @@ export function VersionManager({
                 onCompareClick={(id) => void handleCompare(id)}
               />
             ) : (
-              <p className="text-sm text-eng-muted">Loading graph…</p>
+              <p className="text-sm text-muted-foreground">Loading graph…</p>
             )}
           </div>
 
-          <footer className="border-t border-eng-border bg-eng-panel px-4 py-3">
+          <footer className="border-t border-border bg-card px-4 py-3">
             {selected ? (
               <div className="flex flex-wrap items-start gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[11px] text-eng-faint">
+                  <p className="font-mono text-[11px] text-faint">
                     {selected.id.slice(0, 8)} · {selected.authorName} ·{" "}
                     {new Date(selected.createdAt).toLocaleString()}
                   </p>
@@ -499,7 +499,7 @@ export function VersionManager({
                   <button
                     type="button"
                     onClick={() => void handleCompare(selected.id)}
-                    className="rounded border border-eng-border px-2.5 py-1.5 text-xs hover:border-sky-700 hover:text-sky-300"
+                    className="rounded border border-border px-2.5 py-1.5 text-xs hover:border-accent hover:text-accent"
                   >
                     {compareLeft ? "Compare with selection" : "Mark for compare"}
                   </button>
@@ -507,7 +507,7 @@ export function VersionManager({
                     type="button"
                     disabled={offline}
                     onClick={() => void handleRestore()}
-                    className="rounded border border-eng-border px-2.5 py-1.5 text-xs hover:border-sky-700 disabled:opacity-40"
+                    className="rounded border border-border px-2.5 py-1.5 text-xs hover:border-accent disabled:opacity-40"
                   >
                     Restore
                   </button>
@@ -515,19 +515,19 @@ export function VersionManager({
                     type="button"
                     disabled={offline}
                     onClick={() => void handleRepair()}
-                    className="rounded border border-eng-border px-2.5 py-1.5 text-xs hover:border-sky-700 disabled:opacity-40"
+                    className="rounded border border-border px-2.5 py-1.5 text-xs hover:border-accent disabled:opacity-40"
                   >
                     Repair
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-eng-muted">
+              <p className="text-xs text-muted-foreground">
                 Select a commit node. Click “Mark for compare” twice to diff trees.
               </p>
             )}
             {diff && (
-              <div className="mt-3 grid gap-2 rounded border border-eng-border bg-eng-elevated/40 p-3 text-xs md:grid-cols-3">
+              <div className="mt-3 grid gap-2 rounded border border-border bg-muted/40 p-3 text-xs md:grid-cols-3">
                 <DiffCol title="Added" items={diff.addedKeys} tone="emerald" />
                 <DiffCol title="Removed" items={diff.removedKeys} tone="rose" />
                 <DiffCol title="Changed" items={diff.changedKeys} tone="amber" />
@@ -559,9 +559,9 @@ function DiffCol({
     <div>
       <h3 className={`mb-1 font-semibold ${color}`}>{title}</h3>
       {items.length === 0 ? (
-        <p className="text-eng-faint">—</p>
+        <p className="text-faint">—</p>
       ) : (
-        <ul className="space-y-0.5 font-mono text-eng-muted">
+        <ul className="space-y-0.5 font-mono text-muted-foreground">
           {items.map((k) => (
             <li key={k}>{k || "(root)"}</li>
           ))}
@@ -602,7 +602,7 @@ function BranchGraphView({
   const height = topPad + nodesNewestFirst.length * rowH + 24;
 
   return (
-    <div className="overflow-auto rounded-lg border border-eng-border bg-[#0b1220]">
+    <div className="overflow-auto rounded-lg border border-border bg-background">
       <svg width={width} height={height} className="block min-w-full">
         {graph.edges.map((e) => {
           const from = positions.get(e.fromId);

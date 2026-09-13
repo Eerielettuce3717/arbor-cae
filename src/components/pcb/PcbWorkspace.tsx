@@ -8,7 +8,7 @@ import { PcbViewport3D } from "./PcbViewport3D";
 export function PcbWorkspace() {
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col md:flex-row">
-      <div className="relative min-h-0 min-w-0 flex-1 border-b border-eng-border md:border-b-0 md:border-r">
+      <div className="relative min-h-0 min-w-0 flex-1 border-b border-border md:border-b-0 md:border-r">
         <PcbCanvas />
       </div>
       <div className="relative min-h-[40%] min-w-0 flex-1 md:min-h-0">

@@ -19,8 +19,8 @@ export function RenderSceneList() {
 
   return (
     <div className="flex h-full min-h-0 flex-col text-xs">
-      <div className="flex items-center gap-1 border-b border-eng-border px-2 py-1 text-[10px] text-eng-faint">
-        <span className="text-sky-300">Scene</span>
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1 text-[10px] text-faint">
+        <span className="text-accent">Scene</span>
         <span>·</span>
         <span>
           {environments.find((e) => e.id === activeEnvironmentId)?.name ??
@@ -38,7 +38,7 @@ export function RenderSceneList() {
                 selected={selectedNodeId === root.id}
                 onClick={() => selectNode(root.id)}
               />
-              <div className="ml-3 border-l border-eng-border/60 pl-1">
+              <div className="ml-3 border-l border-border/60 pl-1">
                 {childrenOf(root.id).map((node) => (
                   <Row
                     key={node.id}
@@ -122,7 +122,7 @@ function Section({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+      <div className="px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-faint">
         {label}
       </div>
       {children}
@@ -150,20 +150,20 @@ function Row({
   return (
     <div
       className={`flex w-full items-center gap-1 rounded px-1 py-0.5 ${
-        selected ? "bg-sky-700/40" : "hover:bg-eng-hover"
+        selected ? "bg-accent/20" : "hover:bg-hover"
       }`}
     >
       <button
         type="button"
         onClick={onClick}
-        className="flex min-w-0 flex-1 items-center gap-1.5 px-0.5 py-0.5 text-left text-eng-muted hover:text-eng-text"
+        className="flex min-w-0 flex-1 items-center gap-1.5 px-0.5 py-0.5 text-left text-muted-foreground hover:text-accent"
       >
         <span className="w-4 shrink-0 text-center text-[10px] opacity-70">
           {icon}
         </span>
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {badge && (
-          <span className="shrink-0 rounded bg-eng-active px-1 text-[9px] text-sky-300/80">
+          <span className="shrink-0 rounded bg-active px-1 text-[9px] text-accent/80">
             {badge}
           </span>
         )}
@@ -173,7 +173,7 @@ function Row({
           type="button"
           title={visible ? "Hide" : "Show"}
           onClick={onToggleVisible}
-          className="rounded px-1 text-[10px] text-eng-faint hover:text-eng-text"
+          className="rounded px-1 text-[10px] text-faint hover:text-accent"
         >
           {visible === false ? "○" : "●"}
         </button>

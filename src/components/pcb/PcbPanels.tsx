@@ -10,15 +10,15 @@ export function PcbSidePanel() {
   if (activePanel === "none") return null;
 
   return (
-    <aside className="absolute bottom-3 right-3 top-3 z-20 flex w-80 flex-col overflow-hidden rounded-md border border-eng-border bg-eng-panel/95 shadow-2xl backdrop-blur-sm">
-      <div className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+    <aside className="absolute bottom-3 right-3 top-3 z-20 flex w-80 flex-col overflow-hidden rounded-md border border-border bg-card/95">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {panelTitle(activePanel)}
         </span>
         <button
           type="button"
           onClick={() => setActivePanel("none")}
-          className="rounded px-1.5 text-eng-faint hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 text-faint hover:bg-hover hover:text-accent"
         >
           ×
         </button>
@@ -77,7 +77,7 @@ function BoardPanel() {
         min={0.2}
         onChange={(v) => updateOutline({ thicknessMm: v })}
       />
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Outline has {outline.points.length} vertices. Edits bump revision and
         re-extrude via pcbTo3D.
       </p>
@@ -97,7 +97,7 @@ function ComponentsPanel() {
   return (
     <div className="space-y-3">
       <div className="flex justify-between">
-        <span className="text-eng-muted">{components.length} parts</span>
+        <span className="text-muted-foreground">{components.length} parts</span>
         <ActionBtn label="Add" onClick={() => addComponent()} />
       </div>
       <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -108,22 +108,22 @@ function ComponentsPanel() {
             onClick={() => select(c.id)}
             className={`flex w-full items-center justify-between rounded border px-2 py-1 text-left ${
               selectedId === c.id
-                ? "border-sky-600 bg-sky-700/20"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/15"
+                : "border-border hover:bg-hover"
             }`}
           >
             <span>
               {c.designator}{" "}
-              <span className="text-eng-faint">{c.footprint}</span>
+              <span className="text-faint">{c.footprint}</span>
             </span>
-            <span className="font-mono text-[10px] text-eng-faint">
+            <span className="font-mono text-[10px] text-faint">
               {c.x.toFixed(1)},{c.y.toFixed(1)}
             </span>
           </button>
         ))}
       </div>
       {selected && (
-        <div className="space-y-2 rounded border border-eng-border bg-eng-bg/50 p-2">
+        <div className="space-y-2 rounded border border-border bg-background/50 p-2">
           <Field label="Designator">
             <input
               className={inputClass}
@@ -194,8 +194,8 @@ function TracesPanel() {
               onClick={() => setSnapMode(m)}
               className={`flex-1 rounded px-2 py-1.5 text-[11px] font-medium ${
                 snapMode === m
-                  ? "bg-sky-700 text-white"
-                  : "border border-eng-border text-eng-muted hover:text-eng-text"
+                  ? "bg-accent text-accent-foreground"
+                  : "border border-border text-muted-foreground hover:text-accent"
               }`}
             >
               {m}°
@@ -219,12 +219,12 @@ function TracesPanel() {
         <ActionBtn label="Commit" onClick={commitTrace} />
         <ActionBtn label="Cancel" onClick={cancelTrace} />
       </div>
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Click canvas to place vertices. Preview snaps to {snapMode}°. Enter /
         double-click finishes. Keys: 4 = 45°, 9 = 90°.
       </p>
       {activeTraceId && (
-        <div className="rounded border border-sky-700/50 bg-sky-700/10 px-2 py-1 text-sky-300">
+        <div className="rounded border border-accent/50 bg-accent/10 px-2 py-1 text-accent">
           Active: {activeTraceId}
         </div>
       )}
@@ -232,7 +232,7 @@ function TracesPanel() {
         {traces.map((t) => (
           <div
             key={t.id}
-            className="rounded border border-eng-border px-2 py-1 font-mono text-[10px] text-eng-muted"
+            className="rounded border border-border px-2 py-1 font-mono text-[10px] text-muted-foreground"
           >
             {t.net} · {t.layer} · {t.vertices.length}v
             {t.draft ? " · draft" : ""}
@@ -257,16 +257,16 @@ function LayersPanel() {
           onClick={() => setActiveLayer(l.id)}
           className={`flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left ${
             activeLayer === l.id
-              ? "border-sky-600 bg-sky-700/20"
-              : "border-eng-border hover:bg-eng-hover"
+              ? "border-accent bg-accent/15"
+              : "border-border hover:bg-hover"
           }`}
         >
           <span
-            className="h-3 w-3 rounded-sm border border-eng-border"
+            className="h-3 w-3 rounded-sm border border-border"
             style={{ background: l.color }}
           />
-          <span className="flex-1 text-eng-text">{l.name}</span>
-          <span className="text-[10px] text-eng-faint">
+          <span className="flex-1 text-foreground">{l.name}</span>
+          <span className="text-[10px] text-faint">
             {l.visible ? "on" : "off"}
           </span>
         </button>
@@ -285,7 +285,7 @@ function RigidFlexPanel() {
   return (
     <div className="space-y-3">
       <ScaffoldBadge label="Rigid-Flex" />
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={rigidFlex.enabled}
@@ -308,12 +308,12 @@ function RigidFlexPanel() {
             onClick={() => updateRigidFlex({ activeRegionId: r.id })}
             className={`w-full rounded border px-2 py-1.5 text-left ${
               rigidFlex.activeRegionId === r.id
-                ? "border-sky-600 bg-sky-700/20"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/15"
+                : "border-border hover:bg-hover"
             }`}
           >
-            <span className="block text-eng-text">{r.name}</span>
-            <span className="text-[10px] text-eng-faint">
+            <span className="block text-foreground">{r.name}</span>
+            <span className="text-[10px] text-faint">
               {r.kind}
               {r.bendLine
                 ? ` · bend R=${r.bendRadiusMm} mm`
@@ -322,7 +322,7 @@ function RigidFlexPanel() {
           </button>
         ))}
       </div>
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         Regions and bend lines visualize on the Pixi canvas and as amber guides
         in 3D. Full stackup / bend simulation is scaffold-only.
       </p>
@@ -356,18 +356,18 @@ function Altium365Panel() {
           onChange={(e) => updateAltium365({ projectId: e.target.value })}
         />
       </Field>
-      <div className="rounded border border-eng-border bg-eng-bg/60 px-2 py-1.5 text-[11px] text-eng-muted">
+      <div className="rounded border border-border bg-background/60 px-2 py-1.5 text-[11px] text-muted-foreground">
         Status:{" "}
-        <span className="text-sky-300">
+        <span className="text-accent">
           {altium.connected ? "connected" : "offline"} · {altium.syncStatus}
         </span>
         {altium.lastSyncAt && (
-          <div className="mt-1 text-eng-faint">
+          <div className="mt-1 text-faint">
             Last sync: {new Date(altium.lastSyncAt).toLocaleString()}
           </div>
         )}
       </div>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={altium.commentsEnabled}
@@ -387,7 +387,7 @@ function Altium365Panel() {
           <ActionBtn label="Connect" primary onClick={connectAltium365} />
         )}
       </div>
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         {altium.statusMessage}
       </p>
     </div>
@@ -414,10 +414,10 @@ function ManufacturingPanel() {
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         Run Design Rule Check for the selected fab process, then export RS-274X
-        Gerber (<span className="font-mono text-sky-300/80">.GTL</span>) and
-        Excellon (<span className="font-mono text-sky-300/80">.DRL</span>) via
+        Gerber (<span className="font-mono text-accent/80">.GTL</span>) and
+        Excellon (<span className="font-mono text-accent/80">.DRL</span>) via
         Tauri filesystem.
       </p>
 
@@ -436,7 +436,7 @@ function ManufacturingPanel() {
           ))}
         </select>
       </Field>
-      <p className="text-[11px] text-eng-muted">{profileHint}</p>
+      <p className="text-[11px] text-muted-foreground">{profileHint}</p>
 
       <div className="flex flex-wrap gap-1.5">
         <ActionBtn label="Run DRC" onClick={() => runManufacturingDrc()} />
@@ -485,10 +485,10 @@ function ManufacturingPanel() {
         <div className="space-y-2">
           {lastGtl && (
             <div>
-              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-faint">
                 .GTL preview
               </div>
-              <pre className="max-h-28 overflow-auto rounded border border-eng-border bg-eng-bg p-2 font-mono text-[9px] leading-relaxed text-eng-muted">
+              <pre className="max-h-28 overflow-auto rounded border border-border bg-background p-2 font-mono text-[9px] leading-relaxed text-muted-foreground">
                 {lastGtl.slice(0, 1200)}
                 {lastGtl.length > 1200 ? "\n…" : ""}
               </pre>
@@ -496,10 +496,10 @@ function ManufacturingPanel() {
           )}
           {lastDrl && (
             <div>
-              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+              <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-faint">
                 .DRL preview
               </div>
-              <pre className="max-h-28 overflow-auto rounded border border-eng-border bg-eng-bg p-2 font-mono text-[9px] leading-relaxed text-eng-muted">
+              <pre className="max-h-28 overflow-auto rounded border border-border bg-background p-2 font-mono text-[9px] leading-relaxed text-muted-foreground">
                 {lastDrl}
               </pre>
             </div>
@@ -512,14 +512,14 @@ function ManufacturingPanel() {
 
 function ScaffoldBadge({ label = "UI only" }: { label?: string }) {
   return (
-    <span className="inline-flex rounded bg-eng-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300/90">
+    <span className="inline-flex rounded bg-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent/90">
       {label}
     </span>
   );
 }
 
 const inputClass =
-  "w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-text outline-none focus:border-sky-600";
+  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-accent";
 
 function Field({
   label,
@@ -530,7 +530,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-faint">
         {label}
       </span>
       {children}
@@ -583,8 +583,8 @@ function ActionBtn({
       onClick={onClick}
       className={`rounded px-2.5 py-1.5 text-[11px] font-medium ${
         primary
-          ? "bg-sky-700 text-white hover:bg-sky-600"
-          : "border border-eng-border text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          ? "bg-accent text-accent-foreground hover:bg-accent"
+          : "border border-border text-muted-foreground hover:border-accent hover:text-accent"
       }`}
     >
       {label}

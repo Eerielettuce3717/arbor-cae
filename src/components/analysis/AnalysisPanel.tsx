@@ -156,26 +156,26 @@ export function AnalysisPanel({
           "Analysis");
 
   return (
-    <aside className="pointer-events-auto absolute bottom-10 right-3 z-30 flex max-h-[min(70vh,520px)] w-[320px] flex-col overflow-hidden rounded-md border border-eng-border bg-eng-panel/95 shadow-2xl">
-      <header className="flex items-center justify-between border-b border-eng-border px-3 py-2">
+    <aside className="pointer-events-auto absolute bottom-10 right-3 z-30 flex max-h-[min(70vh,520px)] w-[320px] flex-col overflow-hidden rounded-md border border-border bg-card/95">
+      <header className="flex items-center justify-between border-b border-border px-3 py-2">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Model Evaluation
           </div>
-          <div className="text-sm font-medium text-eng-text">{title}</div>
+          <div className="text-sm font-medium text-foreground">{title}</div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded px-1.5 py-0.5 text-eng-faint hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 py-0.5 text-faint hover:bg-hover hover:text-accent"
           aria-label="Close analysis panel"
         >
           ×
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 text-xs text-eng-muted">
-        <p className="mb-3 font-mono text-[10px] text-eng-faint">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 text-xs text-muted-foreground">
+        <p className="mb-3 font-mono text-[10px] text-faint">
           {busy ? "Working…" : status}
         </p>
         {error && (
@@ -187,38 +187,38 @@ export function AnalysisPanel({
         {activeTool === "measure" && (
           <div className="space-y-3">
             <label className="block">
-              <span className="mb-1 block text-[10px] uppercase text-eng-faint">
+              <span className="mb-1 block text-[10px] uppercase text-faint">
                 Point A (x,y,z)
               </span>
               <input
                 value={pointA}
                 onChange={(e) => setPointA(e.target.value)}
-                className="w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 font-mono text-eng-text outline-none focus:border-sky-600"
+                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground outline-none focus:border-accent"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[10px] uppercase text-eng-faint">
+              <span className="mb-1 block text-[10px] uppercase text-faint">
                 Point B (x,y,z)
               </span>
               <input
                 value={pointB}
                 onChange={(e) => setPointB(e.target.value)}
-                className="w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 font-mono text-eng-text outline-none focus:border-sky-600"
+                className="w-full rounded border border-border bg-background px-2 py-1.5 font-mono text-foreground outline-none focus:border-accent"
               />
             </label>
             <button
               type="button"
               disabled={busy || !kernelReady}
               onClick={() => void runMeasure()}
-              className="w-full rounded bg-sky-700 px-2 py-1.5 text-white hover:bg-sky-600 disabled:opacity-50"
+              className="w-full rounded bg-accent px-2 py-1.5 text-accent-foreground hover:bg-accent disabled:opacity-50"
             >
               Measure Distance
             </button>
             {measure && (
-              <dl className="space-y-1 rounded border border-eng-border bg-eng-bg/60 p-2 font-mono">
+              <dl className="space-y-1 rounded border border-border bg-background/60 p-2 font-mono">
                 <div className="flex justify-between gap-2">
                   <dt>Distance</dt>
-                  <dd className="text-sky-300">{fmt(measure.distance)} mm</dd>
+                  <dd className="text-accent">{fmt(measure.distance)} mm</dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt>On A</dt>
@@ -241,26 +241,26 @@ export function AnalysisPanel({
           <div className="space-y-3">
             <p>
               Volume, surface area, and center of mass from{" "}
-              <code className="text-eng-faint">BRepGProp</code> on shape{" "}
-              <span className="font-mono text-sky-300">{shapeId}</span>.
+              <code className="text-faint">BRepGProp</code> on shape{" "}
+              <span className="font-mono text-accent">{shapeId}</span>.
             </p>
             <button
               type="button"
               disabled={busy || !kernelReady}
               onClick={() => void runMass()}
-              className="w-full rounded bg-sky-700 px-2 py-1.5 text-white hover:bg-sky-600 disabled:opacity-50"
+              className="w-full rounded bg-accent px-2 py-1.5 text-accent-foreground hover:bg-accent disabled:opacity-50"
             >
               Compute Mass Properties
             </button>
             {mass && (
-              <dl className="space-y-1 rounded border border-eng-border bg-eng-bg/60 p-2 font-mono">
+              <dl className="space-y-1 rounded border border-border bg-background/60 p-2 font-mono">
                 <div className="flex justify-between gap-2">
                   <dt>Volume</dt>
-                  <dd className="text-sky-300">{fmt(mass.volume)} u³</dd>
+                  <dd className="text-accent">{fmt(mass.volume)} u³</dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt>Area</dt>
-                  <dd className="text-sky-300">{fmt(mass.surfaceArea)} u²</dd>
+                  <dd className="text-accent">{fmt(mass.surfaceArea)} u²</dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt>CoM</dt>
@@ -292,7 +292,7 @@ export function AnalysisPanel({
                 type="button"
                 disabled={busy || !kernelReady}
                 onClick={() => void runStub(activeTool)}
-                className="w-full rounded border border-eng-border px-2 py-1.5 text-eng-text hover:bg-eng-hover disabled:opacity-50"
+                className="w-full rounded border border-border px-2 py-1.5 text-foreground hover:bg-hover disabled:opacity-50"
               >
                 Run Worker Stub
               </button>
@@ -304,8 +304,8 @@ export function AnalysisPanel({
             </div>
           )}
 
-        <div className="mt-4 border-t border-eng-border pt-3">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-faint">
             Analysis Overlays
           </div>
           <div className="grid grid-cols-1 gap-1">
@@ -315,10 +315,10 @@ export function AnalysisPanel({
                 type="button"
                 disabled={busy || !kernelReady}
                 onClick={() => void runStub(tool.id)}
-                className={`rounded px-2 py-1.5 text-left hover:bg-eng-hover ${
+                className={`rounded px-2 py-1.5 text-left hover:bg-hover ${
                   activeTool === tool.id
-                    ? "bg-eng-active text-sky-300"
-                    : "text-eng-muted"
+                    ? "bg-active text-accent"
+                    : "text-muted-foreground"
                 }`}
                 title={tool.description}
               >

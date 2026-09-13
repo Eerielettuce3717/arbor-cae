@@ -15,6 +15,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
+import { useTheme } from "../../providers/ThemeProvider";
 
 export type ViewCubeFace =
   | "front"
@@ -41,6 +42,7 @@ export function ViewCube({
   onFaceClick,
   size = 96,
 }: ViewCubeProps) {
+  const { resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewDirRef = useRef(viewDirection);
   viewDirRef.current = viewDirection;
@@ -75,7 +77,7 @@ export function ViewCube({
     scene.add(key);
 
     const faceMat = new MeshStandardMaterial({
-      color: new Color("#1e293b"),
+      color: new Color(resolvedTheme === "dark" ? "#1e293b" : "#e8eaee"),
       metalness: 0.15,
       roughness: 0.55,
       transparent: true,
@@ -85,7 +87,9 @@ export function ViewCube({
     const cube = new Mesh(cubeGeo, faceMat);
     root.add(cube);
 
-    const edgeMat = new LineBasicMaterial({ color: 0x94a3b8 });
+    const edgeMat = new LineBasicMaterial({
+      color: resolvedTheme === "dark" ? 0x94a3b8 : 0x64748b,
+    });
     const edgeGeo = new EdgesGeometry(new BoxGeometry(1.12, 1.12, 1.12));
     const edges = new LineSegments(edgeGeo, edgeMat);
     root.add(edges);
@@ -163,14 +167,14 @@ export function ViewCube({
       markGeos.forEach((g) => g.dispose());
       renderer.dispose();
     };
-  }, [size]);
+  }, [size, resolvedTheme]);
 
   return (
     <div
       className="pointer-events-auto absolute bottom-10 right-3 z-20 select-none"
       title="View Cube — click a face to orient"
     >
-      <div className="rounded-md border border-eng-border/80 bg-eng-panel/70 p-1 shadow-lg backdrop-blur-sm">
+      <div className="rounded-md border border-border/80 bg-card/70 p-1">
         <canvas
           ref={canvasRef}
           width={size}
@@ -191,7 +195,7 @@ export function ViewCube({
               key={face}
               type="button"
               onClick={() => onFaceClick(face)}
-              className="rounded bg-eng-elevated/80 px-1 py-0.5 font-mono text-[8px] text-eng-muted hover:bg-eng-hover hover:text-sky-300"
+              className="rounded bg-muted/80 px-1 py-0.5 font-mono text-[8px] text-muted-foreground hover:bg-hover hover:text-accent"
             >
               {label}
             </button>

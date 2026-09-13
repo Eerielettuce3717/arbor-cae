@@ -16,15 +16,15 @@ export function SimulationSidePanel() {
   if (activePanel === "none") return null;
 
   return (
-    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-80 flex-col overflow-hidden rounded-md border border-eng-border bg-eng-panel/95 shadow-2xl backdrop-blur-sm">
-      <div className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-80 flex-col overflow-hidden rounded-md border border-border bg-card/95">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {panelTitle(activePanel)}
         </span>
         <button
           type="button"
           onClick={() => setActivePanel("none")}
-          className="rounded px-1.5 text-eng-faint hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 text-faint hover:bg-hover hover:text-accent"
         >
           ×
         </button>
@@ -126,7 +126,7 @@ function StudyPanel() {
           onChange={(v) => updateMaterial({ yieldMPa: v })}
         />
       </div>
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         Study definition feeds Modal and Asynchronous simulation hooks. No FEA
         solver is implemented in this scaffold.
       </p>
@@ -149,7 +149,7 @@ function LoadsPanel() {
       {study.loads.map((load) => (
         <div
           key={load.id}
-          className="space-y-2 rounded border border-eng-border bg-eng-bg/60 p-2"
+          className="space-y-2 rounded border border-border bg-background/60 p-2"
         >
           <Field label="Name">
             <input
@@ -211,7 +211,7 @@ function RestraintsPanel() {
       {study.restraints.map((r) => (
         <div
           key={r.id}
-          className="space-y-2 rounded border border-eng-border bg-eng-bg/60 p-2"
+          className="space-y-2 rounded border border-border bg-background/60 p-2"
         >
           <Field label="Name">
             <input
@@ -289,7 +289,7 @@ function MeshPanel() {
           <option value={2}>Quadratic (2nd)</option>
         </select>
       </Field>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={study.mesh.curvatureRefine}
@@ -347,7 +347,7 @@ function ModalSimulationPanel() {
           <option value="max">Max component</option>
         </select>
       </Field>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={study.modal.includeRigidBodyModes}
@@ -371,8 +371,8 @@ function ModalSimulationPanel() {
         />
         <ActionBtn label="Cancel" onClick={modal.cancel} />
       </div>
-      <p className="text-[11px] text-eng-faint">
-        Status: <span className="text-sky-300">{modal.status}</span>
+      <p className="text-[11px] text-faint">
+        Status: <span className="text-accent">{modal.status}</span>
       </p>
     </div>
   );
@@ -439,7 +439,7 @@ function AsyncSimulationPanel() {
           <option value="high">High</option>
         </select>
       </Field>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={study.async.notifyOnComplete}
@@ -449,9 +449,9 @@ function AsyncSimulationPanel() {
         />
         Notify on complete
       </label>
-      <div className="h-1.5 overflow-hidden rounded bg-eng-bg">
+      <div className="h-1.5 overflow-hidden rounded bg-background">
         <div
-          className="h-full bg-sky-600 transition-all"
+          className="h-full bg-accent transition-all"
           style={{ width: `${Math.round(asyncSim.progress * 100)}%` }}
         />
       </div>
@@ -475,8 +475,8 @@ function AsyncSimulationPanel() {
         />
         <ActionBtn label="Cancel" onClick={asyncSim.cancel} />
       </div>
-      <p className="text-[11px] text-eng-faint">
-        Status: <span className="text-sky-300">{asyncSim.status}</span>
+      <p className="text-[11px] text-faint">
+        Status: <span className="text-accent">{asyncSim.status}</span>
         {asyncSim.jobId ? ` · ${asyncSim.jobId}` : ""}
       </p>
     </div>
@@ -490,7 +490,7 @@ function ResultsPanel() {
     return (
       <div className="space-y-2">
         <ScaffoldBadge />
-        <p className="text-eng-faint">
+        <p className="text-faint">
           No results yet. Run Modal or Asynchronous simulation.
         </p>
       </div>
@@ -500,7 +500,7 @@ function ResultsPanel() {
   return (
     <div className="space-y-3">
       <ScaffoldBadge />
-      <div className="rounded border border-eng-border bg-eng-bg/60 p-2 space-y-1">
+      <div className="rounded border border-border bg-background/60 p-2 space-y-1">
         <Row label="Status" value={lastResult.status} />
         <Row label="Message" value={lastResult.message} />
         {lastResult.jobId && <Row label="Job" value={lastResult.jobId} />}
@@ -522,10 +522,10 @@ function ResultsPanel() {
       </div>
       {lastResult.naturalFrequenciesHz.length > 0 && (
         <div>
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-eng-faint">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-faint">
             Natural frequencies (Hz)
           </div>
-          <ul className="space-y-0.5 font-mono text-[11px] text-sky-300/90">
+          <ul className="space-y-0.5 font-mono text-[11px] text-accent/90">
             {lastResult.naturalFrequenciesHz.map((f, i) => (
               <li key={i}>
                 Mode {i + 1}: {f.toFixed(2)}
@@ -541,22 +541,22 @@ function ResultsPanel() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2 text-[11px]">
-      <span className="w-16 shrink-0 text-eng-faint">{label}</span>
-      <span className="min-w-0 break-words text-eng-text">{value}</span>
+      <span className="w-16 shrink-0 text-faint">{label}</span>
+      <span className="min-w-0 break-words text-foreground">{value}</span>
     </div>
   );
 }
 
 function ScaffoldBadge({ label = "UI only" }: { label?: string }) {
   return (
-    <span className="inline-flex rounded bg-eng-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300/90">
+    <span className="inline-flex rounded bg-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent/90">
       {label}
     </span>
   );
 }
 
 const inputClass =
-  "w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-text outline-none focus:border-sky-600";
+  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-accent";
 
 function Field({
   label,
@@ -567,7 +567,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-faint">
         {label}
       </span>
       {children}
@@ -623,8 +623,8 @@ function ActionBtn({
       onClick={onClick}
       className={`rounded px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-40 ${
         primary
-          ? "bg-sky-700 text-white hover:bg-sky-600"
-          : "border border-eng-border text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          ? "bg-accent text-accent-foreground hover:bg-accent"
+          : "border border-border text-muted-foreground hover:border-accent hover:text-accent"
       }`}
     >
       {label}

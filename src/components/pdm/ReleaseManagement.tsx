@@ -352,27 +352,27 @@ export function ReleaseManagement({
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-eng-bg text-eng-text">
-      <header className="flex flex-wrap items-center gap-3 border-b border-eng-border bg-eng-panel px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-3">
         <div>
           <h1 className="text-base font-semibold tracking-tight">
             Release Management
           </h1>
-          <p className="text-xs text-eng-muted">
+          <p className="text-xs text-muted-foreground">
             Approvers, candidates, packages, and configuration releases
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-eng-muted">
+        <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
           {offline && (
             <span className="rounded border border-amber-700/60 bg-amber-950/40 px-2 py-0.5 text-amber-300">
               Offline demo
             </span>
           )}
-          <span className="font-mono text-eng-faint">{status}</span>
+          <span className="font-mono text-faint">{status}</span>
         </div>
       </header>
 
-      <div className="flex gap-1 border-b border-eng-border bg-eng-elevated/50 px-3 py-1.5">
+      <div className="flex gap-1 border-b border-border bg-muted/50 px-3 py-1.5">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -380,8 +380,8 @@ export function ReleaseManagement({
             onClick={() => setTab(t.id)}
             className={`rounded px-3 py-1.5 text-xs font-medium ${
               tab === t.id
-                ? "bg-eng-active text-sky-300"
-                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                ? "bg-active text-accent"
+                : "text-muted-foreground hover:bg-hover hover:text-accent"
             }`}
           >
             {t.label}
@@ -400,16 +400,16 @@ export function ReleaseManagement({
           <div className="mx-auto grid max-w-3xl gap-6">
             <section className="space-y-3">
               <h2 className="text-sm font-semibold">Setting up release management</h2>
-              <p className="text-xs text-eng-muted">
+              <p className="text-xs text-muted-foreground">
                 Define the release process for this project: approval rules and
                 whether releasing a configuration obsoletes the previous release.
               </p>
-              <label className="block text-xs text-eng-muted">
+              <label className="block text-xs text-muted-foreground">
                 Process name
                 <input
                   value={processName}
                   onChange={(e) => setProcessName(e.target.value)}
-                  className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-3 py-2 text-sm text-eng-text"
+                  className="mt-1 w-full rounded border border-border bg-muted px-3 py-2 text-sm text-foreground"
                 />
               </label>
               <label className="flex items-center gap-2 text-sm">
@@ -420,14 +420,14 @@ export function ReleaseManagement({
                 />
                 Require approvals
               </label>
-              <label className="block text-xs text-eng-muted">
+              <label className="block text-xs text-muted-foreground">
                 Minimum approvals
                 <input
                   type="number"
                   min={1}
                   value={minApprovals}
                   onChange={(e) => setMinApprovals(Number(e.target.value) || 1)}
-                  className="mt-1 w-24 rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                  className="mt-1 w-24 rounded border border-border bg-muted px-2 py-1.5 text-sm"
                 />
               </label>
               <label className="flex items-center gap-2 text-sm">
@@ -450,23 +450,23 @@ export function ReleaseManagement({
                 type="button"
                 disabled={offline}
                 onClick={() => void saveSetup()}
-                className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="rounded bg-accent px-3 py-2 text-sm font-medium text-accent-foreground disabled:opacity-40"
               >
                 Save process
               </button>
             </section>
 
-            <section className="space-y-3 border-t border-eng-border pt-4">
+            <section className="space-y-3 border-t border-border pt-4">
               <h2 className="text-sm font-semibold">Specifying approvers</h2>
               <ul className="space-y-1">
                 {approvers.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-center justify-between rounded border border-eng-border bg-eng-elevated/40 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded border border-border bg-muted/40 px-3 py-2 text-sm"
                   >
                     <span>
                       {a.userName}{" "}
-                      <span className="font-mono text-[11px] text-eng-faint">
+                      <span className="font-mono text-[11px] text-faint">
                         {a.userId}
                       </span>
                     </span>
@@ -484,7 +484,7 @@ export function ReleaseManagement({
                   </li>
                 ))}
                 {approvers.length === 0 && (
-                  <li className="text-xs text-eng-faint">No approvers yet</li>
+                  <li className="text-xs text-faint">No approvers yet</li>
                 )}
               </ul>
               <div className="flex flex-wrap gap-2">
@@ -492,19 +492,19 @@ export function ReleaseManagement({
                   value={approverName}
                   onChange={(e) => setApproverName(e.target.value)}
                   placeholder="Display name"
-                  className="rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                  className="rounded border border-border bg-muted px-2 py-1.5 text-sm"
                 />
                 <input
                   value={approverId}
                   onChange={(e) => setApproverId(e.target.value)}
                   placeholder="user-id"
-                  className="rounded border border-eng-border bg-eng-elevated px-2 py-1.5 font-mono text-sm"
+                  className="rounded border border-border bg-muted px-2 py-1.5 font-mono text-sm"
                 />
                 <button
                   type="button"
                   disabled={offline}
                   onClick={() => void addApprover()}
-                  className="rounded border border-eng-border px-3 py-1.5 text-sm hover:border-sky-700 disabled:opacity-40"
+                  className="rounded border border-border px-3 py-1.5 text-sm hover:border-accent disabled:opacity-40"
                 >
                   Add approver
                 </button>
@@ -517,7 +517,7 @@ export function ReleaseManagement({
           <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2">
             <section className="space-y-3">
               <h2 className="text-sm font-semibold">Typical release workflow</h2>
-              <ol className="space-y-2 text-sm text-eng-muted">
+              <ol className="space-y-2 text-sm text-muted-foreground">
                 {[
                   "Select a commit that represents the design state to release",
                   "Choose parts / documents included in the candidate",
@@ -527,54 +527,54 @@ export function ReleaseManagement({
                   "Optionally clone a release package and obsolete prior revisions",
                 ].map((step, i) => (
                   <li key={step} className="flex gap-2">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-sky-900/50 text-[10px] font-bold text-sky-300">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent/15 text-[10px] font-bold text-accent">
                       {i + 1}
                     </span>
                     {step}
                   </li>
                 ))}
               </ol>
-              <p className="text-xs text-eng-faint">
+              <p className="text-xs text-faint">
                 Process: {config?.name ?? "—"} · min approvals{" "}
                 {config?.minApprovals ?? "—"}
               </p>
             </section>
 
-            <section className="space-y-3 rounded-lg border border-eng-border bg-eng-panel p-4">
+            <section className="space-y-3 rounded-lg border border-border bg-card p-4">
               <h2 className="text-sm font-semibold">Create release candidate</h2>
-              <label className="block text-xs text-eng-muted">
+              <label className="block text-xs text-muted-foreground">
                 Name
                 <input
                   value={rcName}
                   onChange={(e) => setRcName(e.target.value)}
-                  className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                  className="mt-1 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                 />
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <label className="block text-xs text-eng-muted">
+                <label className="block text-xs text-muted-foreground">
                   Revision
                   <input
                     value={revision}
                     onChange={(e) => setRevision(e.target.value)}
-                    className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                   />
                 </label>
-                <label className="block text-xs text-eng-muted">
+                <label className="block text-xs text-muted-foreground">
                   Configuration
                   <input
                     value={configuration}
                     onChange={(e) => setConfiguration(e.target.value)}
-                    className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                     placeholder="production"
                   />
                 </label>
               </div>
-              <label className="block text-xs text-eng-muted">
+              <label className="block text-xs text-muted-foreground">
                 Source commit
                 <select
                   value={commitId}
                   onChange={(e) => setCommitId(e.target.value)}
-                  className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                  className="mt-1 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                 >
                   {commits.length === 0 && <option value="">No commits</option>}
                   {commits.map((c) => (
@@ -586,20 +586,20 @@ export function ReleaseManagement({
               </label>
 
               <div>
-                <h3 className="mb-1 text-xs font-semibold uppercase text-eng-muted">
+                <h3 className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
                   Selecting parts
                 </h3>
                 <ul className="space-y-1">
                   {PART_CATALOG.map((p) => (
                     <li key={p.id}>
-                      <label className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-eng-hover">
+                      <label className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-hover">
                         <input
                           type="checkbox"
                           checked={selectedParts.includes(p.id)}
                           onChange={() => togglePart(p.id)}
                         />
                         <span>{p.name}</span>
-                        <span className="ml-auto font-mono text-[10px] text-eng-faint">
+                        <span className="ml-auto font-mono text-[10px] text-faint">
                           {p.partNumber}
                         </span>
                       </label>
@@ -608,20 +608,20 @@ export function ReleaseManagement({
                 </ul>
               </div>
 
-              <label className="block text-xs text-eng-muted">
+              <label className="block text-xs text-muted-foreground">
                 Notes
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  className="mt-1 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                  className="mt-1 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                 />
               </label>
               <button
                 type="button"
                 disabled={offline || selectedParts.length === 0}
                 onClick={() => void createCandidate()}
-                className="w-full rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="w-full rounded bg-accent px-3 py-2 text-sm font-medium text-accent-foreground disabled:opacity-40"
               >
                 Submit for review
               </button>
@@ -631,7 +631,7 @@ export function ReleaseManagement({
 
         {tab === "candidates" && (
           <div className="grid h-full min-h-[420px] gap-4 lg:grid-cols-[280px_1fr]">
-            <ul className="space-y-1 overflow-auto rounded-lg border border-eng-border bg-eng-panel p-2">
+            <ul className="space-y-1 overflow-auto rounded-lg border border-border bg-card p-2">
               {candidates.map((c) => (
                 <li key={c.id}>
                   <button
@@ -639,11 +639,11 @@ export function ReleaseManagement({
                     onClick={() => setSelectedId(c.id)}
                     className={`w-full rounded px-2.5 py-2 text-left text-sm ${
                       selectedId === c.id
-                        ? "bg-eng-active text-sky-300"
-                        : "text-eng-muted hover:bg-eng-hover"
+                        ? "bg-active text-accent"
+                        : "text-muted-foreground hover:bg-hover"
                     }`}
                   >
-                    <div className="font-medium text-eng-text">{c.name}</div>
+                    <div className="font-medium text-foreground">{c.name}</div>
                     <div className="mt-0.5 flex gap-2 text-[10px] uppercase tracking-wide">
                       <StatusPill status={c.status} />
                       <span>Rev {c.revision}</span>
@@ -653,16 +653,16 @@ export function ReleaseManagement({
                 </li>
               ))}
               {candidates.length === 0 && (
-                <li className="p-3 text-xs text-eng-faint">No candidates yet</li>
+                <li className="p-3 text-xs text-faint">No candidates yet</li>
               )}
             </ul>
 
             {selected ? (
-              <div className="space-y-4 rounded-lg border border-eng-border bg-eng-panel p-4">
+              <div className="space-y-4 rounded-lg border border-border bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold">{selected.name}</h2>
-                    <p className="text-xs text-eng-muted">
+                    <p className="text-xs text-muted-foreground">
                       Rev {selected.revision} · {selected.configuration} · commit{" "}
                       <span className="font-mono">{selected.commitId.slice(0, 8)}</span>
                     </p>
@@ -671,17 +671,17 @@ export function ReleaseManagement({
                 </div>
 
                 <div>
-                  <h3 className="mb-1 text-[11px] font-semibold uppercase text-eng-muted">
+                  <h3 className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground">
                     Parts in candidate
                   </h3>
-                  <ul className="divide-y divide-eng-border rounded border border-eng-border">
+                  <ul className="divide-y divide-border rounded border border-border">
                     {parts.map((p) => (
                       <li
                         key={p.id}
                         className="flex justify-between px-3 py-2 text-sm"
                       >
                         <span>{p.documentName}</span>
-                        <span className="font-mono text-xs text-eng-faint">
+                        <span className="font-mono text-xs text-faint">
                           {p.partNumber ?? p.documentId}
                         </span>
                       </li>
@@ -690,7 +690,7 @@ export function ReleaseManagement({
                 </div>
 
                 <div>
-                  <h3 className="mb-1 text-[11px] font-semibold uppercase text-eng-muted">
+                  <h3 className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground">
                     Review / approve / reject
                   </h3>
                   <textarea
@@ -698,7 +698,7 @@ export function ReleaseManagement({
                     onChange={(e) => setReviewComment(e.target.value)}
                     placeholder="Review comment"
                     rows={2}
-                    className="mb-2 w-full rounded border border-eng-border bg-eng-elevated px-2 py-1.5 text-sm"
+                    className="mb-2 w-full rounded border border-border bg-muted px-2 py-1.5 text-sm"
                   />
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -721,7 +721,7 @@ export function ReleaseManagement({
                       type="button"
                       disabled={offline}
                       onClick={() => void doRelease()}
-                      className="rounded bg-sky-700 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+                      className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-40"
                     >
                       Release
                     </button>
@@ -729,7 +729,7 @@ export function ReleaseManagement({
                       type="button"
                       disabled={offline}
                       onClick={() => void doObsolete()}
-                      className="rounded border border-eng-border px-3 py-1.5 text-xs disabled:opacity-40"
+                      className="rounded border border-border px-3 py-1.5 text-xs disabled:opacity-40"
                     >
                       Obsolete
                     </button>
@@ -737,7 +737,7 @@ export function ReleaseManagement({
                       type="button"
                       disabled={offline}
                       onClick={() => void clonePackage()}
-                      className="rounded border border-eng-border px-3 py-1.5 text-xs disabled:opacity-40"
+                      className="rounded border border-border px-3 py-1.5 text-xs disabled:opacity-40"
                     >
                       Clone release package
                     </button>
@@ -746,12 +746,12 @@ export function ReleaseManagement({
 
                 {reviews.length > 0 && (
                   <div>
-                    <h3 className="mb-1 text-[11px] font-semibold uppercase text-eng-muted">
+                    <h3 className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground">
                       Review history
                     </h3>
-                    <ul className="space-y-1 text-xs text-eng-muted">
+                    <ul className="space-y-1 text-xs text-muted-foreground">
                       {reviews.map((r) => (
-                        <li key={r.id} className="rounded bg-eng-elevated/40 px-2 py-1.5">
+                        <li key={r.id} className="rounded bg-muted/40 px-2 py-1.5">
                           <span
                             className={
                               r.decision === "approved"
@@ -770,7 +770,7 @@ export function ReleaseManagement({
                 )}
               </div>
             ) : (
-              <div className="flex items-center justify-center rounded-lg border border-dashed border-eng-border text-sm text-eng-muted">
+              <div className="flex items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
                 Select a candidate
               </div>
             )}
@@ -780,25 +780,25 @@ export function ReleaseManagement({
         {tab === "packages" && (
           <div className="mx-auto max-w-3xl space-y-3">
             <h2 className="text-sm font-semibold">Cloned release packages</h2>
-            <p className="text-xs text-eng-muted">
+            <p className="text-xs text-muted-foreground">
               Packages snapshot the candidate manifest (parts, revision,
               configuration) for handoff or archive.
             </p>
             {packages.length === 0 ? (
-              <p className="text-sm text-eng-faint">No packages yet</p>
+              <p className="text-sm text-faint">No packages yet</p>
             ) : (
               <ul className="space-y-2">
                 {packages.map((p) => (
                   <li
                     key={p.id}
-                    className="rounded-lg border border-eng-border bg-eng-panel px-4 py-3"
+                    className="rounded-lg border border-border bg-card px-4 py-3"
                   >
                     <div className="font-medium">{p.name}</div>
-                    <div className="mt-1 font-mono text-[11px] text-eng-faint">
+                    <div className="mt-1 font-mono text-[11px] text-faint">
                       {p.id.slice(0, 8)} · from {p.sourceCandidateId.slice(0, 8)} ·{" "}
                       {new Date(p.createdAt).toLocaleString()}
                     </div>
-                    <pre className="mt-2 overflow-auto rounded bg-eng-elevated/50 p-2 text-[10px] text-eng-muted">
+                    <pre className="mt-2 overflow-auto rounded bg-muted/50 p-2 text-[10px] text-muted-foreground">
                       {JSON.stringify(p.manifestJson, null, 2)}
                     </pre>
                   </li>
@@ -813,14 +813,14 @@ export function ReleaseManagement({
             <h2 className="text-sm font-semibold">
               Viewing history and obsoleting parts
             </h2>
-            <p className="text-xs text-eng-muted">
+            <p className="text-xs text-muted-foreground">
               Released and obsolete candidates by configuration. Releasing a new
               revision of the same configuration can auto-obsolete the previous
               one.
             </p>
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-eng-muted">
-                <tr className="border-b border-eng-border">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border">
                   <th className="px-2 py-2 font-medium">Name</th>
                   <th className="px-2 py-2 font-medium">Rev</th>
                   <th className="px-2 py-2 font-medium">Config</th>
@@ -830,14 +830,14 @@ export function ReleaseManagement({
               </thead>
               <tbody>
                 {candidates.map((c) => (
-                  <tr key={c.id} className="border-b border-eng-border/60">
+                  <tr key={c.id} className="border-b border-border/60">
                     <td className="px-2 py-2">{c.name}</td>
                     <td className="px-2 py-2 font-mono text-xs">{c.revision}</td>
-                    <td className="px-2 py-2 text-eng-muted">{c.configuration}</td>
+                    <td className="px-2 py-2 text-muted-foreground">{c.configuration}</td>
                     <td className="px-2 py-2">
                       <StatusPill status={c.status} />
                     </td>
-                    <td className="px-2 py-2 font-mono text-[11px] text-eng-faint">
+                    <td className="px-2 py-2 font-mono text-[11px] text-faint">
                       {c.releasedAt
                         ? new Date(c.releasedAt).toLocaleDateString()
                         : "—"}
@@ -847,11 +847,11 @@ export function ReleaseManagement({
               </tbody>
             </table>
 
-            <section className="rounded-lg border border-eng-border bg-eng-panel p-4">
+            <section className="rounded-lg border border-border bg-card p-4">
               <h3 className="text-sm font-semibold">Releasing configurations</h3>
-              <p className="mt-1 text-xs text-eng-muted">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Each candidate carries a{" "}
-                <span className="font-mono text-sky-300">configuration</span>{" "}
+                <span className="font-mono text-accent">configuration</span>{" "}
                 label (e.g. production, prototype). Use the Candidates tab to
                 approve and release; history above tracks which configuration
                 revisions are live vs obsolete.
@@ -869,7 +869,7 @@ function StatusPill({ status }: { status: string }) {
     status === "released"
       ? "border-emerald-700/50 bg-emerald-950/40 text-emerald-300"
       : status === "approved"
-        ? "border-sky-700/50 bg-sky-950/40 text-sky-300"
+        ? "border-accent/50 bg-accent/10 text-accent"
         : status === "rejected" || status === "obsolete"
           ? "border-rose-800/50 bg-rose-950/30 text-rose-300"
           : "border-amber-700/50 bg-amber-950/30 text-amber-300";

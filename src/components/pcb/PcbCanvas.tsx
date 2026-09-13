@@ -3,6 +3,8 @@ import { Application, Container, Graphics, Text } from "pixi.js";
 import { usePcbStore } from "../../store/pcbStore";
 import type { PcbPoint } from "../../store/pcbTypes";
 import { LAYER_COLORS } from "../../store/pcbTypes";
+import { useTheme } from "../../providers/ThemeProvider";
+import { VIEWPORT_THEME } from "../../theme/viewportTheme";
 
 const PX_PER_MM = 8;
 const ORIGIN_X = 40;
@@ -24,10 +26,13 @@ function toWorld(sx: number, sy: number): PcbPoint {
  * Renders board outline, components, traces; handles route clicks with snap.
  */
 export function PcbCanvas() {
+  const { resolvedTheme } = useTheme();
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const worldRef = useRef<Container | null>(null);
   const drawRef = useRef<(() => void) | null>(null);
+  const themeRef = useRef(resolvedTheme);
+  themeRef.current = resolvedTheme;
 
   const outline = usePcbStore((s) => s.outline);
   const components = usePcbStore((s) => s.components);
@@ -50,7 +55,7 @@ export function PcbCanvas() {
 
     void (async () => {
       await app.init({
-        background: "#0b1220",
+        background: VIEWPORT_THEME[themeRef.current].background,
         antialias: true,
         resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
@@ -89,7 +94,7 @@ export function PcbCanvas() {
           const h = app.screen.height;
           overlayG.setStrokeStyle({
             width: 1,
-            color: 0x1e293b,
+            color: VIEWPORT_THEME[themeRef.current].grid,
             alpha: 0.7,
           });
           for (let x = ORIGIN_X % grid; x < w; x += grid) {
@@ -340,16 +345,25 @@ export function PcbCanvas() {
     routePreview,
   ]);
 
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app?.renderer) return;
+    app.renderer.background.color.setValue(
+      VIEWPORT_THEME[resolvedTheme].background,
+    );
+    drawRef.current?.();
+  }, [resolvedTheme]);
+
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#0b1220]">
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-background">
       <div ref={hostRef} className="absolute inset-0" />
       <div className="pointer-events-none absolute left-2 top-2 space-y-1">
-        <div className="rounded border border-eng-border bg-eng-panel/90 px-2 py-1 text-[10px] uppercase tracking-wide text-sky-300/90">
+        <div className="rounded border border-border bg-card/90 px-2 py-1 text-[10px] uppercase tracking-wide text-accent/90">
           PixiJS · {snapMode}° snap · {PX_PER_MM} px/mm
         </div>
       </div>
       <div className="pointer-events-none absolute bottom-2 left-2 right-2 flex justify-center">
-        <div className="max-w-xl truncate rounded border border-eng-border bg-eng-panel/90 px-3 py-1 text-[11px] text-sky-300/90">
+        <div className="max-w-xl truncate rounded border border-border bg-card/90 px-3 py-1 text-[11px] text-accent/90">
           {statusMessage}
         </div>
       </div>

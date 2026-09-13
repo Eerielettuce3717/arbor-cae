@@ -18,8 +18,8 @@ export function CamTree() {
 
   return (
     <div className="flex h-full min-h-0 flex-col text-xs">
-      <div className="flex items-center gap-1 border-b border-eng-border px-2 py-1 text-[10px] text-eng-faint">
-        <span className="text-sky-300">{setup?.wcs.frame ?? "G54"}</span>
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1 text-[10px] text-faint">
+        <span className="text-accent">{setup?.wcs.frame ?? "G54"}</span>
         <span>·</span>
         <span>{setup?.stock.material ?? "Stock"}</span>
       </div>
@@ -41,7 +41,7 @@ export function CamTree() {
                   setActivePanel("setup");
                 }}
               />
-              <div className="ml-3 border-l border-eng-border/60 pl-1">
+              <div className="ml-3 border-l border-border/60 pl-1">
                 <Row
                   icon="□"
                   label={`Stock ${s.stock.size[0]}×${s.stock.size[1]}×${s.stock.size[2]}`}
@@ -123,7 +123,7 @@ function Section({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
         {label}
       </div>
       {children}
@@ -152,10 +152,10 @@ function Row({
       onClick={onClick}
       className={`flex w-full items-center gap-1.5 rounded px-2 py-1 text-left ${
         selected
-          ? "bg-sky-900/40 text-sky-200"
+          ? "bg-accent/15 text-accent"
           : muted
-            ? "text-eng-faint"
-            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+            ? "text-faint"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
       }`}
     >
       <span className="w-3 shrink-0 text-center text-[10px] opacity-70">
@@ -163,7 +163,7 @@ function Row({
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge && (
-        <span className="rounded bg-eng-active px-1 text-[9px] text-eng-faint">
+        <span className="rounded bg-active px-1 text-[9px] text-faint">
           {badge}
         </span>
       )}

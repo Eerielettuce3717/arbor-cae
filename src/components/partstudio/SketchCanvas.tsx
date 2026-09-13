@@ -175,7 +175,7 @@ export function SketchCanvas({ className, viewSize = 220 }: SketchCanvasProps) {
       <SketchToolbar />
 
       <div className="relative min-h-0 flex-1">
-        <div className="pointer-events-none absolute inset-0 bg-sky-950/35" />
+        <div className="pointer-events-none absolute inset-0 bg-accent/10" />
 
         <svg
           ref={svgRef}
@@ -245,18 +245,18 @@ export function SketchCanvas({ className, viewSize = 220 }: SketchCanvasProps) {
         </svg>
 
         <div className="pointer-events-none absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
-          <div className="rounded border border-eng-border/80 bg-eng-panel/90 px-2 py-1 text-[10px] text-eng-muted">
-            <span className="font-medium text-sky-300">{sketchName}</span>
-            <span className="mx-1.5 text-eng-faint">·</span>
+          <div className="rounded border border-border/80 bg-card/90 px-2 py-1 text-[10px] text-muted-foreground">
+            <span className="font-medium text-accent">{sketchName}</span>
+            <span className="mx-1.5 text-faint">·</span>
             <span>{statusMessage}</span>
             {constructionMode && (
               <>
-                <span className="mx-1.5 text-eng-faint">·</span>
+                <span className="mx-1.5 text-faint">·</span>
                 <span className="text-amber-300">construction</span>
               </>
             )}
           </div>
-          <div className="rounded border border-eng-border/80 bg-eng-panel/90 px-2 py-1 font-mono text-[10px] text-eng-faint">
+          <div className="rounded border border-border/80 bg-card/90 px-2 py-1 font-mono text-[10px] text-faint">
             {entities.length} ents · {constraints.length} cons
             {snappedCursor && (
               <>

@@ -297,13 +297,13 @@ export function DrawingSheet({ className }: DrawingSheetProps) {
   }
 
   return (
-    <div className={`flex h-full min-h-0 w-full items-center justify-center overflow-auto bg-[#0b1220] p-4 ${className ?? ""}`}>
+    <div className={`flex h-full min-h-0 w-full items-center justify-center overflow-auto bg-background p-4 ${className ?? ""}`}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${size.widthMm} ${size.heightMm}`}
         width="100%"
         height="100%"
-        className="max-h-full max-w-full rounded border border-eng-border bg-[#e8edf5] shadow-2xl"
+        className="max-h-full max-w-full rounded border border-border bg-[#e8edf5]"
         style={{ aspectRatio: `${size.widthMm} / ${size.heightMm}` }}
         onPointerDown={onPointerDown}
       >

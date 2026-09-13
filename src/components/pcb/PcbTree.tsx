@@ -15,8 +15,8 @@ export function PcbTree() {
 
   return (
     <div className="flex h-full min-h-0 flex-col text-xs">
-      <div className="flex items-center gap-1 border-b border-eng-border px-2 py-1 text-[10px] text-eng-faint">
-        <span className="text-sky-300">{outline.thicknessMm} mm</span>
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1 text-[10px] text-faint">
+        <span className="text-accent">{outline.thicknessMm} mm</span>
         <span>·</span>
         <span>{snapMode}° snap</span>
         <span>·</span>
@@ -118,7 +118,7 @@ function Section({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+      <div className="px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-faint">
         {label}
       </div>
       {children}
@@ -147,10 +147,10 @@ function Row({
       onClick={onClick}
       className={`flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left ${
         selected
-          ? "bg-sky-700/40 text-eng-text"
+          ? "bg-accent/20 text-foreground"
           : muted
-            ? "text-eng-faint"
-            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+            ? "text-faint"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
       }`}
     >
       <span className="w-4 shrink-0 text-center text-[10px] opacity-70">
@@ -158,7 +158,7 @@ function Row({
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge && (
-        <span className="shrink-0 rounded bg-eng-active px-1 text-[9px] text-sky-300/80">
+        <span className="shrink-0 rounded bg-active px-1 text-[9px] text-accent/80">
           {badge}
         </span>
       )}

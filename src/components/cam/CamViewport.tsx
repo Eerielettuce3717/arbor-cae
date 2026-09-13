@@ -9,6 +9,7 @@ import {
   DoubleSide,
   EdgesGeometry,
   Float32BufferAttribute,
+  GridHelper,
   Group,
   Line,
   LineBasicMaterial,
@@ -32,6 +33,11 @@ import {
   type ActiveCamera,
 } from "../viewport/controls/OnshapeControls";
 import { ViewCube, type ViewCubeFace } from "../viewport/ViewCube";
+import { useTheme } from "../../providers/ThemeProvider";
+import {
+  applyViewportSceneTheme,
+  createThemedGrid,
+} from "../../theme/viewportTheme";
 
 const FACE_DIRS: Record<Exclude<ViewCubeFace, "iso">, Vector3> = {
   front: new Vector3(0, 0, 1),
@@ -54,6 +60,10 @@ interface CamViewportApi {
   stockRoot: Group;
   toolpathRoot: Group;
   wcsRoot: Group;
+  ambient: AmbientLight;
+  key: DirectionalLight;
+  fill: DirectionalLight;
+  grid: GridHelper;
   setActiveCamera: (cam: ActiveCamera) => void;
   fit: () => void;
   aimDirection: (dir: Vector3, orthographic: boolean) => void;
@@ -64,8 +74,11 @@ interface CamViewportApi {
  * CAM 3D viewport: stock bounding box, selectable faces, WCS triad, toolpaths.
  */
 export function CamViewport() {
+  const { resolvedTheme } = useTheme();
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<CamViewportApi | null>(null);
+  const resolvedThemeRef = useRef(resolvedTheme);
+  resolvedThemeRef.current = resolvedTheme;
 
   const setups = useCamStore((s) => s.setups);
   const activeSetupId = useCamStore((s) => s.activeSetupId);
@@ -97,7 +110,6 @@ export function CamViewport() {
     if (!host) return;
 
     const scene = new Scene();
-    scene.background = new Color("#0b1220");
 
     const perspective = new PerspectiveCamera(45, 1, 0.1, 5000);
     perspective.position.set(160, 120, 160);
@@ -122,14 +134,22 @@ export function CamViewport() {
     const controls = new OnshapeControls(orthographic, renderer.domElement);
     controls.target.set(50, 10, 30);
 
-    scene.add(new AmbientLight(0xffffff, 0.55));
+    const ambient = new AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
     const key = new DirectionalLight(0xffffff, 1.05);
     key.position.set(80, 120, 60);
     scene.add(key);
     const fill = new DirectionalLight(0xb0c4de, 0.35);
     fill.position.set(-60, 40, -40);
     scene.add(fill);
-    scene.add(createGroundGrid());
+    const grid = createThemedGrid(resolvedThemeRef.current, 400, 40);
+    scene.add(grid);
+    applyViewportSceneTheme(
+      scene,
+      resolvedThemeRef.current,
+      { ambient, key, fill },
+      grid,
+    );
 
     const stockRoot = new Group();
     stockRoot.name = "stockRoot";
@@ -210,6 +230,10 @@ export function CamViewport() {
       stockRoot,
       toolpathRoot,
       wcsRoot,
+      ambient,
+      key,
+      fill,
+      grid,
       setActiveCamera,
       fit,
       aimDirection,
@@ -293,6 +317,17 @@ export function CamViewport() {
   }, [selectFace]);
 
   useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    applyViewportSceneTheme(
+      api.scene,
+      resolvedTheme,
+      { ambient: api.ambient, key: api.key, fill: api.fill },
+      api.grid,
+    );
+  }, [resolvedTheme]);
+
+  useEffect(() => {
     apiRef.current?.rebuild();
   }, [setup, toolpaths, selectedFaceId]);
 
@@ -300,11 +335,11 @@ export function CamViewport() {
     <div className="relative h-full min-h-0 w-full">
       <div ref={canvasHostRef} className="absolute inset-0" />
       <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex justify-center">
-        <div className="max-w-xl truncate rounded border border-eng-border bg-eng-panel/90 px-3 py-1 text-[11px] text-sky-300/90 shadow-lg backdrop-blur-sm">
+        <div className="max-w-xl truncate rounded border border-border bg-card/90 px-3 py-1 text-[11px] text-accent/90">
           {statusMessage}
         </div>
       </div>
-      <div className="pointer-events-none absolute left-3 top-3 rounded border border-eng-border bg-eng-panel/80 px-2 py-1 font-mono text-[10px] text-eng-muted">
+      <div className="pointer-events-none absolute left-3 top-3 rounded border border-border bg-card/80 px-2 py-1 font-mono text-[10px] text-muted-foreground">
         {fps} fps · mm · {setup?.wcs.frame ?? "G54"}
       </div>
       <div className="absolute bottom-3 right-3">
@@ -414,7 +449,7 @@ function buildStock(
       new BoxGeometry(f.size[0], f.size[1], f.size[2]),
       new MeshStandardMaterial({
         color: selected ? 0x38bdf8 : 0x334155,
-        emissive: selected ? 0x0ea5e9 : 0x000000,
+        emissive: selected ? 0xe85d04 : 0x000000,
         emissiveIntensity: selected ? 0.35 : 0,
         transparent: true,
         opacity: selected ? 0.55 : 0.15,
@@ -475,26 +510,6 @@ function buildToolpath(root: Group, toolpath: Toolpath, setup: SetupNode) {
     line.userData.toolpathId = toolpath.id;
     root.add(line);
   }
-}
-
-function createGroundGrid(): LineSegments {
-  const positions: number[] = [];
-  const size = 200;
-  const step = 10;
-  for (let i = -size; i <= size; i += step) {
-    positions.push(-size, 0, i, size, 0, i);
-    positions.push(i, 0, -size, i, 0, size);
-  }
-  const geo = new BufferGeometry();
-  geo.setAttribute("position", new Float32BufferAttribute(positions, 3));
-  const mat = new LineBasicMaterial({
-    color: 0x1e293b,
-    transparent: true,
-    opacity: 0.7,
-  });
-  const lines = new LineSegments(geo, mat);
-  lines.name = "groundGrid";
-  return lines;
 }
 
 function clearGroup(root: Group) {

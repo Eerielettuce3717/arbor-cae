@@ -10,6 +10,7 @@ import {
   DoubleSide,
   EdgesGeometry,
   Float32BufferAttribute,
+  GridHelper,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -53,6 +54,11 @@ import {
 } from "../viewport/types";
 import { ViewCube, type ViewCubeFace } from "../viewport/ViewCube";
 import { ViewportMenus } from "../viewport/ViewportMenus";
+import { useTheme } from "../../providers/ThemeProvider";
+import {
+  applyViewportSceneTheme,
+  createThemedGrid,
+} from "../../theme/viewportTheme";
 
 const AXONOMETRIC: Record<
   "isometric" | "dimetric" | "trimetric",
@@ -81,6 +87,10 @@ interface AssemblyViewportApi {
   instanceRoot: Group;
   connectorRoot: Group;
   mateLine: LineSegments;
+  ambient: AmbientLight;
+  key: DirectionalLight;
+  fill: DirectionalLight;
+  grid: GridHelper;
   setActiveCamera: (cam: ActiveCamera) => void;
   fit: () => void;
   aimDirection: (dir: Vector3, orthographic: boolean) => void;
@@ -93,8 +103,11 @@ const MATE_TOOL_TYPES = new Set(MATE_CATALOG.map((m) => m.type));
  * Assembly 3D viewport: instance solids, mate-connector snap points, mate lines.
  */
 export function AssemblyViewport() {
+  const { resolvedTheme } = useTheme();
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<AssemblyViewportApi | null>(null);
+  const resolvedThemeRef = useRef(resolvedTheme);
+  resolvedThemeRef.current = resolvedTheme;
 
   const instances = useAssemblyStore((s) => s.instances);
   const connectors = useAssemblyStore((s) => s.connectors);
@@ -163,7 +176,6 @@ export function AssemblyViewport() {
     if (!host) return;
 
     const scene = new Scene();
-    scene.background = new Color("#0b1220");
 
     const perspective = new PerspectiveCamera(45, 1, 0.01, 5000);
     perspective.position.set(4, 3.5, 4);
@@ -188,14 +200,22 @@ export function AssemblyViewport() {
     const controls = new OnshapeControls(orthographic, renderer.domElement);
     controls.target.set(0, 0.4, 0);
 
-    scene.add(new AmbientLight(0xffffff, 0.55));
+    const ambient = new AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
     const key = new DirectionalLight(0xffffff, 1.05);
     key.position.set(5, 8, 4);
     scene.add(key);
     const fill = new DirectionalLight(0xb0c4de, 0.35);
     fill.position.set(-4, 2, -3);
     scene.add(fill);
-    scene.add(createGroundGrid());
+    const grid = createThemedGrid(resolvedThemeRef.current);
+    scene.add(grid);
+    applyViewportSceneTheme(
+      scene,
+      resolvedThemeRef.current,
+      { ambient, key, fill },
+      grid,
+    );
 
     const instanceRoot = new Group();
     instanceRoot.name = "instanceRoot";
@@ -281,6 +301,10 @@ export function AssemblyViewport() {
       instanceRoot,
       connectorRoot,
       mateLine,
+      ambient,
+      key,
+      fill,
+      grid,
       setActiveCamera,
       fit,
       aimDirection,
@@ -446,6 +470,17 @@ export function AssemblyViewport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    applyViewportSceneTheme(
+      api.scene,
+      resolvedTheme,
+      { ambient: api.ambient, key: api.key, fill: api.fill },
+      api.grid,
+    );
+  }, [resolvedTheme]);
+
   const instanceKey = instances.map((i) => i.id).join("|");
   const connectorKey = connectors.map((c) => c.id).join("|");
   useEffect(() => {
@@ -496,7 +531,7 @@ export function AssemblyViewport() {
       : cameraMode.charAt(0).toUpperCase() + cameraMode.slice(1);
 
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#0b1220]">
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-background">
       <div ref={canvasHostRef} className="absolute inset-0" />
 
       <ViewportMenus
@@ -512,12 +547,12 @@ export function AssemblyViewport() {
       <ViewCube viewDirection={viewDirection} onFaceClick={onFaceClick} />
 
       {hoverConnector && (
-        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded border border-sky-700 bg-eng-panel/95 px-2 py-1 text-[11px] text-sky-200 shadow-lg">
+        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded border border-accent bg-card/95 px-2 py-1 text-[11px] text-accent">
           Mate connector · {connectors.find((c) => c.id === hoverConnector)?.name ?? hoverConnector}
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-eng-border/60 bg-eng-panel/90 px-3 py-1 text-[10px] text-eng-muted">
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-border/60 bg-card/90 px-3 py-1 text-[10px] text-muted-foreground">
         <span className="truncate pr-3">{statusMessage}</span>
         <span className="font-mono">
           LMB pick connector · RMB orbit · MMB pan
@@ -738,26 +773,6 @@ function axisArrow(dir: [number, number, number], color: number, connectorId: st
   head.userData.connectorId = connectorId;
   group.add(shaft, head);
   return group;
-}
-
-function createGroundGrid(): LineSegments {
-  const positions: number[] = [];
-  const size = 8;
-  const step = 0.5;
-  for (let i = -size; i <= size; i += step) {
-    positions.push(-size, 0, i, size, 0, i);
-    positions.push(i, 0, -size, i, 0, size);
-  }
-  const geo = new BufferGeometry();
-  geo.setAttribute("position", new Float32BufferAttribute(positions, 3));
-  const mat = new LineBasicMaterial({
-    color: 0x1e293b,
-    transparent: true,
-    opacity: 0.7,
-  });
-  const lines = new LineSegments(geo, mat);
-  lines.name = "groundGrid";
-  return lines;
 }
 
 function disposeObject(root: Object3D) {

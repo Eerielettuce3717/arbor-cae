@@ -1,15 +1,72 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --color-eng-bg: #0f172a;
-  --color-eng-panel: #111827;
-  --color-eng-elevated: #1e293b;
-  --color-eng-hover: #243044;
-  --color-eng-active: #1e3a5f;
-  --color-eng-border: #334155;
-  --color-eng-text: #e2e8f0;
-  --color-eng-muted: #94a3b8;
-  --color-eng-faint: #64748b;
+/*
+  Palette — mill control, vellum, safety orange.
+  Matches the promotional landing page.
+
+  ink    #0A0C0F  mill-control black
+  panel  #13171E  CRT / property panel
+  rule   #2C3642  construction hairline
+  paper  #F3EEE6  plotter vellum
+  mute   #8B949E  dimension text
+  signal #E85D04  OSHA / Haas orange (the only accent)
+*/
+
+:root {
+  --background: #f4f5f7;
+  --foreground: #0a0c0f;
+  --card: #ffffff;
+  --muted: #e8eaee;
+  --muted-foreground: #5c6670;
+  --faint: #8b949e;
+  --border: #cfd5dc;
+  --hover: #dde1e7;
+  --active: #f4e4d6;
+  --accent: #e85d04;
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  --background: #0a0c0f;
+  --foreground: #f3eee6;
+  --card: #13171e;
+  --muted: #1a2028;
+  --muted-foreground: #8b949e;
+  --faint: #64707a;
+  --border: #2c3642;
+  --hover: #222a34;
+  --active: #2a2118;
+  --accent: #e85d04;
+  --accent-foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
+  --color-border: var(--border);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-eng-bg: var(--background);
+  --color-eng-panel: var(--card);
+  --color-eng-elevated: var(--muted);
+  --color-eng-hover: var(--hover);
+  --color-eng-active: var(--active);
+  --color-eng-border: var(--border);
+  --color-eng-text: var(--foreground);
+  --color-eng-muted: var(--muted-foreground);
+  --color-eng-faint: var(--faint);
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 @layer base {
@@ -21,23 +78,33 @@
   }
 
   body {
-    font-family:
-      "IBM Plex Sans",
-      "Segoe UI",
-      system-ui,
-      -apple-system,
-      sans-serif;
-    background: var(--color-eng-bg);
-    color: var(--color-eng-text);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    background: var(--background);
+    color: var(--foreground);
     -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
     overflow: hidden;
     user-select: none;
   }
 
   button,
   input,
-  select {
+  select,
+  textarea {
     font: inherit;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   ::-webkit-scrollbar {
@@ -46,11 +113,11 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 6px;
+    background: var(--border);
+    border: 2px solid var(--background);
   }
 
   ::-webkit-scrollbar-track {
-    background: #0f172a;
+    background: var(--background);
   }
 }

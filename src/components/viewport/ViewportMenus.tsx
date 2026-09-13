@@ -98,7 +98,7 @@ export function ViewportMenus({
         >
           Perspective
         </MenuItem>
-        <div className="my-1 border-t border-eng-border" />
+        <div className="my-1 border-t border-border" />
         <MenuItem
           active={cameraMode === "orient-sketch-plane"}
           onClick={() => {
@@ -170,7 +170,7 @@ export function ViewportMenus({
           Removed
         </MenuItem>
 
-        <div className="my-1 border-t border-eng-border" />
+        <div className="my-1 border-t border-border" />
         <MenuItem
           active={renderOptions.highQuality}
           onClick={() =>
@@ -199,7 +199,7 @@ export function ViewportMenus({
         <MenuItem onClick={() => onDisplayOverride("hide-show")}>
           Hide / Show
           {displayOverrides.hiddenIds.length > 0 && (
-            <span className="ml-2 text-[10px] text-eng-faint">
+            <span className="ml-2 text-[10px] text-faint">
               ({displayOverrides.hiddenIds.length} hidden)
             </span>
           )}
@@ -207,7 +207,7 @@ export function ViewportMenus({
         <MenuItem onClick={() => onDisplayOverride("isolate")}>
           Isolate
           {displayOverrides.isolatedIds && (
-            <span className="ml-2 text-[10px] text-sky-400">on</span>
+            <span className="ml-2 text-[10px] text-accent">on</span>
           )}
         </MenuItem>
         <MenuItem onClick={() => onDisplayOverride("make-transparent")}>
@@ -221,7 +221,7 @@ export function ViewportMenus({
         </MenuItem>
       </MenuButton>
 
-      <span className="ml-1 rounded border border-eng-border/80 bg-eng-panel/80 px-2 py-1 font-mono text-[10px] text-eng-muted">
+      <span className="ml-1 rounded border border-border/80 bg-card/80 px-2 py-1 font-mono text-[10px] text-muted-foreground">
         {cameraLabel} · {renderOptions.shading}
       </span>
 
@@ -255,19 +255,19 @@ function MenuButton({
         onClick={onClick}
         className={`rounded border px-2.5 py-1 text-[11px] font-medium transition-colors ${
           open
-            ? "border-sky-600 bg-eng-active text-sky-300"
-            : "border-eng-border bg-eng-panel/90 text-eng-text hover:border-slate-500 hover:bg-eng-hover"
+            ? "border-accent bg-active text-accent"
+            : "border-border bg-card/90 text-foreground hover:border-accent hover:bg-hover hover:text-accent"
         }`}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         {label}
-        <span className="ml-1 text-[9px] text-eng-faint">▾</span>
+        <span className="ml-1 text-[9px] text-faint">▾</span>
       </button>
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 min-w-[220px] rounded border border-eng-border bg-eng-elevated py-1 shadow-xl shadow-black/40"
+          className="absolute left-0 top-full z-30 mt-1 min-w-[220px] rounded border border-border bg-muted py-1"
         >
           {children}
         </div>
@@ -292,12 +292,12 @@ function MenuItem({
       onClick={onClick}
       className={`flex w-full items-center px-3 py-1.5 text-left text-[11px] ${
         active
-          ? "bg-eng-active text-sky-300"
-          : "text-eng-text hover:bg-eng-hover"
+          ? "bg-active text-accent"
+          : "text-foreground hover:bg-hover hover:text-accent"
       }`}
     >
       <span
-        className={`mr-2 w-3 text-center text-[10px] ${active ? "text-sky-400" : "text-transparent"}`}
+        className={`mr-2 w-3 text-center text-[10px] ${active ? "text-accent" : "text-transparent"}`}
       >
         ✓
       </span>
@@ -308,7 +308,7 @@ function MenuItem({
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="px-3 pb-0.5 pt-2 text-[9px] font-semibold uppercase tracking-wider text-eng-faint">
+    <div className="px-3 pb-0.5 pt-2 text-[9px] font-semibold uppercase tracking-wider text-faint">
       {children}
     </div>
   );

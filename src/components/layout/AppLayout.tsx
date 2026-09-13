@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Settings } from "lucide-react";
 import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
 import { useFeatureStore } from "../../store/featureStore";
 import type { FeatureToolType } from "../../store/featureTypes";
@@ -42,6 +43,7 @@ import {
   type SimulationToolId,
 } from "../../store/simulationTypes";
 import { Viewport3D } from "../viewport/Viewport3D";
+import { PreferencesModal } from "../settings/PreferencesModal";
 
 export interface WorkspaceTab {
   id: string;
@@ -215,6 +217,7 @@ export function AppLayout({
     null,
   );
   const [occtMesh, setOcctMesh] = useState<MeshBuffers | null>(null);
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
@@ -350,27 +353,27 @@ export function AppLayout({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-eng-bg text-eng-text">
+    <div className="relative flex h-full min-h-0 flex-col bg-background text-foreground">
       {/* Top chrome: Document Menu + Document Tabs */}
-      <div className="flex shrink-0 items-stretch border-b border-eng-border bg-eng-panel">
-        <div className="relative flex items-center border-r border-eng-border">
+      <div className="flex shrink-0 items-stretch border-b border-border bg-card">
+        <div className="relative flex items-center border-r border-border">
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-full items-center gap-2 px-3 text-sm font-semibold tracking-tight text-eng-text hover:bg-eng-hover"
+            className="flex h-full items-center gap-2 px-3 text-sm font-semibold tracking-tight text-foreground hover:bg-hover hover:text-accent"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-sky-700 text-[10px] font-bold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded bg-accent text-[10px] font-bold text-accent-foreground">
               CE
             </span>
             Document
-            <span className="text-[10px] text-eng-muted">▾</span>
+            <span className="text-[10px] text-muted-foreground">▾</span>
           </button>
           {menuOpen && (
             <div
               role="menu"
-              className="absolute left-0 top-full z-40 w-56 overflow-hidden rounded-b-md border border-eng-border border-t-0 bg-eng-elevated shadow-2xl"
+              className="absolute left-0 top-full z-40 w-56 overflow-hidden rounded-b-md border border-border border-t-0 bg-muted"
             >
               {(
                 [
@@ -388,24 +391,28 @@ export function AppLayout({
                   { type: "item", label: "Export STEP…" },
                   { type: "sep", label: "sep-2" },
                   { type: "item", label: "Document properties" },
+                  { type: "item", label: "Preferences…" },
                   { type: "item", label: "Close document" },
                 ] as const
               ).map((item) =>
                 item.type === "sep" ? (
                   <div
                     key={item.label}
-                    className="my-1 border-t border-eng-border"
+                    className="my-1 border-t border-border"
                   />
                 ) : (
                   <button
                     key={item.label}
                     type="button"
                     role="menuitem"
-                    className="block w-full px-3 py-2 text-left text-sm text-eng-text hover:bg-eng-hover"
+                    className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent"
                     onClick={() => {
                       setMenuOpen(false);
                       if (item.label === "Close document") {
                         onBackToDocuments?.();
+                      }
+                      if (item.label === "Preferences…") {
+                        setPrefsOpen(true);
                       }
                     }}
                   >
@@ -423,10 +430,10 @@ export function AppLayout({
             return (
               <div
                 key={tab.id}
-                className={`group flex max-w-[200px] items-center gap-1 border-r border-eng-border px-3 py-2 text-xs ${
+                className={`group flex max-w-[200px] items-center gap-1 border-r border-border px-3 py-2 text-xs ${
                   isActive
-                    ? "border-b-2 border-b-sky-500 bg-eng-bg text-eng-text"
-                    : "border-b-2 border-b-transparent text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                    ? "border-b-2 border-b-accent bg-background text-foreground"
+                    : "border-b-2 border-b-transparent text-muted-foreground hover:bg-hover hover:text-accent"
                 }`}
               >
                 <button
@@ -435,7 +442,7 @@ export function AppLayout({
                   className="min-w-0 truncate font-medium"
                   title={tab.title}
                 >
-                  <span className="mr-1.5 text-[10px] uppercase text-eng-faint">
+                  <span className="mr-1.5 text-[10px] uppercase text-faint">
                     {tab.kind[0]}
                   </span>
                   {tab.title}
@@ -449,7 +456,7 @@ export function AppLayout({
                   type="button"
                   aria-label={`Close ${tab.title}`}
                   onClick={() => onCloseTab?.(tab.id)}
-                  className="rounded px-1 text-eng-faint opacity-0 hover:bg-eng-active hover:text-eng-text group-hover:opacity-100"
+                  className="rounded px-1 text-faint opacity-0 hover:bg-active hover:text-accent group-hover:opacity-100"
                 >
                   ×
                 </button>
@@ -458,12 +465,12 @@ export function AppLayout({
           })}
         </div>
 
-        <div className="flex items-center gap-2 border-l border-eng-border px-3">
+        <div className="flex items-center gap-2 border-l border-border px-3">
           {onBackToDocuments && (
             <button
               type="button"
               onClick={onBackToDocuments}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               Documents
             </button>
@@ -472,7 +479,7 @@ export function AppLayout({
             <button
               type="button"
               onClick={onOpenVersions}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               Versions
             </button>
@@ -481,21 +488,30 @@ export function AppLayout({
             <button
               type="button"
               onClick={onOpenReleases}
-              className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
             >
               Releases
             </button>
           )}
-          <span className="font-mono text-[10px] text-eng-faint">mm · ISO</span>
+          <button
+            type="button"
+            onClick={() => setPrefsOpen(true)}
+            className="rounded border border-border p-1 text-muted-foreground hover:border-accent hover:text-accent"
+            title="Preferences"
+            aria-label="Open preferences"
+          >
+            <Settings className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </button>
+          <span className="font-mono text-[10px] text-faint">mm · ISO</span>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-eng-border bg-eng-elevated/80 px-2 py-1.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border bg-muted/80 px-2 py-1.5">
         {isPcb
           ? PCB_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                   {group.label}
                 </span>
                 {group.tools.map((tool) => {
@@ -507,8 +523,8 @@ export function AppLayout({
                       onClick={() => setPcbTool(tool.id as PcbToolId)}
                       className={`rounded px-2 py-1 text-xs ${
                         active
-                          ? "bg-sky-700 text-white"
-                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-hover hover:text-accent"
                       }`}
                     >
                       {tool.label}
@@ -520,7 +536,7 @@ export function AppLayout({
           : isRender
           ? RENDER_TOOLBAR_GROUPS.map((group) => (
               <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                   {group.label}
                 </span>
                 {group.tools.map((tool) => {
@@ -532,8 +548,8 @@ export function AppLayout({
                       onClick={() => setRenderTool(tool.id as RenderToolId)}
                       className={`rounded px-2 py-1 text-xs ${
                         active
-                          ? "bg-sky-700 text-white"
-                          : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-hover hover:text-accent"
                       }`}
                     >
                       {tool.label}
@@ -545,7 +561,7 @@ export function AppLayout({
           : isSimulation
             ? SIMULATION_TOOLBAR_GROUPS.map((group) => (
                 <div key={group.id} className="flex items-center gap-1">
-                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                     {group.label}
                   </span>
                   {group.tools.map((tool) => {
@@ -559,8 +575,8 @@ export function AppLayout({
                         }
                         className={`rounded px-2 py-1 text-xs ${
                           active
-                            ? "bg-sky-700 text-white"
-                            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                            ? "bg-accent text-accent-foreground"
+                            : "text-muted-foreground hover:bg-hover hover:text-accent"
                         }`}
                       >
                         {tool.label}
@@ -572,7 +588,7 @@ export function AppLayout({
             : isCam
               ? CAM_TOOLBAR_GROUPS.map((group) => (
                   <div key={group.id} className="flex items-center gap-1">
-                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                       {group.label}
                     </span>
                     {group.tools.map((tool) => {
@@ -584,8 +600,8 @@ export function AppLayout({
                           onClick={() => setCamTool(tool.id as CamToolId)}
                           className={`rounded px-2 py-1 text-xs ${
                             active
-                              ? "bg-sky-700 text-white"
-                              : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:bg-hover hover:text-accent"
                           }`}
                         >
                           {tool.label}
@@ -597,7 +613,7 @@ export function AppLayout({
               : isDrawing
                 ? DRAWING_TOOLBAR_GROUPS.map((group) => (
                     <div key={group.id} className="flex items-center gap-1">
-                      <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                      <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                         {group.label}
                       </span>
                       {group.tools.map((tool) => {
@@ -611,8 +627,8 @@ export function AppLayout({
                             }
                             className={`rounded px-2 py-1 text-xs ${
                               active
-                                ? "bg-sky-700 text-white"
-                                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-hover hover:text-accent"
                             }`}
                           >
                             {tool.label}
@@ -624,7 +640,7 @@ export function AppLayout({
                 : isAssembly
                   ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
                       <div key={group.id} className="flex items-center gap-1">
-                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                           {group.label}
                         </span>
                         {group.tools.map((tool) => {
@@ -639,8 +655,8 @@ export function AppLayout({
                               onClick={() => setAssemblyTool(tool.id)}
                               className={`rounded px-2 py-1 text-xs ${
                                 active
-                                  ? "bg-sky-700 text-white"
-                                  : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                                  ? "bg-accent text-accent-foreground"
+                                  : "text-muted-foreground hover:bg-hover hover:text-accent"
                               }`}
                             >
                               {tool.label}
@@ -651,7 +667,7 @@ export function AppLayout({
                     ))
                   : TOOLBAR_GROUPS.map((group) => (
                       <div key={group.id} className="flex items-center gap-1">
-                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-eng-faint">
+                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                           {group.label}
                         </span>
                         {group.tools.map((tool) => (
@@ -661,8 +677,8 @@ export function AppLayout({
                             onClick={() => onSelectTool(tool)}
                             className={`rounded px-2 py-1 text-xs ${
                               activeTool === tool
-                                ? "bg-sky-700 text-white"
-                                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-hover hover:text-accent"
                             }`}
                           >
                             {tool}
@@ -670,10 +686,10 @@ export function AppLayout({
                         ))}
                       </div>
                     ))}
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-eng-muted">
+        <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
           <span>
             Active:{" "}
-            <span className="font-medium text-sky-300">
+            <span className="font-medium text-accent">
               {isPcb
                 ? pcbTool
                 : isRender
@@ -689,52 +705,52 @@ export function AppLayout({
                         : activeTool}
             </span>
           </span>
-          <span className="text-eng-faint">|</span>
+          <span className="text-faint">|</span>
           <span>{activeTab?.title ?? "No document"}</span>
           {isPcb && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {pcbStatus}
               </span>
             </>
           )}
           {isRender && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {renderStatus}
               </span>
             </>
           )}
           {isSimulation && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {simulationStatus}
               </span>
             </>
           )}
           {isCam && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {camStatus}
               </span>
             </>
           )}
           {isDrawing && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {drawingStatus}
               </span>
             </>
           )}
           {isAssembly && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="max-w-[240px] truncate text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="max-w-[240px] truncate text-accent/80">
                 {assemblyStatus}
               </span>
             </>
@@ -747,8 +763,8 @@ export function AppLayout({
             !isPcb &&
             selectedFeatureId && (
             <>
-              <span className="text-eng-faint">|</span>
-              <span className="text-sky-300/80">
+              <span className="text-faint">|</span>
+              <span className="text-accent/80">
                 {features.find((f) => f.id === selectedFeatureId)?.name ??
                   selectedFeatureId}
               </span>
@@ -760,13 +776,13 @@ export function AppLayout({
       <div className="flex min-h-0 flex-1">
         {/* Document Panel (feature tree) */}
         <aside
-          className={`flex shrink-0 flex-col border-r border-eng-border bg-eng-panel transition-[width] ${
+          className={`flex shrink-0 flex-col border-r border-border bg-card transition-[width] ${
             panelCollapsed ? "w-10" : "w-64"
           }`}
         >
-          <div className="flex items-center justify-between border-b border-eng-border px-2 py-1.5">
+          <div className="flex items-center justify-between border-b border-border px-2 py-1.5">
             {!panelCollapsed && (
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {isPcb
                   ? "PCB Tree"
                   : isRender
@@ -785,7 +801,7 @@ export function AppLayout({
             <button
               type="button"
               onClick={() => setPanelCollapsed((v) => !v)}
-              className="rounded px-1.5 py-0.5 text-xs text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+              className="rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-hover hover:text-accent"
               title={panelCollapsed ? "Expand panel" : "Collapse panel"}
             >
               {panelCollapsed ? "»" : "«"}
@@ -818,7 +834,7 @@ export function AppLayout({
         </aside>
 
         {/* Viewport / workspace content */}
-        <section className="relative min-w-0 flex-1 bg-[#0b1220]">
+        <section className="relative min-w-0 flex-1 bg-background">
           {children ??
             (isPcb ? (
               <PcbWorkspace />
@@ -852,6 +868,7 @@ export function AppLayout({
             ))}
         </section>
       </div>
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
 } from "../../store/assemblyTypes";
 
 const inputClass =
-  "rounded border border-eng-border bg-eng-bg px-1.5 py-0.5 text-[11px] text-eng-text outline-none focus:border-sky-600";
+  "rounded border border-border bg-background px-1.5 py-0.5 text-[11px] text-foreground outline-none focus:border-accent";
 
 export function BomTable() {
   const bom = useAssemblyStore((s) => s.bom);
@@ -35,20 +35,20 @@ export function BomTable() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-        <p className="text-[10px] text-eng-faint">
+      <header className="flex items-center justify-between border-b border-border px-3 py-2">
+        <p className="text-[10px] text-faint">
           Working with Table · Formatting · Templates
         </p>
         <button
           type="button"
           onClick={() => rebuildBom()}
-          className="rounded border border-eng-border px-2 py-1 text-[11px] text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
         >
           Rebuild
         </button>
       </header>
 
-      <nav className="flex gap-1 border-b border-eng-border px-2 py-1.5">
+      <nav className="flex gap-1 border-b border-border px-2 py-1.5">
         {(
           [
             ["table", "Working with Table"],
@@ -62,8 +62,8 @@ export function BomTable() {
             onClick={() => setTab(id)}
             className={`rounded px-2 py-1 text-[11px] ${
               tab === id
-                ? "bg-sky-700 text-white"
-                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-hover hover:text-accent"
             }`}
           >
             {label}
@@ -80,12 +80,12 @@ export function BomTable() {
               onClick={() => setBomTemplate(t.id)}
               className={`block w-full rounded border px-3 py-2 text-left ${
                 bom.templateId === t.id
-                  ? "border-sky-600 bg-eng-active"
-                  : "border-eng-border hover:bg-eng-hover"
+                  ? "border-accent bg-active"
+                  : "border-border hover:bg-hover"
               }`}
             >
-              <div className="text-xs font-medium text-eng-text">{t.label}</div>
-              <div className="text-[10px] text-eng-faint">{t.hint}</div>
+              <div className="text-xs font-medium text-foreground">{t.label}</div>
+              <div className="text-[10px] text-faint">{t.hint}</div>
             </button>
           ))}
         </div>
@@ -93,7 +93,7 @@ export function BomTable() {
 
       {tab === "format" && (
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 text-xs">
-          <label className="block text-eng-muted">
+          <label className="block text-muted-foreground">
             Header background
             <input
               type="color"
@@ -102,7 +102,7 @@ export function BomTable() {
               onChange={(e) => setBomFormatting({ headerBg: e.target.value })}
             />
           </label>
-          <label className="block text-eng-muted">
+          <label className="block text-muted-foreground">
             Header text
             <input
               type="color"
@@ -111,7 +111,7 @@ export function BomTable() {
               onChange={(e) => setBomFormatting({ headerFg: e.target.value })}
             />
           </label>
-          <label className="block text-eng-muted">
+          <label className="block text-muted-foreground">
             Alt row
             <input
               type="color"
@@ -120,7 +120,7 @@ export function BomTable() {
               onChange={(e) => setBomFormatting({ altRowBg: e.target.value })}
             />
           </label>
-          <label className="flex items-center justify-between text-eng-muted">
+          <label className="flex items-center justify-between text-muted-foreground">
             Font size
             <input
               type="number"
@@ -131,7 +131,7 @@ export function BomTable() {
               onChange={(e) => setBomFormatting({ fontSize: Number(e.target.value) })}
             />
           </label>
-          <label className="flex items-center justify-between text-eng-muted">
+          <label className="flex items-center justify-between text-muted-foreground">
             Number precision
             <input
               type="number"
@@ -144,7 +144,7 @@ export function BomTable() {
               }
             />
           </label>
-          <label className="flex items-center justify-between text-eng-muted">
+          <label className="flex items-center justify-between text-muted-foreground">
             Mass unit
             <select
               className={inputClass}
@@ -157,36 +157,36 @@ export function BomTable() {
               <option value="kg">kilograms</option>
             </select>
           </label>
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={fmt.showGrid}
               onChange={(e) => setBomFormatting({ showGrid: e.target.checked })}
-              className="accent-sky-600"
+              className="accent-accent"
             />
             Show grid
           </label>
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={fmt.boldHeader}
               onChange={(e) => setBomFormatting({ boldHeader: e.target.checked })}
-              className="accent-sky-600"
+              className="accent-accent"
             />
             Bold header
           </label>
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={fmt.wrapText}
               onChange={(e) => setBomFormatting({ wrapText: e.target.checked })}
-              className="accent-sky-600"
+              className="accent-accent"
             />
             Wrap text
           </label>
 
           <div>
-            <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+            <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-faint">
               Columns
             </h4>
             {bom.columns.map((col) => (
@@ -195,9 +195,9 @@ export function BomTable() {
                   type="checkbox"
                   checked={col.visible}
                   onChange={(e) => setBomColumn(col.id, { visible: e.target.checked })}
-                  className="accent-sky-600"
+                  className="accent-accent"
                 />
-                <span className="w-24 truncate text-eng-muted">{col.label}</span>
+                <span className="w-24 truncate text-muted-foreground">{col.label}</span>
                 <input
                   type="number"
                   className={`${inputClass} w-16`}
@@ -287,7 +287,7 @@ export function BomTable() {
               })}
             </tbody>
             <tfoot>
-              <tr className="text-eng-muted">
+              <tr className="text-muted-foreground">
                 <td className="px-2 py-1.5" colSpan={Math.max(visibleCols.length - 2, 1)}>
                   {bom.rows.length} row{bom.rows.length === 1 ? "" : "s"}
                 </td>

@@ -12,15 +12,15 @@ export function RenderSidePanel() {
   if (activePanel === "none") return null;
 
   return (
-    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-[22rem] flex-col overflow-hidden rounded-md border border-eng-border bg-eng-panel/95 shadow-2xl backdrop-blur-sm">
-      <div className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-[22rem] flex-col overflow-hidden rounded-md border border-border bg-card/95">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {panelTitle(activePanel)}
         </span>
         <button
           type="button"
           onClick={() => setActivePanel("none")}
-          className="rounded px-1.5 text-eng-faint hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 text-faint hover:bg-hover hover:text-accent"
         >
           ×
         </button>
@@ -81,7 +81,7 @@ export function AppearancesLibrary() {
   return (
     <div className="space-y-3">
       <ScaffoldBadge label="PBR map" />
-      <div className="flex gap-1 rounded border border-eng-border bg-eng-bg p-0.5">
+      <div className="flex gap-1 rounded border border-border bg-background p-0.5">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -89,8 +89,8 @@ export function AppearancesLibrary() {
             onClick={() => setAppearanceTab(t.id)}
             className={`flex-1 rounded px-2 py-1 text-[10px] font-medium ${
               appearanceTab === t.id
-                ? "bg-sky-700 text-white"
-                : "text-eng-muted hover:text-eng-text"
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:text-accent"
             }`}
           >
             {t.label}
@@ -107,17 +107,17 @@ export function AppearancesLibrary() {
               onClick={() => selectFunction(fn.id)}
               className={`flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left ${
                 selectedFunctionId === fn.id
-                  ? "border-sky-600 bg-sky-700/20"
-                  : "border-eng-border hover:bg-eng-hover"
+                  ? "border-accent bg-accent/15"
+                  : "border-border hover:bg-hover"
               }`}
             >
               <span
-                className="h-5 w-5 shrink-0 rounded border border-eng-border"
+                className="h-5 w-5 shrink-0 rounded border border-border"
                 style={{ background: fn.baseColor }}
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-eng-text">{fn.name}</span>
-                <span className="text-[10px] text-eng-faint">
+                <span className="block truncate text-foreground">{fn.name}</span>
+                <span className="text-[10px] text-faint">
                   {fn.kind} · m={fn.metalness} r={fn.roughness}
                 </span>
               </span>
@@ -131,10 +131,10 @@ export function AppearancesLibrary() {
           {modifiers.map((mod) => (
             <div
               key={mod.id}
-              className="space-y-1.5 rounded border border-eng-border bg-eng-bg/50 p-2"
+              className="space-y-1.5 rounded border border-border bg-background/50 p-2"
             >
               <label className="flex items-center justify-between gap-2">
-                <span className="font-medium text-eng-text">{mod.name}</span>
+                <span className="font-medium text-foreground">{mod.name}</span>
                 <input
                   type="checkbox"
                   checked={mod.enabled}
@@ -171,8 +171,8 @@ export function AppearancesLibrary() {
             onClick={() => selectEmission(null)}
             className={`w-full rounded border px-2 py-1.5 text-left ${
               selectedEmissionId == null
-                ? "border-sky-600 bg-sky-700/20"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/15"
+                : "border-border hover:bg-hover"
             }`}
           >
             None
@@ -184,17 +184,17 @@ export function AppearancesLibrary() {
               onClick={() => selectEmission(em.id)}
               className={`flex w-full items-center gap-2 rounded border px-2 py-1.5 text-left ${
                 selectedEmissionId === em.id
-                  ? "border-sky-600 bg-sky-700/20"
-                  : "border-eng-border hover:bg-eng-hover"
+                  ? "border-accent bg-accent/15"
+                  : "border-border hover:bg-hover"
               }`}
             >
               <span
-                className="h-5 w-5 shrink-0 rounded border border-eng-border"
+                className="h-5 w-5 shrink-0 rounded border border-border"
                 style={{ background: em.emissiveColor }}
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-eng-text">{em.name}</span>
-                <span className="text-[10px] text-eng-faint">
+                <span className="block truncate text-foreground">{em.name}</span>
+                <span className="text-[10px] text-faint">
                   {em.temperatureK} K · I={em.intensity}
                   {em.castLight ? " · casts light" : ""}
                 </span>
@@ -229,19 +229,19 @@ export function EnvironmentsLibrary() {
             onClick={() => selectEnvironment(env.id)}
             className={`w-full rounded border px-2 py-1.5 text-left ${
               activeEnvironmentId === env.id
-                ? "border-sky-600 bg-sky-700/20"
-                : "border-eng-border hover:bg-eng-hover"
+                ? "border-accent bg-accent/15"
+                : "border-border hover:bg-hover"
             }`}
           >
-            <span className="block text-eng-text">{env.name}</span>
-            <span className="text-[10px] text-eng-faint">
+            <span className="block text-foreground">{env.name}</span>
+            <span className="text-[10px] text-faint">
               {env.kind} · {env.mapRef}
             </span>
           </button>
         ))}
       </div>
       {active && (
-        <div className="space-y-2 rounded border border-eng-border bg-eng-bg/50 p-2">
+        <div className="space-y-2 rounded border border-border bg-background/50 p-2">
           <NumField
             label="Intensity"
             value={active.intensity}
@@ -259,7 +259,7 @@ export function EnvironmentsLibrary() {
               updateEnvironment(active.id, { rotationDeg: v })
             }
           />
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={active.backgroundVisible}
@@ -271,7 +271,7 @@ export function EnvironmentsLibrary() {
             />
             Show as background
           </label>
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={active.groundShadow}
@@ -325,7 +325,7 @@ function AxfPanel() {
           onChange={(v) => updateAxf({ rotationDeg: v })}
         />
       </div>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={axf.useSpectral}
@@ -333,7 +333,7 @@ function AxfPanel() {
         />
         Spectral AxF
       </label>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={axf.previewSrgb}
@@ -341,7 +341,7 @@ function AxfPanel() {
         />
         Preview in sRGB
       </label>
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         AxF id is attached to the PBR bag (`axfId`) for a future measured-BRDF
         binder — not decoded in this UI scaffold.
       </p>
@@ -379,7 +379,7 @@ function VolumePanel() {
         <Field label="Absorption">
           <input
             type="color"
-            className="h-8 w-full cursor-pointer rounded border border-eng-border bg-eng-bg"
+            className="h-8 w-full cursor-pointer rounded border border-border bg-background"
             value={volume.absorptionColor}
             onChange={(e) => updateVolume({ absorptionColor: e.target.value })}
           />
@@ -387,7 +387,7 @@ function VolumePanel() {
         <Field label="Scattering">
           <input
             type="color"
-            className="h-8 w-full cursor-pointer rounded border border-eng-border bg-eng-bg"
+            className="h-8 w-full cursor-pointer rounded border border-border bg-background"
             value={volume.scatteringColor}
             onChange={(e) => updateVolume({ scatteringColor: e.target.value })}
           />
@@ -423,11 +423,11 @@ function LightsPanel() {
       {lights.map((light) => (
         <div
           key={light.id}
-          className="space-y-2 rounded border border-eng-border bg-eng-bg/50 p-2"
+          className="space-y-2 rounded border border-border bg-background/50 p-2"
         >
           <div className="flex items-center justify-between">
-            <span className="font-medium text-eng-text">{light.name}</span>
-            <label className="flex items-center gap-1 text-[10px] text-eng-muted">
+            <span className="font-medium text-foreground">{light.name}</span>
+            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
               <input
                 type="checkbox"
                 checked={light.enabled}
@@ -459,7 +459,7 @@ function LightsPanel() {
             <Field label="Color">
               <input
                 type="color"
-                className="h-8 w-full cursor-pointer rounded border border-eng-border bg-eng-bg"
+                className="h-8 w-full cursor-pointer rounded border border-border bg-background"
                 value={light.color}
                 onChange={(e) =>
                   updateLight(light.id, { color: e.target.value })
@@ -473,7 +473,7 @@ function LightsPanel() {
               onChange={(v) => updateLight(light.id, { intensity: v })}
             />
           </div>
-          <label className="flex items-center gap-2 text-eng-muted">
+          <label className="flex items-center gap-2 text-muted-foreground">
             <input
               type="checkbox"
               checked={light.castShadow}
@@ -493,7 +493,7 @@ function CameraPanel() {
   return (
     <div className="space-y-3">
       <ScaffoldBadge />
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         Camera framing for Render Studio graphics area. Perspective / ortho and
         exposure controls will bind to the WebGL viewport host.
       </p>
@@ -522,17 +522,17 @@ function PbrPreview({
   };
 }) {
   return (
-    <div className="rounded border border-eng-border bg-eng-bg/70 p-2">
+    <div className="rounded border border-border bg-background/70 p-2">
       <div className="mb-1.5 flex items-center gap-2">
         <span
-          className="h-6 w-6 rounded border border-eng-border"
+          className="h-6 w-6 rounded border border-border"
           style={{ background: pbr.color }}
         />
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-faint">
           Mapped PBR
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[10px] text-eng-muted">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-[10px] text-muted-foreground">
         <span>metal {pbr.metalness.toFixed(2)}</span>
         <span>rough {pbr.roughness.toFixed(2)}</span>
         <span>α {pbr.opacity.toFixed(2)}</span>
@@ -549,14 +549,14 @@ function PbrPreview({
 
 function ScaffoldBadge({ label = "UI only" }: { label?: string }) {
   return (
-    <span className="inline-flex rounded bg-eng-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300/90">
+    <span className="inline-flex rounded bg-active px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent/90">
       {label}
     </span>
   );
 }
 
 const inputClass =
-  "w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-text outline-none focus:border-sky-600";
+  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-accent";
 
 function Field({
   label,
@@ -567,7 +567,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-faint">
         {label}
       </span>
       {children}
@@ -623,8 +623,8 @@ function ActionBtn({
       onClick={onClick}
       className={`rounded px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-40 ${
         primary
-          ? "bg-sky-700 text-white hover:bg-sky-600"
-          : "border border-eng-border text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          ? "bg-accent text-accent-foreground hover:bg-accent"
+          : "border border-border text-muted-foreground hover:border-accent hover:text-accent"
       }`}
     >
       {label}

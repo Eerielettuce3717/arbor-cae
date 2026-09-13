@@ -9,13 +9,12 @@ import {
 import {
   AmbientLight,
   BoxGeometry,
-  BufferGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   EdgesGeometry,
-  Float32BufferAttribute,
+  GridHelper,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -32,6 +31,11 @@ import {
 } from "three";
 import { meshFromBuffers } from "../../cad/meshFromBuffers";
 import type { MeshBuffers } from "../../cad/types";
+import { useTheme } from "../../providers/ThemeProvider";
+import {
+  applyViewportSceneTheme,
+  createThemedGrid,
+} from "../../theme/viewportTheme";
 import {
   FormWorkspace,
   type GizmoMode,
@@ -89,6 +93,10 @@ interface ViewportApi {
   phantomEdges: LineSegments[];
   sectionPlane: Plane;
   formWorkspace: FormWorkspace | null;
+  ambient: AmbientLight;
+  key: DirectionalLight;
+  fill: DirectionalLight;
+  grid: GridHelper;
   setActiveCamera: (cam: ActiveCamera) => void;
   fit: () => void;
   aimDirection: (dir: Vector3, orthographic: boolean) => void;
@@ -139,8 +147,11 @@ export function Viewport3D({
   onSculptCageChanged,
   onSculptLevelsChanged,
 }: Viewport3DProps) {
+  const { resolvedTheme } = useTheme();
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ViewportApi | null>(null);
+  const resolvedThemeRef = useRef(resolvedTheme);
+  resolvedThemeRef.current = resolvedTheme;
   const onCageChangedRef = useRef(onSculptCageChanged);
   onCageChangedRef.current = onSculptCageChanged;
 
@@ -173,7 +184,6 @@ export function Viewport3D({
     if (!host) return;
 
     const scene = new Scene();
-    scene.background = new Color("#0b1220");
 
     const perspective = new PerspectiveCamera(45, 1, 0.01, 5000);
     perspective.position.set(4, 3.5, 4);
@@ -200,7 +210,8 @@ export function Viewport3D({
     const controls = new OnshapeControls(orthographic, renderer.domElement);
     controls.target.set(0, 0.25, 0);
 
-    scene.add(new AmbientLight(0xffffff, 0.55));
+    const ambient = new AmbientLight(0xffffff, 0.55);
+    scene.add(ambient);
     const key = new DirectionalLight(0xffffff, 1.05);
     key.position.set(5, 8, 4);
     scene.add(key);
@@ -208,7 +219,14 @@ export function Viewport3D({
     fill.position.set(-4, 2, -3);
     scene.add(fill);
 
-    scene.add(createGroundGrid());
+    const grid = createThemedGrid(resolvedThemeRef.current);
+    scene.add(grid);
+    applyViewportSceneTheme(
+      scene,
+      resolvedThemeRef.current,
+      { ambient, key, fill },
+      grid,
+    );
 
     const modelRoot = new Group();
     modelRoot.name = "modelRoot";
@@ -369,6 +387,10 @@ export function Viewport3D({
       phantomEdges,
       sectionPlane,
       formWorkspace,
+      ambient,
+      key,
+      fill,
+      grid,
       setActiveCamera,
       fit,
       aimDirection,
@@ -453,6 +475,17 @@ export function Viewport3D({
       apiRef.current = null;
     };
   }, [arBridge]);
+
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    applyViewportSceneTheme(
+      api.scene,
+      resolvedTheme,
+      { ambient: api.ambient, key: api.key, fill: api.fill },
+      api.grid,
+    );
+  }, [resolvedTheme]);
 
   useEffect(() => {
     if (!occtMesh || sculptActive) return;
@@ -609,7 +642,7 @@ export function Viewport3D({
 
   return (
     <div
-      className={`relative h-full min-h-0 w-full overflow-hidden bg-[#0b1220] ${className ?? ""}`}
+      className={`relative h-full min-h-0 w-full overflow-hidden bg-background ${className ?? ""}`}
       style={style}
     >
       <div ref={canvasHostRef} className="absolute inset-0" />
@@ -627,8 +660,8 @@ export function Viewport3D({
       <ViewCube viewDirection={viewDirection} onFaceClick={onFaceClick} />
 
       {sculptActive && (
-        <div className="pointer-events-auto absolute left-3 top-14 z-20 flex flex-col gap-2 rounded border border-eng-border bg-eng-panel/95 p-2 shadow-xl">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-sky-300">
+        <div className="pointer-events-auto absolute left-3 top-14 z-20 flex flex-col gap-2 rounded border border-border bg-card/95 p-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-accent">
             Form Workspace
           </div>
           <div className="flex gap-1">
@@ -646,8 +679,8 @@ export function Viewport3D({
                 onClick={() => setGizmoMode(mode)}
                 className={`rounded px-2 py-1 text-[11px] ${
                   gizmoMode === mode
-                    ? "bg-sky-700 text-white"
-                    : "bg-eng-elevated text-eng-muted hover:text-eng-text"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:text-accent"
                 }`}
               >
                 {label}
@@ -655,7 +688,7 @@ export function Viewport3D({
             ))}
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-eng-muted">Subdiv</span>
+            <span className="text-[10px] text-muted-foreground">Subdiv</span>
             {[0, 1, 2, 3, 4].map((level) => (
               <button
                 key={level}
@@ -663,16 +696,16 @@ export function Viewport3D({
                 onClick={() => onFormLevelClick(level)}
                 className={`h-6 w-6 rounded text-[11px] ${
                   formLevels === level
-                    ? "bg-sky-700 text-white"
-                    : "bg-eng-elevated text-eng-muted hover:text-eng-text"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:text-accent"
                 }`}
               >
                 {level}
               </button>
             ))}
           </div>
-          <p className="max-w-[200px] text-[10px] leading-snug text-eng-faint">
-            Click amber vertices, cyan edges, or violet face centers. Drag the
+          <p className="max-w-[200px] text-[10px] leading-snug text-faint">
+            Click amber vertices, cyan edges, or face centers. Drag the
             gizmo to edit the cage — smooth mesh updates live.
           </p>
         </div>
@@ -684,8 +717,8 @@ export function Viewport3D({
           onClick={() => setArPanelOpen((v) => !v)}
           className={`rounded border px-2.5 py-1 text-[11px] font-medium ${
             arPanelOpen
-              ? "border-sky-600 bg-eng-active text-sky-300"
-              : "border-eng-border bg-eng-panel/90 text-eng-muted hover:text-eng-text"
+              ? "border-accent bg-active text-accent"
+              : "border-border bg-card/90 text-muted-foreground hover:text-accent"
           }`}
           title="Augmented Reality / Apple Vision Pro"
         >
@@ -700,7 +733,7 @@ export function Viewport3D({
         />
       )}
 
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-eng-border/60 bg-eng-panel/90 px-3 py-1 text-[10px] text-eng-muted">
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between border-t border-border/60 bg-card/90 px-3 py-1 text-[10px] text-muted-foreground">
         <span>{statusLine}</span>
         <span className="font-mono">
           {sculptActive
@@ -775,26 +808,6 @@ function createDemoPart(): {
   return { solids, edges, phantom };
 }
 
-function createGroundGrid(): LineSegments {
-  const positions: number[] = [];
-  const size = 8;
-  const step = 0.5;
-  for (let i = -size; i <= size; i += step) {
-    positions.push(-size, 0, i, size, 0, i);
-    positions.push(i, 0, -size, i, 0, size);
-  }
-  const geo = new BufferGeometry();
-  geo.setAttribute("position", new Float32BufferAttribute(positions, 3));
-  const mat = new LineBasicMaterial({
-    color: 0x1e293b,
-    transparent: true,
-    opacity: 0.7,
-  });
-  const lines = new LineSegments(geo, mat);
-  lines.name = "groundGrid";
-  return lines;
-}
-
 function applyMaterials(
   solids: Mesh[],
   edges: LineSegments[],
@@ -857,7 +870,7 @@ function applyMaterials(
       (showBoundary || render.highlightBoundaryEdges) &&
       render.hiddenEdges !== "removed";
     const mat = line.material as LineBasicMaterial;
-    mat.color.set(render.highlightBoundaryEdges ? 0x0ea5e9 : 0x0f172a);
+    mat.color.set(render.highlightBoundaryEdges ? 0xe85d04 : 0x0f172a);
     mat.clippingPlanes = planes;
   }
 

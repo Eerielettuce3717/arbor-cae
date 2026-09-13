@@ -16,15 +16,15 @@ export function CamSidePanel() {
   if (activePanel === "none") return null;
 
   return (
-    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-72 flex-col overflow-hidden rounded-md border border-eng-border bg-eng-panel/95 shadow-2xl backdrop-blur-sm">
-      <div className="flex items-center justify-between border-b border-eng-border px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-eng-muted">
+    <aside className="absolute bottom-12 right-3 top-3 z-20 flex w-72 flex-col overflow-hidden rounded-md border border-border bg-card/95">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {panelTitle(activePanel)}
         </span>
         <button
           type="button"
           onClick={() => setActivePanel("none")}
-          className="rounded px-1.5 text-eng-faint hover:bg-eng-hover hover:text-eng-text"
+          className="rounded px-1.5 text-faint hover:bg-hover hover:text-accent"
         >
           ×
         </button>
@@ -75,11 +75,11 @@ function SetupPanel() {
         />
       </Field>
       <Field label="Machine">
-        <div className="rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-muted">
+        <div className="rounded border border-border bg-background px-2 py-1.5 text-muted-foreground">
           {setup.machine}
         </div>
       </Field>
-      <p className="text-[11px] leading-relaxed text-eng-faint">
+      <p className="text-[11px] leading-relaxed text-faint">
         A Setup defines stock bounding box and WCS origin for machining. Open
         Stock / WCS to edit, then select a flat face for pocket clearing.
       </p>
@@ -152,7 +152,7 @@ function StockPanel() {
           </Field>
         ))}
       </div>
-      <label className="flex items-center gap-2 text-eng-muted">
+      <label className="flex items-center gap-2 text-muted-foreground">
         <input
           type="checkbox"
           checked={stock.visible}
@@ -217,7 +217,7 @@ function WcsPanel() {
           }
         />
       </Field>
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Default places G54 on the top of stock at the min-X/min-Y corner.
       </p>
     </div>
@@ -244,7 +244,7 @@ function PocketPanel() {
   return (
     <div className="space-y-3">
       <Field label="Tool">
-        <div className="rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-muted">
+        <div className="rounded border border-border bg-background px-2 py-1.5 text-muted-foreground">
           {tool?.name ?? "—"}
         </div>
       </Field>
@@ -324,9 +324,9 @@ function PostPanel() {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <p className="text-[11px] text-eng-faint">
+      <p className="text-[11px] text-faint">
         Posts the active pocket toolpath to Fanuc G-code and writes a{" "}
-        <span className="font-mono text-sky-300/80">.nc</span> file via Tauri
+        <span className="font-mono text-accent/80">.nc</span> file via Tauri
         fs.
       </p>
       <ActionBtn
@@ -341,7 +341,7 @@ function PostPanel() {
         </div>
       )}
       {lastGCode && (
-        <pre className="min-h-0 flex-1 overflow-auto rounded border border-eng-border bg-eng-bg p-2 font-mono text-[10px] leading-relaxed text-eng-muted">
+        <pre className="min-h-0 flex-1 overflow-auto rounded border border-border bg-background p-2 font-mono text-[10px] leading-relaxed text-muted-foreground">
           {lastGCode}
         </pre>
       )}
@@ -350,7 +350,7 @@ function PostPanel() {
 }
 
 const inputClass =
-  "w-full rounded border border-eng-border bg-eng-bg px-2 py-1.5 text-eng-text outline-none focus:border-sky-600";
+  "w-full rounded border border-border bg-background px-2 py-1.5 text-foreground outline-none focus:border-accent";
 
 function Field({
   label,
@@ -361,7 +361,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[10px] font-medium uppercase tracking-wide text-eng-faint">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-faint">
         {label}
       </span>
       {children}
@@ -417,8 +417,8 @@ function ActionBtn({
       onClick={onClick}
       className={`rounded px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-40 ${
         primary
-          ? "bg-sky-700 text-white hover:bg-sky-600"
-          : "border border-eng-border text-eng-muted hover:border-sky-700 hover:text-sky-300"
+          ? "bg-accent text-accent-foreground hover:bg-accent"
+          : "border border-border text-muted-foreground hover:border-accent hover:text-accent"
       }`}
     >
       {label}

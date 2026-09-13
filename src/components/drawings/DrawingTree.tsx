@@ -34,7 +34,7 @@ export function DrawingTree() {
 
   return (
     <div className="flex h-full min-h-0 flex-col text-xs">
-      <div className="flex flex-wrap gap-0.5 border-b border-eng-border px-1 py-1">
+      <div className="flex flex-wrap gap-0.5 border-b border-border px-1 py-1">
         {QUICK_PANELS.map((p) => (
           <button
             key={p.id}
@@ -44,8 +44,8 @@ export function DrawingTree() {
             }
             className={`rounded px-1.5 py-0.5 text-[10px] ${
               activePanel === p.id
-                ? "bg-sky-700 text-white"
-                : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-hover hover:text-accent"
             }`}
           >
             {p.label}
@@ -53,7 +53,7 @@ export function DrawingTree() {
         ))}
       </div>
 
-      <div className="border-b border-eng-border px-2 py-1 text-[10px] text-eng-faint">
+      <div className="border-b border-border px-2 py-1 text-[10px] text-faint">
         {properties.format} · {properties.units} · {properties.scale}
         {exportState.danglingCount > 0 && (
           <span className="ml-2 text-rose-300">
@@ -127,7 +127,7 @@ function Section({
 }) {
   return (
     <div className="mb-2">
-      <div className="px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-eng-faint">
+      <div className="px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-faint">
         {label}
       </div>
       <div className="space-y-0.5">{children}</div>
@@ -154,10 +154,10 @@ function Row({
       onClick={onClick}
       className={`flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left ${
         selected
-          ? "bg-sky-900/40 text-sky-200"
+          ? "bg-accent/15 text-accent"
           : muted
-            ? "text-eng-faint"
-            : "text-eng-muted hover:bg-eng-hover hover:text-eng-text"
+            ? "text-faint"
+            : "text-muted-foreground hover:bg-hover hover:text-accent"
       }`}
     >
       <span className="w-3 text-center text-[10px] opacity-70">{icon}</span>
