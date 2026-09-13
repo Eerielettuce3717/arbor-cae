@@ -313,7 +313,10 @@ function ModalSimulationPanel() {
 
   return (
     <div className="space-y-3">
-      <ScaffoldBadge label="Modal hook" />
+      <ScaffoldBadge label="FEA not implemented" />
+      <p className="text-[11px] leading-relaxed text-faint">
+        Run maps study params only. No eigenmodes are computed.
+      </p>
       <NumField
         label="Mode count"
         value={study.modal.modeCount}
@@ -390,7 +393,10 @@ function AsyncSimulationPanel() {
 
   return (
     <div className="space-y-3">
-      <ScaffoldBadge label="Async hook" />
+      <ScaffoldBadge label="FEA not implemented" />
+      <p className="text-[11px] leading-relaxed text-faint">
+        Enqueue does not start a remote or local worker job.
+      </p>
       <Field label="Job name">
         <input
           className={inputClass}
@@ -491,7 +497,8 @@ function ResultsPanel() {
       <div className="space-y-2">
         <ScaffoldBadge />
         <p className="text-faint">
-          No results yet. Run Modal or Asynchronous simulation.
+          No results yet. Run Modal or Asynchronous to confirm the solver is
+          unavailable (honest failure, no fake stress or frequencies).
         </p>
       </div>
     );

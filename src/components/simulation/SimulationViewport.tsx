@@ -30,8 +30,8 @@ export function SimulationViewport() {
             {study?.name ?? "Study"}
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-faint">
-            Viewport scaffold for mesh / modal shapes / stress contours. Solver
-            hooks map study params; FEA visualization binds here later.
+            No FEA mesh or contour overlay yet. Run Modal/Async to get an
+            honest failure — results never invent stress or frequencies.
           </p>
           {lastResult && (
             <div className="mt-3 rounded border border-border bg-background/70 px-3 py-2 text-left text-[11px] text-muted-foreground">

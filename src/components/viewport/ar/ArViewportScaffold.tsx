@@ -118,8 +118,8 @@ export function ArViewportPlaceholder({
             Augmented Reality
           </p>
           <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">
-            View this model in AR or on Apple Vision Pro. Spatial sessions are
-            scaffolded and will activate when host APIs are available.
+            AR / Vision Pro is not available yet. WebXR, visionOS, and USDZ
+            export are placeholders — no session or file is produced.
           </p>
         </div>
         {onClose && (
@@ -154,9 +154,11 @@ export function ArViewportPlaceholder({
         <ArAction
           label="Export USDZ / Quick Look"
           detail={
-            caps.usdzQuickLook ? "Share sheet" : "Scaffold — logs export stub"
+            caps.usdzQuickLook
+              ? "Share sheet"
+              : "Not implemented — no USDZ/glTF export"
           }
-          disabled={false}
+          disabled={!caps.usdzQuickLook}
           onClick={() => void bridge.exportForAr()}
         />
       </div>

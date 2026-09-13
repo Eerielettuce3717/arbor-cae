@@ -58,16 +58,14 @@ export interface AsyncSimulationHooks {
   cancel: () => void;
 }
 
-function stubFrequencies(modeCount: number): number[] {
-  const base = 42.5;
-  return Array.from({ length: modeCount }, (_, i) =>
-    Number((base * (i + 1) * 1.17).toFixed(2)),
-  );
+function stubFrequencies(_modeCount: number): number[] {
+  // Do not invent eigenfrequencies — FEA is not wired.
+  return [];
 }
 
 /**
  * Hook for Modal Simulation (frequency / eigenmode) UI wiring.
- * Returns a scaffolded runner that records mapped params and fake modes.
+ * Returns a scaffolded runner that records mapped params; does not solve FEA.
  */
 export function useModalSimulation(): ModalSimulationHooks {
   const [status, setStatus] = useState<SimulationRunStatus>("idle");
@@ -95,10 +93,9 @@ export function useModalSimulation(): ModalSimulationHooks {
       cancelled.current = false;
       setStatus("running");
       const request = buildRequest(study);
-      // Future: post request to FEA worker / OpenCascade + Eigen bridge.
-      console.info("[SimulationStudio] ModalSimulation request", request);
+      console.info("[SimulationStudio] ModalSimulation request (scaffold)", request);
 
-      await new Promise((r) => setTimeout(r, 280));
+      await new Promise((r) => setTimeout(r, 120));
       if (cancelled.current) {
         const cancelledResult: SimulationResultSummary = {
           studyId: study.id,
@@ -116,15 +113,16 @@ export function useModalSimulation(): ModalSimulationHooks {
 
       const summary: SimulationResultSummary = {
         studyId: study.id,
-        status: "converged",
+        status: "failed",
         maxDisplacementMm: null,
         maxVonMisesMPa: null,
         naturalFrequenciesHz: stubFrequencies(request.modal.modeCount),
         jobId: null,
-        elapsedMs: 280,
-        message: `Modal scaffold: ${request.modal.modeCount} modes mapped for PBR/FEA handoff.`,
+        elapsedMs: 120,
+        message:
+          "Modal FEA is not implemented — params were mapped only. No eigenfrequencies were computed.",
       };
-      setStatus("converged");
+      setStatus("failed");
       setResult(summary);
       return summary;
     },
@@ -173,40 +171,40 @@ export function useAsyncSimulation(): AsyncSimulationHooks {
       setJobId(id);
       setStatus("queued");
       setProgress(0);
-      console.info("[SimulationStudio] AsyncSimulation enqueue", { id, request });
+      console.info("[SimulationStudio] AsyncSimulation enqueue (scaffold)", {
+        id,
+        request,
+      });
 
-      const steps = 5;
-      for (let i = 1; i <= steps; i++) {
-        await new Promise((r) => setTimeout(r, 120));
-        if (cancelled.current) {
-          const cancelledResult: SimulationResultSummary = {
-            studyId: study.id,
-            status: "cancelled",
-            maxDisplacementMm: null,
-            maxVonMisesMPa: null,
-            naturalFrequenciesHz: [],
-            jobId: id,
-            elapsedMs: null,
-            message: "Async simulation cancelled.",
-          };
-          setResult(cancelledResult);
-          return cancelledResult;
-        }
-        setStatus("running");
-        setProgress(i / steps);
+      setStatus("running");
+      setProgress(0.5);
+      await new Promise((r) => setTimeout(r, 120));
+      if (cancelled.current) {
+        const cancelledResult: SimulationResultSummary = {
+          studyId: study.id,
+          status: "cancelled",
+          maxDisplacementMm: null,
+          maxVonMisesMPa: null,
+          naturalFrequenciesHz: [],
+          jobId: id,
+          elapsedMs: null,
+          message: "Async simulation cancelled.",
+        };
+        setResult(cancelledResult);
+        return cancelledResult;
       }
 
       const summary: SimulationResultSummary = {
         studyId: study.id,
-        status: "converged",
-        maxDisplacementMm: 0.42,
-        maxVonMisesMPa: 118.5,
+        status: "failed",
+        maxDisplacementMm: null,
+        maxVonMisesMPa: null,
         naturalFrequenciesHz: [],
         jobId: id,
-        elapsedMs: steps * 120,
-        message: `Async scaffold job ${id} complete (${request.async.workerPool}).`,
+        elapsedMs: 120,
+        message: `Async FEA is not implemented — job ${id} was not sent to a worker pool.`,
       };
-      setStatus("converged");
+      setStatus("failed");
       setProgress(1);
       setResult(summary);
       return summary;

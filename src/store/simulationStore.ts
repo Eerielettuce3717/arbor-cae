@@ -122,7 +122,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => {
         selectedNodeId: study.id,
         lastResult: null,
         statusMessage:
-          "Sample study loaded — Modal/Async still return scaffold results only.",
+          "Sample study loaded — Modal/Async report failure until an FEA solver is wired.",
       });
     },
 

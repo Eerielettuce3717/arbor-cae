@@ -708,9 +708,9 @@ export function Viewport3D({
               ? "border-accent bg-active text-accent"
               : "border-border bg-card/90 text-muted-foreground hover:text-accent"
           }`}
-          title="Augmented Reality / Apple Vision Pro"
+          title="AR / Vision Pro (not implemented)"
         >
-          AR / Vision Pro
+          AR (stub)
         </button>
       </div>
 
