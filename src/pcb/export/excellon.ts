@@ -44,7 +44,7 @@ export function generateExcellon(input: ExcellonExportInput): string {
   const tools = [...toolMap.values()].sort((a, b) => a.diam - b.diam);
 
   lines.push(`M48`);
-  lines.push(`;CAD Engine PCB Studio — Excellon`);
+  lines.push(`;Arbor PCB Studio — Excellon`);
   if (input.partName) lines.push(`;${input.partName}`);
   lines.push(`;FORMAT={2:4/ Absolute / Metric}`);
   lines.push(`METRIC,TZ`);

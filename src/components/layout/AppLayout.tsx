@@ -44,6 +44,7 @@ import {
 } from "../../store/simulationTypes";
 import { Viewport3D } from "../viewport/Viewport3D";
 import { PreferencesModal } from "../settings/PreferencesModal";
+import { Logo } from "../ui/Logo";
 
 export interface WorkspaceTab {
   id: string;
@@ -356,6 +357,9 @@ export function AppLayout({
     <div className="relative flex h-full min-h-0 flex-col bg-background text-foreground">
       {/* Top chrome: Document Menu + Document Tabs */}
       <div className="flex shrink-0 items-stretch border-b border-border bg-card">
+        <div className="flex items-center border-r border-border px-3">
+          <Logo className="h-6 w-6" />
+        </div>
         <div className="relative flex items-center border-r border-border">
           <button
             type="button"
@@ -364,9 +368,6 @@ export function AppLayout({
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-accent text-[10px] font-bold text-accent-foreground">
-              CE
-            </span>
             Document
             <span className="text-[10px] text-muted-foreground">▾</span>
           </button>

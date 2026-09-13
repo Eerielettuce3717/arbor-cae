@@ -153,7 +153,7 @@ export function generateGerber(input: GerberExportInput): string {
   }
 
   const out: string[] = [];
-  out.push(`G04 CAD Engine PCB Studio — RS-274X*`);
+  out.push(`G04 Arbor PCB Studio — RS-274X*`);
   out.push(`G04 ${input.partName ?? input.outline.name} / ${layer}*`);
   out.push(`%FSLAX46Y46*%`);
   out.push(`%MOMM*%`);
