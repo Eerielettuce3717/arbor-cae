@@ -93,6 +93,70 @@ export function rotationZMat4(radians: number): Mat4 {
   return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
 
+/**
+ * Rotation about an arbitrary axis through the origin (Rodrigues), column-major.
+ *
+ * Callers previously branched between a Y and a Z rotation on `|axis.y| > 0.5`,
+ * which silently mapped an X axis (and every diagonal) onto the wrong rotation
+ * plane.
+ */
+export function rotationAboutAxisMat4(axis: Vec3, radians: number): Mat4 {
+  const [x, y, z] = normalize(axis);
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  const t = 1 - c;
+
+  return [
+    t * x * x + c,
+    t * x * y + s * z,
+    t * x * z - s * y,
+    0,
+
+    t * x * y - s * z,
+    t * y * y + c,
+    t * y * z + s * x,
+    0,
+
+    t * x * z + s * y,
+    t * y * z - s * x,
+    t * z * z + c,
+    0,
+
+    0,
+    0,
+    0,
+    1,
+  ];
+}
+
+/** Reflection through the plane with unit normal `n` passing through the origin. */
+export function reflectionMat4(normal: Vec3): Mat4 {
+  const [x, y, z] = normalize(normal);
+  // Householder: I - 2 n nᵀ. Symmetric, so column-major layout matches row-major.
+  return [
+    1 - 2 * x * x,
+    -2 * x * y,
+    -2 * x * z,
+    0,
+
+    -2 * x * y,
+    1 - 2 * y * y,
+    -2 * y * z,
+    0,
+
+    -2 * x * z,
+    -2 * y * z,
+    1 - 2 * z * z,
+    0,
+
+    0,
+    0,
+    0,
+    1,
+  ];
+}
+
+
 export function mulMat4(a: Mat4, b: Mat4): Mat4 {
   const r = identityMat4();
   for (let col = 0; col < 4; col++) {

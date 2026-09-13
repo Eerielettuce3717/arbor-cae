@@ -569,7 +569,18 @@ function NumField({
         step={step}
         min={min}
         max={max}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => {
+          // An empty field parses to NaN. Feeding that to setGridMm made
+          // snapToGrid compute Math.round(x / NaN) * NaN, so every routed vertex
+          // became (NaN, NaN). Board thickness had the same exposure. Ignore
+          // non-finite input and respect the declared bounds.
+          const next = Number(e.target.value);
+          if (!Number.isFinite(next)) return;
+          let clamped = next;
+          if (typeof min === "number" && clamped < min) clamped = min;
+          if (typeof max === "number" && clamped > max) clamped = max;
+          onChange(clamped);
+        }}
       />
     </Field>
   );

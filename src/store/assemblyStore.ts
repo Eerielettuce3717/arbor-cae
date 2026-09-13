@@ -8,6 +8,8 @@ import {
   mat4ToFrame,
   measureMateResidual,
   mulMat4,
+  reflectionMat4,
+  rotationAboutAxisMat4,
   solveMateWorld,
   translationMat4,
   type Mat4,
@@ -1265,17 +1267,18 @@ export const useAssemblyStore = create<AssemblyStoreState>((set, get) => ({
     const id = uid("pat");
     const copies: AssemblyInstance[] = [];
     const copyConnectors: MateConnector[] = [];
-    const n = Math.max(2, Math.min(count, 12));
-    const step = (angle * Math.PI) / 180 / Math.max(n - 1, 1);
+    const n = Math.max(2, Math.min(Number.isFinite(count) ? count : 2, 12));
+    const sweep = Number.isFinite(angle) ? angle : 0;
+    const step = (sweep * Math.PI) / 180 / Math.max(n - 1, 1);
+    // The axis line passes through the assembly origin, so copies orbit (0,0,0).
+    // Conjugating this to pivot at the seed's own origin would stack every copy
+    // exactly on the seed.
     for (let i = 1; i < n; i++) {
       const copyId = uid("inst");
       const theta = step * i;
-      const c = Math.cos(theta);
-      const s = Math.sin(theta);
-      const rot: Mat4 =
-        Math.abs(axis[1]) > 0.5
-          ? [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1]
-          : [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+      // Rodrigues about the true axis. The previous branch picked a Y or Z
+      // rotation from `|axis.y| > 0.5`, so an X axis rotated in the Z plane.
+      const rot = rotationAboutAxisMat4(axis, theta);
       copies.push({
         ...seedInst,
         id: copyId,
@@ -1318,10 +1321,13 @@ export const useAssemblyStore = create<AssemblyStoreState>((set, get) => ({
     if (!seedInst) return;
     const id = uid("pat");
     const copyId = uid("inst");
-    const sx = axis[0] !== 0 ? -1 : 1;
-    const sy = axis[1] !== 0 ? -1 : 1;
-    const sz = axis[2] !== 0 ? -1 : 1;
-    const mirror: Mat4 = [sx, 0, 0, 0, 0, sy, 0, 0, 0, 0, sz, 0, 0, 0, 0, 1];
+    // Reflect through the assembly datum plane whose normal is `axis`.
+    //
+    // The previous implementation negated one scale component per non-zero axis
+    // entry. That is only a reflection for a world-axis-aligned normal; for a
+    // diagonal normal like [1,1,0] it negates two axes, which is a 180 degree
+    // rotation (determinant +1), not a mirror.
+    const mirror = reflectionMat4(axis);
     const copy: AssemblyInstance = {
       ...seedInst,
       id: copyId,

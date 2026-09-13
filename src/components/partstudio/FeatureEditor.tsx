@@ -12,6 +12,20 @@ import {
   type FeatureToolType,
 } from "../../store/featureTypes";
 
+/**
+ * Clamp a parameter to the catalog's declared bounds.
+ *
+ * The catalog marks radius/depth/width/thickness with `min: 0.01`, but those
+ * bounds were only forwarded to the DOM, so typing a negative or zero value
+ * stored it and pushed invalid geometry into the kernel.
+ */
+function clampToField(value: number, min?: number, max?: number): number {
+  let out = value;
+  if (typeof min === "number" && Number.isFinite(min) && out < min) out = min;
+  if (typeof max === "number" && Number.isFinite(max) && out > max) out = max;
+  return out;
+}
+
 function FieldLabel({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="mb-0.5 flex items-baseline justify-between gap-2">
@@ -118,7 +132,17 @@ function ParamField({
           min={field.min}
           max={field.max}
           step={field.step ?? 0.1}
-          onChange={(e) => onChange(field.key, e.target.valueAsNumber)}
+          onChange={(e) => {
+            // Clearing a number input yields NaN from valueAsNumber. Storing it
+            // put NaN into a geometry parameter, and the evaluators' `Number(x)
+            // || fallback` then silently substituted a default (a blank depth
+            // became 12mm) while the field still displayed NaN. Keep the last
+            // good value instead, and honour the catalog's min/max, which were
+            // previously advisory DOM attributes only.
+            const next = e.target.valueAsNumber;
+            if (!Number.isFinite(next)) return;
+            onChange(field.key, clampToField(next, field.min, field.max));
+          }}
         />
       </div>
     );

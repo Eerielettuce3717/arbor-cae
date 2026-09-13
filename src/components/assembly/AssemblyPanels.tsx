@@ -283,7 +283,10 @@ function MateEditor() {
   const pendingConnectorId = useAssemblyStore((s) => s.pendingConnectorId);
   const clearPendingConnector = useAssemblyStore((s) => s.clearPendingConnector);
 
-  const mate = mates.find((m) => m.id === selectedMateId) ?? mates[0];
+  // No fallback to mates[0]: selectInstances() clears selectedMateId, and falling
+  // back meant every control in this panel silently edited the first mate in the
+  // assembly instead of showing the empty state.
+  const mate = mates.find((m) => m.id === selectedMateId) ?? null;
   const def = mate ? MATE_CATALOG.find((m) => m.type === mate.type) : undefined;
   const implemented = mate ? IMPLEMENTED_MATES.has(mate.type) : false;
   const toolDef = MATE_CATALOG.find((m) => m.type === activeTool);

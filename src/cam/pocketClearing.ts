@@ -136,49 +136,107 @@ export function generatePocketZigzag(input: PocketClearInput): CamPoint2[] {
     ];
   }
 
-  // Optional rotation of pass direction about face center.
+  // Rotate the raster *direction*, then clip every pass to the inset rectangle.
+  //
+  // The previous implementation generated full-width passes across the
+  // axis-aligned inset box and rotated the emitted endpoints about the centre.
+  // Rotating a rectangle's corners moves them outside that rectangle, so any
+  // non-zero angle drove the tool past the inset boundary and through the
+  // stock-to-leave margin. The perimeter pass was rotated the same way, so the
+  // finishing loop left the pocket entirely.
   const angle = (params.angleDeg * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
+  // Pass direction and its perpendicular.
+  const ux = Math.cos(angle);
+  const uy = Math.sin(angle);
+  const vx = -uy;
+  const vy = ux;
+
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
 
-  const rotate = (x: number, y: number): CamPoint2 => {
-    const dx = x - cx;
-    const dy = y - cy;
-    return {
-      x: cx + dx * cos - dy * sin,
-      y: cy + dx * sin + dy * cos,
-    };
-  };
+  // Half-extent of the inset rectangle measured along the perpendicular, so the
+  // scan lines span the whole pocket no matter how it is rotated.
+  const halfW = (maxX - minX) / 2;
+  const halfH = (maxY - minY) / 2;
+  const vExtent = Math.abs(halfW * vx) + Math.abs(halfH * vy);
 
-  // Work in unrotated AABB; rotate points on emit when angle ≠ 0.
   const points: CamPoint2[] = [];
-  let y = minY;
   let row = 0;
 
-  while (y <= maxY + 1e-9) {
-    const clampedY = Math.min(y, maxY);
-    if (row % 2 === 0) {
-      points.push(rotate(minX, clampedY));
-      points.push(rotate(maxX, clampedY));
-    } else {
-      points.push(rotate(maxX, clampedY));
-      points.push(rotate(minX, clampedY));
+  for (let offset = -vExtent; offset <= vExtent + 1e-9; offset += step) {
+    const clamped = Math.min(offset, vExtent);
+    // Line through (cx,cy) + v*clamped, running along u.
+    const px = cx + vx * clamped;
+    const py = cy + vy * clamped;
+    const span = clipLineToRect(px, py, ux, uy, minX, maxX, minY, maxY);
+    if (span) {
+      const a: CamPoint2 = { x: px + ux * span.tMin, y: py + uy * span.tMin };
+      const b: CamPoint2 = { x: px + ux * span.tMax, y: py + uy * span.tMax };
+      // Serpentine: alternate direction so the tool does not air-cut back.
+      if (row % 2 === 0) {
+        points.push(a, b);
+      } else {
+        points.push(b, a);
+      }
+      row += 1;
     }
-    if (clampedY >= maxY) break;
-    y += step;
-    row += 1;
+    if (clamped >= vExtent) break;
   }
 
-  // Close with a perimeter pass for residual corners (simple box outline).
-  points.push(rotate(minX, minY));
-  points.push(rotate(maxX, minY));
-  points.push(rotate(maxX, maxY));
-  points.push(rotate(minX, maxY));
-  points.push(rotate(minX, minY));
+  if (points.length === 0) {
+    return [{ x: cx, y: cy }];
+  }
+
+  // Perimeter pass for residual corners. This traces the inset rectangle itself
+  // and is deliberately not rotated — the pocket boundary does not rotate with
+  // the raster direction.
+  points.push({ x: minX, y: minY });
+  points.push({ x: maxX, y: minY });
+  points.push({ x: maxX, y: maxY });
+  points.push({ x: minX, y: maxY });
+  points.push({ x: minX, y: minY });
 
   return points;
+}
+
+/**
+ * Clip the infinite line `(px,py) + t*(dx,dy)` to an axis-aligned rectangle.
+ *
+ * Liang-Barsky slab clipping. Returns the parametric range that lies inside the
+ * rectangle, or null when the line misses it entirely. This is what guarantees
+ * every emitted toolpath point stays within the inset (tool-safe) region.
+ */
+function clipLineToRect(
+  px: number,
+  py: number,
+  dx: number,
+  dy: number,
+  minX: number,
+  maxX: number,
+  minY: number,
+  maxY: number,
+): { tMin: number; tMax: number } | null {
+  let tMin = -Infinity;
+  let tMax = Infinity;
+
+  // Each slab contributes an entry/exit parameter; a near-zero direction
+  // component means the line is parallel to that slab, so it is either wholly
+  // inside it or wholly outside.
+  const slab = (p: number, d: number, lo: number, hi: number): boolean => {
+    if (Math.abs(d) < 1e-12) return p >= lo - 1e-9 && p <= hi + 1e-9;
+    const t1 = (lo - p) / d;
+    const t2 = (hi - p) / d;
+    const enter = Math.min(t1, t2);
+    const exit = Math.max(t1, t2);
+    if (enter > tMin) tMin = enter;
+    if (exit < tMax) tMax = exit;
+    return true;
+  };
+
+  if (!slab(px, dx, minX, maxX)) return null;
+  if (!slab(py, dy, minY, maxY)) return null;
+  if (tMin > tMax) return null;
+  return { tMin, tMax };
 }
 
 /**

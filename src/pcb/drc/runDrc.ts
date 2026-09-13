@@ -59,7 +59,69 @@ export function minPadPitchMm(pads: PcbPad[]): number | null {
   return Number.isFinite(min) ? min : null;
 }
 
-/** Approximate segment–segment clearance (centerline distance − half widths). */
+/** Shortest distance from point `p` to segment `a`–`b`. */
+function pointSegmentDistance(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq < 1e-18) return Math.hypot(px - ax, py - ay);
+  // Projection parameter clamped to the segment.
+  let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+  if (t < 0) t = 0;
+  else if (t > 1) t = 1;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+/** Sign of the cross product (b-a) x (c-a); 0 when collinear. */
+function orientation(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  cx: number,
+  cy: number,
+): number {
+  const v = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+  if (v > 1e-12) return 1;
+  if (v < -1e-12) return -1;
+  return 0;
+}
+
+function onSegment(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  px: number,
+  py: number,
+): boolean {
+  return (
+    px >= Math.min(ax, bx) - 1e-12 &&
+    px <= Math.max(ax, bx) + 1e-12 &&
+    py >= Math.min(ay, by) - 1e-12 &&
+    py <= Math.max(ay, by) + 1e-12
+  );
+}
+
+/**
+ * Exact segment–segment clearance: true centreline distance minus half widths.
+ *
+ * This replaces an 8x8 sampled approximation. Sampling only evaluates 81 fixed
+ * parameter pairs, and the true minimum between two segments generally does not
+ * fall on a sample point, so a narrow gap between two long traces could sit
+ * between samples and report as passing. DRC gates manufacturing export, so a
+ * false negative here ships a board with sub-minimum clearance.
+ *
+ * In 2D the minimum is zero when the segments cross; otherwise it is attained at
+ * one of the four endpoints, so the four point-to-segment distances are exact.
+ */
 function segmentClearanceMm(
   a0: PcbPoint,
   a1: PcbPoint,
@@ -68,21 +130,30 @@ function segmentClearanceMm(
   b1: PcbPoint,
   bw: number,
 ): number {
-  const samples = 8;
-  let minD = Infinity;
-  for (let i = 0; i <= samples; i++) {
-    const ta = i / samples;
-    const ax = a0.x + (a1.x - a0.x) * ta;
-    const ay = a0.y + (a1.y - a0.y) * ta;
-    for (let j = 0; j <= samples; j++) {
-      const tb = j / samples;
-      const bx = b0.x + (b1.x - b0.x) * tb;
-      const by = b0.y + (b1.y - b0.y) * tb;
-      const d = Math.hypot(ax - bx, ay - by);
-      if (d < minD) minD = d;
-    }
-  }
-  return minD - aw / 2 - bw / 2;
+  const halfWidths = aw / 2 + bw / 2;
+
+  const o1 = orientation(a0.x, a0.y, a1.x, a1.y, b0.x, b0.y);
+  const o2 = orientation(a0.x, a0.y, a1.x, a1.y, b1.x, b1.y);
+  const o3 = orientation(b0.x, b0.y, b1.x, b1.y, a0.x, a0.y);
+  const o4 = orientation(b0.x, b0.y, b1.x, b1.y, a1.x, a1.y);
+
+  const crosses =
+    (o1 !== o2 && o3 !== o4) ||
+    (o1 === 0 && onSegment(a0.x, a0.y, a1.x, a1.y, b0.x, b0.y)) ||
+    (o2 === 0 && onSegment(a0.x, a0.y, a1.x, a1.y, b1.x, b1.y)) ||
+    (o3 === 0 && onSegment(b0.x, b0.y, b1.x, b1.y, a0.x, a0.y)) ||
+    (o4 === 0 && onSegment(b0.x, b0.y, b1.x, b1.y, a1.x, a1.y));
+
+  if (crosses) return -halfWidths;
+
+  const d = Math.min(
+    pointSegmentDistance(a0.x, a0.y, b0.x, b0.y, b1.x, b1.y),
+    pointSegmentDistance(a1.x, a1.y, b0.x, b0.y, b1.x, b1.y),
+    pointSegmentDistance(b0.x, b0.y, a0.x, a0.y, a1.x, a1.y),
+    pointSegmentDistance(b1.x, b1.y, a0.x, a0.y, a1.x, a1.y),
+  );
+
+  return d - halfWidths;
 }
 
 /**
