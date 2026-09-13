@@ -475,6 +475,15 @@ export const IMPLEMENTED_DIMENSIONS = new Set<DrawingDimensionType>([
   "twoPointLinear",
 ]);
 
+/** Drawing toolbar tools that are live (not scaffold insert / export stubs). */
+export const IMPLEMENTED_DRAWING_TOOLS = new Set<DrawingToolId>([
+  "select",
+  "projected",
+  "twoPointLinear",
+  "update",
+  "dangling",
+]);
+
 export const DRAWING_TOOLBAR_GROUPS: {
   id: string;
   label: string;

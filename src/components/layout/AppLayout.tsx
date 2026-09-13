@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Settings } from "lucide-react";
-import type { AnalysisToolId, MeshBuffers } from "../../cad/types";
+import {
+  IMPLEMENTED_ANALYSIS_TOOLS,
+  type AnalysisToolId,
+  type MeshBuffers,
+} from "../../cad/types";
 import { useFeatureStore } from "../../store/featureStore";
-import type { FeatureToolType } from "../../store/featureTypes";
+import {
+  EVALUATED_FEATURE_TOOLS,
+  SCULPT_FEATURE_TOOLS,
+  type FeatureToolType,
+} from "../../store/featureTypes";
 import { useSketchStore } from "../../store/sketchStore";
 import { AssemblyWorkspace, InstanceTree } from "../assembly";
 import { CamTree, CamWorkspace } from "../cam";
@@ -17,8 +25,10 @@ import {
   SketchCanvas,
   SketchTool,
 } from "../partstudio";
+import { IMPLEMENTED_SKETCH_TOOLS } from "../partstudio/types";
 import { useAssemblyStore } from "../../store/assemblyStore";
 import {
+  IMPLEMENTED_ASSEMBLY_TOOLS,
   MATE_CATALOG,
   RELATION_CATALOG,
   type AssemblyToolId,
@@ -28,6 +38,7 @@ import { CAM_TOOLBAR_GROUPS, type CamToolId } from "../../store/camTypes";
 import { useDrawingStore } from "../../store/drawingStore";
 import {
   DRAWING_TOOLBAR_GROUPS,
+  IMPLEMENTED_DRAWING_TOOLS,
   type DrawingToolId,
 } from "../../store/drawingTypes";
 import { usePcbStore } from "../../store/pcbStore";
@@ -190,6 +201,28 @@ const TOOL_TO_ANALYSIS: Record<string, AnalysisToolId> = {
   Interference: "interference-detection",
 };
 
+const VIEW_TOOLS = new Set(["Fit", "Iso", "Section", "Edges"]);
+
+function isPartStudioToolImplemented(tool: string): boolean {
+  if (VIEW_TOOLS.has(tool)) return true;
+  const analysis = TOOL_TO_ANALYSIS[tool];
+  if (analysis) return IMPLEMENTED_ANALYSIS_TOOLS.has(analysis);
+  const sketchTool = SKETCH_TOOL_MAP[tool];
+  if (sketchTool) return IMPLEMENTED_SKETCH_TOOLS.has(sketchTool);
+  const featureType = FEATURE_TOOL_MAP[tool];
+  if (featureType) {
+    return (
+      EVALUATED_FEATURE_TOOLS.has(featureType) ||
+      SCULPT_FEATURE_TOOLS.has(featureType)
+    );
+  }
+  // e.g. Pattern — listed but not mapped to a live feature.
+  return false;
+}
+
+const disabledToolClass =
+  "cursor-not-allowed opacity-45 text-faint hover:bg-transparent hover:text-faint";
+
 export function AppLayout({
   tabs = DEFAULT_TABS,
   activeTabId,
@@ -298,9 +331,13 @@ export function AppLayout({
 
   const onSelectTool = useCallback(
     (tool: string) => {
+      if (!isPartStudioToolImplemented(tool)) return;
       setActiveTool(tool);
       const analysis = TOOL_TO_ANALYSIS[tool];
-      if (analysis) setAnalysisTool(analysis);
+      if (analysis) {
+        setAnalysisTool(analysis);
+        return;
+      }
 
       const sketchTool = SKETCH_TOOL_MAP[tool];
       if (sketchTool) {
@@ -611,17 +648,30 @@ export function AppLayout({
                       </span>
                       {group.tools.map((tool) => {
                         const active = drawingTool === tool.id;
+                        const implemented = IMPLEMENTED_DRAWING_TOOLS.has(
+                          tool.id as DrawingToolId,
+                        );
                         return (
                           <button
                             key={tool.id}
                             type="button"
-                            onClick={() =>
-                              setDrawingTool(tool.id as DrawingToolId)
+                            disabled={!implemented}
+                            aria-disabled={!implemented}
+                            title={
+                              implemented
+                                ? tool.label
+                                : `${tool.label} (not implemented)`
                             }
+                            onClick={() => {
+                              if (!implemented) return;
+                              setDrawingTool(tool.id as DrawingToolId);
+                            }}
                             className={`rounded px-2 py-1 text-xs ${
-                              active
-                                ? "bg-accent text-accent-foreground"
-                                : "text-muted-foreground hover:bg-hover hover:text-accent"
+                              !implemented
+                                ? disabledToolClass
+                                : active
+                                  ? "bg-accent text-accent-foreground"
+                                  : "text-muted-foreground hover:bg-hover hover:text-accent"
                             }`}
                           >
                             {tool.label}
@@ -641,15 +691,30 @@ export function AppLayout({
                             (tool.id === "snapMode" && snapMode) ||
                             (tool.id === "showMates" && showMatesMode);
                           const active = assemblyTool === tool.id || toggled;
+                          const implemented = IMPLEMENTED_ASSEMBLY_TOOLS.has(
+                            tool.id,
+                          );
                           return (
                             <button
                               key={tool.id}
                               type="button"
-                              onClick={() => setAssemblyTool(tool.id)}
+                              disabled={!implemented}
+                              aria-disabled={!implemented}
+                              title={
+                                implemented
+                                  ? tool.label
+                                  : `${tool.label} (not implemented)`
+                              }
+                              onClick={() => {
+                                if (!implemented) return;
+                                setAssemblyTool(tool.id);
+                              }}
                               className={`rounded px-2 py-1 text-xs ${
-                                active
-                                  ? "bg-accent text-accent-foreground"
-                                  : "text-muted-foreground hover:bg-hover hover:text-accent"
+                                !implemented
+                                  ? disabledToolClass
+                                  : active
+                                    ? "bg-accent text-accent-foreground"
+                                    : "text-muted-foreground hover:bg-hover hover:text-accent"
                               }`}
                             >
                               {tool.label}
@@ -663,20 +728,32 @@ export function AppLayout({
                         <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
                           {group.label}
                         </span>
-                        {group.tools.map((tool) => (
-                          <button
-                            key={tool}
-                            type="button"
-                            onClick={() => onSelectTool(tool)}
-                            className={`rounded px-2 py-1 text-xs ${
-                              activeTool === tool
-                                ? "bg-accent text-accent-foreground"
-                                : "text-muted-foreground hover:bg-hover hover:text-accent"
-                            }`}
-                          >
-                            {tool}
-                          </button>
-                        ))}
+                        {group.tools.map((tool) => {
+                          const implemented = isPartStudioToolImplemented(tool);
+                          return (
+                            <button
+                              key={tool}
+                              type="button"
+                              disabled={!implemented}
+                              aria-disabled={!implemented}
+                              title={
+                                implemented
+                                  ? tool
+                                  : `${tool} (not implemented)`
+                              }
+                              onClick={() => onSelectTool(tool)}
+                              className={`rounded px-2 py-1 text-xs ${
+                                !implemented
+                                  ? disabledToolClass
+                                  : activeTool === tool
+                                    ? "bg-accent text-accent-foreground"
+                                    : "text-muted-foreground hover:bg-hover hover:text-accent"
+                              }`}
+                            >
+                              {tool}
+                            </button>
+                          );
+                        })}
                       </div>
                     ))}
         <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">

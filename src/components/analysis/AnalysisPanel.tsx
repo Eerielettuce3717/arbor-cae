@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { cadClient } from "../../cad/cadClient";
 import {
   ANALYSIS_OVERLAY_TOOLS,
+  IMPLEMENTED_ANALYSIS_TOOLS,
   type AnalysisStubResult,
   type AnalysisToolId,
   type MassPropertiesResult,
@@ -300,14 +301,15 @@ export function AnalysisPanel({
               </p>
               <button
                 type="button"
-                disabled={busy || !kernelReady}
-                onClick={() => void runStub(activeTool)}
-                className="w-full rounded border border-border px-2 py-1.5 text-foreground hover:bg-hover disabled:opacity-50"
+                disabled
+                aria-disabled
+                title="Overlay analysis is not implemented in the OCCT bridge"
+                className="w-full cursor-not-allowed rounded border border-border px-2 py-1.5 text-faint opacity-60"
               >
-                Run Worker Stub
+                Worker stub disabled
               </button>
               {stub && (
-                <p className="rounded border border-amber-900/50 bg-amber-950/30 px-2 py-1.5 text-amber-200">
+                <p className="rounded border border-border bg-muted px-2 py-1.5 text-muted-foreground">
                   {stub.message}
                 </p>
               )}
@@ -319,22 +321,35 @@ export function AnalysisPanel({
             Analysis Overlays
           </div>
           <div className="grid grid-cols-1 gap-1">
-            {ANALYSIS_OVERLAY_TOOLS.map((tool) => (
+            {ANALYSIS_OVERLAY_TOOLS.map((tool) => {
+              const live = IMPLEMENTED_ANALYSIS_TOOLS.has(tool.id);
+              return (
               <button
                 key={tool.id}
                 type="button"
-                disabled={busy || !kernelReady}
-                onClick={() => void runStub(tool.id)}
-                className={`rounded px-2 py-1.5 text-left hover:bg-hover ${
-                  activeTool === tool.id
-                    ? "bg-active text-accent"
-                    : "text-muted-foreground"
+                disabled={!live || busy || !kernelReady}
+                aria-disabled={!live}
+                onClick={() => {
+                  if (!live) return;
+                  void runStub(tool.id);
+                }}
+                className={`rounded px-2 py-1.5 text-left ${
+                  !live
+                    ? "cursor-not-allowed opacity-45 text-faint"
+                    : activeTool === tool.id
+                    ? "bg-active text-accent hover:bg-hover"
+                    : "text-muted-foreground hover:bg-hover"
                 }`}
-                title={tool.description}
+                title={
+                  live
+                    ? tool.description
+                    : `${tool.label} (not implemented)`
+                }
               >
                 {tool.label}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

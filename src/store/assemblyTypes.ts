@@ -292,6 +292,16 @@ export const DEFAULT_MATE_PARAMS: MateParams = {
 
 export const IMPLEMENTED_MATES = new Set<MateType>(["fastened", "revolute"]);
 
+/** Assembly chrome tools that do real work (not status-message scaffolds). */
+export const IMPLEMENTED_ASSEMBLY_TOOLS = new Set<AssemblyToolId>([
+  "insert",
+  "fastened",
+  "revolute",
+  "snapMode",
+  "showMates",
+  "bom",
+]);
+
 export const MATE_CATALOG: {
   type: MateType;
   label: string;

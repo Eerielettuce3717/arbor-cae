@@ -531,12 +531,26 @@ function InsertFeatureMenu({ onPick }: { onPick: (type: FeatureToolType) => void
                 <div className="px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
                   {group.label}
                 </div>
-                {group.tools.map((tool) => (
+                {group.tools.map((tool) => {
+                  const live = Boolean(tool.evaluated);
+                  return (
                   <button
                     key={tool.type}
                     type="button"
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-hover hover:text-accent"
+                    disabled={!live}
+                    aria-disabled={!live}
+                    title={
+                      live
+                        ? tool.label
+                        : `${tool.label} (not implemented in OCCT bridge)`
+                    }
+                    className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs ${
+                      live
+                        ? "text-muted-foreground hover:bg-hover hover:text-accent"
+                        : "cursor-not-allowed opacity-45 text-faint"
+                    }`}
                     onClick={() => {
+                      if (!live) return;
                       onPick(tool.type);
                       setOpen(false);
                       setFilter("");
@@ -546,13 +560,14 @@ function InsertFeatureMenu({ onPick }: { onPick: (type: FeatureToolType) => void
                       {tool.icon}
                     </span>
                     <span className="flex-1">{tool.label}</span>
-                    {tool.evaluated ? (
+                    {live ? (
                       <span className="text-[9px] text-emerald-400">eval</span>
                     ) : (
                       <span className="text-[9px] text-faint">UI</span>
                     )}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             ))}
           </div>

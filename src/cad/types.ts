@@ -69,6 +69,12 @@ export interface AnalysisStubResult {
   message: string;
 }
 
+/** Analysis tools with real OCCT worker math (not stub overlays). */
+export const IMPLEMENTED_ANALYSIS_TOOLS = new Set<AnalysisToolId>([
+  "measure",
+  "mass-properties",
+]);
+
 export interface TessellateOptions {
   linearDeflection?: number;
   angularDeflection?: number;

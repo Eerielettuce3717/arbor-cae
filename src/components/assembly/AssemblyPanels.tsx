@@ -951,21 +951,35 @@ export function MateToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {MATE_CATALOG.map((mate) => (
+      {MATE_CATALOG.map((mate) => {
+        const implemented = IMPLEMENTED_MATES.has(mate.type);
+        return (
         <button
           key={mate.type}
           type="button"
-          title={`${mate.label} — ${mate.hint}`}
-          onClick={() => setActiveTool(mate.type as MateType)}
+          disabled={!implemented}
+          aria-disabled={!implemented}
+          title={
+            implemented
+              ? `${mate.label} — ${mate.hint}`
+              : `${mate.label} (not implemented)`
+          }
+          onClick={() => {
+            if (!implemented) return;
+            setActiveTool(mate.type as MateType);
+          }}
           className={`rounded px-2 py-1 text-xs ${
-            activeTool === mate.type
+            !implemented
+              ? "cursor-not-allowed opacity-45 text-faint"
+              : activeTool === mate.type
               ? "bg-accent text-accent-foreground"
               : "text-muted-foreground hover:bg-hover hover:text-accent"
           }`}
         >
           {compact ? mate.icon : mate.label}
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }

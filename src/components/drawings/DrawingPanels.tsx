@@ -400,9 +400,22 @@ function ViewsPanel() {
             <button
               key={v.type}
               type="button"
-              onClick={() => setActiveTool(v.type)}
-              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
-              title={v.description}
+              disabled={!v.implemented}
+              aria-disabled={!v.implemented}
+              onClick={() => {
+                if (!v.implemented) return;
+                setActiveTool(v.type);
+              }}
+              className={`rounded border border-border px-2 py-1 text-[11px] ${
+                v.implemented
+                  ? "text-muted-foreground hover:border-accent hover:text-accent"
+                  : "cursor-not-allowed opacity-45 text-faint"
+              }`}
+              title={
+                v.implemented
+                  ? v.description
+                  : `${v.label} (not implemented)`
+              }
             >
               {v.label}
               {!v.implemented && (
@@ -455,8 +468,22 @@ function DimensionsPanel() {
             <button
               key={d.type}
               type="button"
-              onClick={() => setActiveTool(d.type)}
-              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
+              disabled={!d.implemented}
+              aria-disabled={!d.implemented}
+              onClick={() => {
+                if (!d.implemented) return;
+                setActiveTool(d.type);
+              }}
+              className={`rounded border border-border px-2 py-1 text-[11px] ${
+                d.implemented
+                  ? "text-muted-foreground hover:border-accent hover:text-accent"
+                  : "cursor-not-allowed opacity-45 text-faint"
+              }`}
+              title={
+                d.implemented
+                  ? d.label
+                  : `${d.label} (not implemented)`
+              }
             >
               {d.label}
               {!d.implemented && (

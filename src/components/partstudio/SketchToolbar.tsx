@@ -67,14 +67,20 @@ export function SketchToolbar() {
                     aria-label={item.label}
                     aria-pressed={active}
                     aria-disabled={!item.implemented}
-                    onClick={() => setActiveTool(item.tool)}
+                    disabled={!item.implemented}
+                    onClick={() => {
+                      if (!item.implemented) return;
+                      setActiveTool(item.tool);
+                    }}
                     className={`rounded px-1.5 py-0.5 text-[10px] ${
-                      active
+                      !item.implemented
+                        ? "cursor-not-allowed opacity-45 text-faint"
+                        : active
                         ? "bg-accent text-accent-foreground"
                         : item.implemented
                           ? "text-muted-foreground hover:bg-hover hover:text-accent"
                           : "text-faint/80 hover:bg-hover hover:text-muted-foreground"
-                    } ${!item.implemented ? "opacity-70" : ""}`}
+                    }`}
                   >
                     {shortLabel(item.label)}
                     {!item.implemented && (
@@ -105,13 +111,18 @@ export function SketchToolbar() {
               }
               aria-label={item.label}
               aria-pressed={active}
-              onClick={() =>
+              aria-disabled={!item.implemented}
+              disabled={!item.implemented}
+              onClick={() => {
+                if (!item.implemented) return;
                 setActiveConstraintTool(
                   active ? null : (item.type as SketchConstraintType),
-                )
-              }
+                );
+              }}
               className={`rounded px-1.5 py-0.5 text-[10px] ${
-                active
+                !item.implemented
+                  ? "cursor-not-allowed opacity-45 text-faint"
+                  : active
                   ? "bg-emerald-700 text-white"
                   : item.implemented
                     ? "text-muted-foreground hover:bg-hover hover:text-accent"
