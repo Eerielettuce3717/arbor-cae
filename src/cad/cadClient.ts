@@ -23,6 +23,7 @@ import type {
 type Pending = {
   resolve: (payload: CadSuccessPayload) => void;
   reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
 };
 
 /** Distribute Omit over CadRequest union members. */
@@ -32,6 +33,8 @@ type CadRequestBody = CadRequest extends infer R
     : never
   : never;
 
+const RPC_TIMEOUT_MS = 60_000;
+
 let workerSingleton: Worker | null = null;
 let seq = 0;
 const pending = new Map<string, Pending>();
@@ -40,6 +43,14 @@ let initPromise: Promise<void> | null = null;
 function nextId(): string {
   seq += 1;
   return `cad-${seq}-${Date.now()}`;
+}
+
+function rejectAllPending(err: Error): void {
+  for (const [id, entry] of pending) {
+    clearTimeout(entry.timer);
+    entry.reject(err);
+    pending.delete(id);
+  }
 }
 
 function getWorker(): Worker {
@@ -58,6 +69,7 @@ function getWorker(): Worker {
         return;
       }
 
+      clearTimeout(entry.timer);
       pending.delete(data.id);
       if (!data.ok) {
         entry.reject(new Error(data.error));
@@ -69,10 +81,7 @@ function getWorker(): Worker {
     };
     workerSingleton.onerror = (event) => {
       const err = new Error(event.message || "CAD worker error");
-      for (const [id, entry] of pending) {
-        entry.reject(err);
-        pending.delete(id);
-      }
+      rejectAllPending(err);
     };
   }
   return workerSingleton;
@@ -82,9 +91,14 @@ function request<T extends CadSuccessPayload>(body: CadRequestBody): Promise<T> 
   const id = nextId();
   const req = { ...body, id } as CadRequest;
   return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`CAD worker timed out after ${RPC_TIMEOUT_MS}ms (${body.op})`));
+    }, RPC_TIMEOUT_MS);
     pending.set(id, {
       resolve: (payload) => resolve(payload as T),
       reject,
+      timer,
     });
     getWorker().postMessage(req);
   });
@@ -209,11 +223,39 @@ export class CadClient {
     return payload.result;
   }
 
+  /** Keep only the listed shape ids (plus the shared demo body). */
+  async retainShapes(shapeIds: string[]): Promise<{ kept: number; dropped: number }> {
+    await this.init();
+    const payload = await request<{
+      op: "retainShapes";
+      kept: number;
+      dropped: number;
+    }>({
+      op: "retainShapes",
+      shapeIds,
+    });
+    return { kept: payload.kept, dropped: payload.dropped };
+  }
+
+  async deleteShape(shapeId: string): Promise<boolean> {
+    await this.init();
+    const payload = await request<{
+      op: "deleteShape";
+      shapeId: string;
+      deleted: boolean;
+    }>({
+      op: "deleteShape",
+      shapeId,
+    });
+    return payload.deleted;
+  }
+
+  /** Tear down the WASM worker thread and reject any in-flight RPCs. */
   terminate(): void {
+    rejectAllPending(new Error("CAD worker terminated"));
     workerSingleton?.terminate();
     workerSingleton = null;
     initPromise = null;
-    pending.clear();
   }
 }
 

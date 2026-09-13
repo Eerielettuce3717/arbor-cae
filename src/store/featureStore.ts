@@ -585,6 +585,16 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
         const mesh = await evaluateFeature(feature.id);
         if (mesh) lastMesh = mesh;
       }
+      // Drop superseded B-Rep handles so long sessions do not retain native memory.
+      const keep = get()
+        .features.map((f) => f.shapeId)
+        .filter((id): id is string => Boolean(id));
+      if (lastMesh?.shapeId) keep.push(lastMesh.shapeId);
+      try {
+        await cadClient.retainShapes(keep);
+      } catch {
+        // Eviction is best-effort; evaluation already succeeded.
+      }
       set({ regenerating: false, lastMesh });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

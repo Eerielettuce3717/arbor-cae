@@ -142,7 +142,9 @@ export type CadRequest =
     }
   | { id: string; op: "evaluateExtrude"; params: EvaluateExtrudeParams }
   | { id: string; op: "evaluateFillet"; params: EvaluateFilletParams }
-  | { id: string; op: "evaluateBoolean"; params: EvaluateBooleanParams };
+  | { id: string; op: "evaluateBoolean"; params: EvaluateBooleanParams }
+  | { id: string; op: "retainShapes"; shapeIds: string[] }
+  | { id: string; op: "deleteShape"; shapeId: string };
 
 export type CadSuccessPayload =
   | { op: "init"; ready: true; version: string }
@@ -153,7 +155,9 @@ export type CadSuccessPayload =
   | { op: "runAnalysis"; result: AnalysisStubResult }
   | { op: "evaluateExtrude"; result: FeatureEvalResult }
   | { op: "evaluateFillet"; result: FeatureEvalResult }
-  | { op: "evaluateBoolean"; result: FeatureEvalResult };
+  | { op: "evaluateBoolean"; result: FeatureEvalResult }
+  | { op: "retainShapes"; kept: number; dropped: number }
+  | { op: "deleteShape"; shapeId: string; deleted: boolean };
 
 export type CadResponse =
   | { id: string; ok: true; payload: CadSuccessPayload }

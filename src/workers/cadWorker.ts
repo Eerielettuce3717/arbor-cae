@@ -503,6 +503,25 @@ function evaluateBoolean(params: EvaluateBooleanParams): FeatureEvalResult {
   return { shapeId, mesh };
 }
 
+function deleteShape(shapeId: string): boolean {
+  return shapes.delete(shapeId);
+}
+
+/** Drop every shape not in `keep`, so long sessions do not retain dead B-Rep. */
+function retainShapes(shapeIds: string[]): { kept: number; dropped: number } {
+  const keep = new Set(shapeIds.filter(Boolean));
+  // Always preserve the shared demo body used as a boolean target.
+  keep.add("demo");
+  let dropped = 0;
+  for (const id of [...shapes.keys()]) {
+    if (!keep.has(id)) {
+      shapes.delete(id);
+      dropped += 1;
+    }
+  }
+  return { kept: shapes.size, dropped };
+}
+
 function collectTransferables(mesh: MeshBuffers): Transferable[] {
   return [mesh.positions.buffer, mesh.normals.buffer, mesh.indices.buffer];
 }
@@ -617,6 +636,28 @@ async function handleRequest(req: CadRequest): Promise<{
           payload: { op: "evaluateBoolean", result },
         },
         transfer: collectTransferables(result.mesh),
+      };
+    }
+    case "retainShapes": {
+      await initKernel();
+      const { kept, dropped } = retainShapes(req.shapeIds);
+      return {
+        response: {
+          id: req.id,
+          ok: true,
+          payload: { op: "retainShapes", kept, dropped },
+        },
+      };
+    }
+    case "deleteShape": {
+      await initKernel();
+      const deleted = deleteShape(req.shapeId);
+      return {
+        response: {
+          id: req.id,
+          ok: true,
+          payload: { op: "deleteShape", shapeId: req.shapeId, deleted },
+        },
       };
     }
     default: {
