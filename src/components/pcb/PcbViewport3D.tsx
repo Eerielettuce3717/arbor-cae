@@ -139,7 +139,15 @@ export function PcbViewport3D() {
       ro.disconnect();
       disposePcb3D(api.root);
       controls.dispose();
+      scene.traverse((obj) => {
+        const mesh = obj as { geometry?: { dispose: () => void }; material?: { dispose: () => void } | { dispose: () => void }[] };
+        mesh.geometry?.dispose();
+        const mat = mesh.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat?.dispose();
+      });
       renderer.dispose();
+      renderer.forceContextLoss();
       if (renderer.domElement.parentElement === host) {
         host.removeChild(renderer.domElement);
       }

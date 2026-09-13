@@ -339,8 +339,9 @@ export class FormWorkspace {
       this.pickables = [];
       this.vertexHandles = [];
 
-      // Vertex spheres.
+      // Vertex spheres — one shared geometry; dispose once after handles are removed.
       const sphere = new SphereGeometry(0.45, 12, 12);
+      sphere.userData.sharedGeometry = true;
       const handleMat = new MeshStandardMaterial({
         color: new Color("#fbbf24"),
         emissive: new Color("#78350f"),
@@ -351,6 +352,7 @@ export class FormWorkspace {
       for (let i = 0; i < this.cageMesh.vertices.length; i++) {
         const v = this.cageMesh.vertices[i];
         const handle = new Mesh(sphere, handleMat.clone());
+        handle.userData.sharedGeometry = true;
         handle.position.set(v.x, v.y, v.z);
         handle.userData.cageKind = "vertex";
         handle.userData.vertexIndex = i;
@@ -506,20 +508,33 @@ export class FormWorkspace {
     this.cageFacesMesh = null;
 
     if (clearPickables) {
+      let sharedGeo: { dispose: () => void } | null = null;
       for (const h of this.pickables) {
         this.root.remove(h);
-        disposeObject(h);
+        const mesh = h as Mesh;
+        if (mesh.userData.sharedGeometry && mesh.geometry) {
+          sharedGeo = mesh.geometry;
+        }
+        disposeObject(h, { skipSharedGeometry: true });
       }
+      sharedGeo?.dispose();
       this.pickables = [];
       this.vertexHandles = [];
     }
   }
 }
 
-function disposeObject(root: Object3D) {
+function disposeObject(
+  root: Object3D,
+  opts?: { skipSharedGeometry?: boolean },
+) {
   root.traverse((obj) => {
     const mesh = obj as Mesh;
-    if (mesh.geometry) mesh.geometry.dispose();
+    if (mesh.geometry) {
+      if (!(opts?.skipSharedGeometry && mesh.userData.sharedGeometry)) {
+        mesh.geometry.dispose();
+      }
+    }
     const mat = mesh.material as Material | Material[] | undefined;
     if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
     else mat?.dispose();

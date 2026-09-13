@@ -375,6 +375,7 @@ export function AssemblyViewport() {
     let raf = 0;
     let frames = 0;
     let lastFps = performance.now();
+    let lastPixelRatio = renderer.getPixelRatio();
     const viewDir = new Vector3();
     const matePositions: number[] = [];
 
@@ -423,28 +424,41 @@ export function AssemblyViewport() {
         mateLine.visible = false;
       } else {
         mateLine.visible = true;
-        mateLine.geometry.setAttribute(
-          "position",
-          new Float32BufferAttribute(matePositions, 3),
-        );
+        const needed = matePositions.length;
+        let attr = mateLine.geometry.getAttribute("position") as
+          | Float32BufferAttribute
+          | undefined;
+        if (!attr || attr.count * 3 < needed) {
+          attr = new Float32BufferAttribute(new Float32Array(Math.max(needed, 6)), 3);
+          mateLine.geometry.setAttribute("position", attr);
+        }
+        const arr = attr.array as Float32Array;
+        for (let i = 0; i < needed; i++) arr[i] = matePositions[i];
+        // Zero unused slots so stale segments do not linger if drawRange shrinks.
+        for (let i = needed; i < arr.length; i++) arr[i] = 0;
+        attr.needsUpdate = true;
+        mateLine.geometry.setDrawRange(0, needed / 3);
         mateLine.geometry.computeBoundingSphere();
       }
 
-      renderer.setPixelRatio(
-        renderOptionsRef.current.highQuality
-          ? Math.min(window.devicePixelRatio, 2)
-          : 1,
-      );
+      const nextPr = renderOptionsRef.current.highQuality
+        ? Math.min(window.devicePixelRatio, 2)
+        : 1;
+      if (nextPr !== lastPixelRatio) {
+        lastPixelRatio = nextPr;
+        renderer.setPixelRatio(nextPr);
+      }
       renderer.render(scene, active);
 
       viewDir.copy(active.position).sub(controls.target).normalize();
-      setViewDirection((prev) => {
-        if (prev.distanceToSquared(viewDir) < 1e-6) return prev;
-        return viewDir.clone();
-      });
-
       frames += 1;
       const now = performance.now();
+      if (frames % 8 === 0) {
+        setViewDirection((prev) => {
+          if (prev.distanceToSquared(viewDir) < 1e-6) return prev;
+          return viewDir.clone();
+        });
+      }
       if (now - lastFps >= 500) {
         setFps(Math.round((frames * 1000) / (now - lastFps)));
         frames = 0;
@@ -461,6 +475,7 @@ export function AssemblyViewport() {
       controls.dispose();
       disposeObject(scene);
       renderer.dispose();
+      renderer.forceContextLoss();
       if (renderer.domElement.parentElement === host) {
         host.removeChild(renderer.domElement);
       }

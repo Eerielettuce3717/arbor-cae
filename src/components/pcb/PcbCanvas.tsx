@@ -85,7 +85,9 @@ export function PcbCanvas() {
         copperG.clear();
         compG.clear();
         overlayG.clear();
-        labelRoot.removeChildren();
+        labelRoot.removeChildren().forEach((child) => {
+          child.destroy({ children: true });
+        });
 
         // Grid
         const grid = state.gridMm * PX_PER_MM;

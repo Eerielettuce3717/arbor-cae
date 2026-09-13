@@ -140,9 +140,19 @@ export function AnalysisPanel({
 
   useEffect(() => {
     if (!activeTool || !kernelReady) return;
-    if (activeTool === "measure") void runMeasure();
-    else if (activeTool === "mass-properties") void runMass();
-    else void runStub(activeTool);
+    let cancelled = false;
+    (async () => {
+      if (activeTool === "measure") {
+        if (!cancelled) await runMeasure();
+      } else if (activeTool === "mass-properties") {
+        if (!cancelled) await runMass();
+      } else if (!cancelled) {
+        await runStub(activeTool);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [activeTool, kernelReady, runMeasure, runMass, runStub]);
 
   if (!activeTool) return null;

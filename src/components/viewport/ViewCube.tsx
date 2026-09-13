@@ -90,7 +90,9 @@ export function ViewCube({
     const edgeMat = new LineBasicMaterial({
       color: resolvedTheme === "dark" ? 0x94a3b8 : 0x64748b,
     });
-    const edgeGeo = new EdgesGeometry(new BoxGeometry(1.12, 1.12, 1.12));
+    const edgeBox = new BoxGeometry(1.12, 1.12, 1.12);
+    const edgeGeo = new EdgesGeometry(edgeBox);
+    edgeBox.dispose();
     const edges = new LineSegments(edgeGeo, edgeMat);
     root.add(edges);
 

@@ -424,6 +424,7 @@ export function Viewport3D({
     let raf = 0;
     let frames = 0;
     let lastFps = performance.now();
+    let lastPixelRatio = renderer.getPixelRatio();
     const viewDir = new Vector3();
 
     const tick = () => {
@@ -436,21 +437,24 @@ export function Viewport3D({
         displayRef.current,
         sectionPlane,
       );
-      renderer.setPixelRatio(
-        renderOptionsRef.current.highQuality
-          ? Math.min(window.devicePixelRatio, 2)
-          : 1,
-      );
+      const nextPr = renderOptionsRef.current.highQuality
+        ? Math.min(window.devicePixelRatio, 2)
+        : 1;
+      if (nextPr !== lastPixelRatio) {
+        lastPixelRatio = nextPr;
+        renderer.setPixelRatio(nextPr);
+      }
       renderer.render(scene, active);
 
       viewDir.copy(active.position).sub(controls.target).normalize();
-      setViewDirection((prev) => {
-        if (prev.distanceToSquared(viewDir) < 1e-6) return prev;
-        return viewDir.clone();
-      });
-
       frames += 1;
       const now = performance.now();
+      if (frames % 8 === 0) {
+        setViewDirection((prev) => {
+          if (prev.distanceToSquared(viewDir) < 1e-6) return prev;
+          return viewDir.clone();
+        });
+      }
       if (now - lastFps >= 500) {
         setFps(Math.round((frames * 1000) / (now - lastFps)));
         frames = 0;
@@ -469,6 +473,7 @@ export function Viewport3D({
       arBridge.dispose();
       disposeObject(scene);
       renderer.dispose();
+      renderer.forceContextLoss();
       if (renderer.domElement.parentElement === host) {
         host.removeChild(renderer.domElement);
       }

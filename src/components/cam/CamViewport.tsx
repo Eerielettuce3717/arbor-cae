@@ -87,6 +87,8 @@ export function CamViewport() {
   const activeCamTool = useCamStore((s) => s.activeCamTool);
   const selectFace = useCamStore((s) => s.selectFace);
   const statusMessage = useCamStore((s) => s.statusMessage);
+  const selectFaceRef = useRef(selectFace);
+  selectFaceRef.current = selectFace;
 
   const setup = setups.find((s) => s.id === activeSetupId) ?? setups[0];
 
@@ -256,7 +258,7 @@ export function CamViewport() {
         let obj: Object3D | null = hit.object;
         while (obj) {
           if (obj.userData.faceId) {
-            selectFace(obj.userData.faceId as FlatFaceId);
+            selectFaceRef.current(obj.userData.faceId as FlatFaceId);
             return;
           }
           obj = obj.parent;
@@ -269,11 +271,17 @@ export function CamViewport() {
     let lastT = performance.now();
     let frames = 0;
     let raf = 0;
+    const viewDir = new Vector3();
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
       controls.update();
-      const dir = active.position.clone().sub(controls.target).normalize();
-      if (frame % 8 === 0) setViewDirection(dir.clone());
+      viewDir.copy(active.position).sub(controls.target).normalize();
+      if (frame % 8 === 0) {
+        setViewDirection((prev) => {
+          if (prev.distanceToSquared(viewDir) < 1e-6) return prev;
+          return viewDir.clone();
+        });
+      }
       renderer.render(scene, active);
       frames += 1;
       if (t - lastT > 500) {
@@ -305,16 +313,17 @@ export function CamViewport() {
       ro.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointer);
       controls.dispose();
-      clearGroup(stockRoot);
-      clearGroup(toolpathRoot);
-      clearGroup(wcsRoot);
+      disposeObject(scene);
       renderer.dispose();
+      renderer.forceContextLoss();
       if (renderer.domElement.parentElement === host) {
         host.removeChild(renderer.domElement);
       }
       apiRef.current = null;
     };
-  }, [selectFace]);
+    // selectFace is read via selectFaceRef so the WebGL stack is not rebuilt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const api = apiRef.current;
