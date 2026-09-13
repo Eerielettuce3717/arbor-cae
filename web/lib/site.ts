@@ -12,9 +12,15 @@ export const GITHUB_ISSUES = `${GITHUB_URL}/issues`;
 export const GITHUB_CLONE = `${GITHUB_URL}.git`;
 /** Pre-release tag. GitHub /releases/latest ignores prereleases, so download URLs use this tag. */
 export const RELEASE_TAG = "v0.1.0-pre.1";
-export const RELEASE_DMG = "Arbor.dmg";
+export const RELEASE_ASSETS = {
+  macos: "Arbor.dmg",
+  windows: "Arbor.msi",
+  linux: "Arbor.AppImage",
+} as const;
 export const RELEASE_DOWNLOAD = {
-  macos: `${GITHUB_URL}/releases/download/${RELEASE_TAG}/${RELEASE_DMG}`,
+  macos: `${GITHUB_URL}/releases/download/${RELEASE_TAG}/${RELEASE_ASSETS.macos}`,
+  windows: `${GITHUB_URL}/releases/download/${RELEASE_TAG}/${RELEASE_ASSETS.windows}`,
+  linux: `${GITHUB_URL}/releases/download/${RELEASE_TAG}/${RELEASE_ASSETS.linux}`,
   index: `${GITHUB_URL}/releases/tag/${RELEASE_TAG}`,
 } as const;
 

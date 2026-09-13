@@ -1,0 +1,122 @@
+name: Bundle Windows and Linux
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-bundles
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            platform: windows
+            asset: Arbor.msi
+          - os: ubuntu-22.04
+            label: Linux AppImage
+            platform: linux
+            asset: Arbor.AppImage
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev \
+            patchelf \
+            build-essential \
+            curl \
+            wget \
+            file \
+            pkg-config
+
+      - name: Install WiX and NSIS
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install wixtoolset nsis -y --no-progress
+          foreach ($dir in @(
+            "C:\Program Files (x86)\WiX Toolset v3.14\bin",
+            "C:\Program Files (x86)\WiX Toolset v3.11\bin",
+            "C:\Program Files (x86)\NSIS"
+          )) {
+            if (Test-Path $dir) { Add-Content $env:GITHUB_PATH $dir }
+          }
+
+      - run: npm ci
+
+      - name: Build Windows installer
+        if: matrix.platform == 'windows'
+        id: msi
+        continue-on-error: true
+        run: npx tauri build --bundles msi
+
+      - name: Build Windows NSIS fallback
+        if: matrix.platform == 'windows' && steps.msi.outcome == 'failure'
+        run: npx tauri build --bundles nsis
+
+      - name: Build Linux AppImage
+        if: matrix.platform == 'linux'
+        run: npx tauri build --bundles appimage
+
+      - name: Upload to pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREFERRED_ASSET: ${{ matrix.asset }}
+          PLATFORM: ${{ matrix.platform }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=""
+          asset="$PREFERRED_ASSET"
+          if [ "$PLATFORM" = "windows" ]; then
+            msi=$(ls src-tauri/target/release/bundle/msi/*.msi 2>/dev/null | head -n 1 || true)
+            nsis=$(ls src-tauri/target/release/bundle/nsis/*.exe 2>/dev/null | head -n 1 || true)
+            if [ -n "${msi:-}" ]; then
+              src="$msi"
+              asset="Arbor.msi"
+            elif [ -n "${nsis:-}" ]; then
+              src="$nsis"
+              asset="Arbor-setup.exe"
+            fi
+          else
+            src=$(ls src-tauri/target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1 || true)
+            asset="Arbor.AppImage"
+          fi
+          if [ -z "${src:-}" ]; then
+            echo "No artifact found"
+            find src-tauri/target/release/bundle -type f 2>/dev/null | head -50 || true
+            exit 1
+          fi
+          cp "$src" "$asset"
+          gh release upload v0.1.0-pre.1 "$asset" --clobber --repo "${{ github.repository }}"
+          echo "Uploaded $asset from $src"

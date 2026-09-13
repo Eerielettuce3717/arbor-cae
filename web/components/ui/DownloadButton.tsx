@@ -1,37 +1,32 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AppLink } from "../AppLink";
 import { useOS, type OS } from "@/hooks/useOS";
-import { GITHUB_URL, RELEASE_DOWNLOAD, RELEASE_DMG, ROUTES } from "@/lib/site";
+import { RELEASE_ASSETS, RELEASE_DOWNLOAD } from "@/lib/site";
 
 const PRIMARY: Record<
   OS,
-  { href: string; text: string; icon: OS; external: boolean }
+  { href: string; text: string; icon: OS }
 > = {
   macos: {
     href: RELEASE_DOWNLOAD.macos,
     text: "Download for macOS",
     icon: "macos",
-    external: true,
   },
   windows: {
-    href: ROUTES.contribute,
-    text: "Build for Windows",
+    href: RELEASE_DOWNLOAD.windows,
+    text: "Download for Windows",
     icon: "windows",
-    external: false,
   },
   linux: {
-    href: ROUTES.contribute,
-    text: "Build for Linux",
+    href: RELEASE_DOWNLOAD.linux,
+    text: "Download for Linux",
     icon: "linux",
-    external: false,
   },
   other: {
     href: RELEASE_DOWNLOAD.index,
     text: "Pre-release",
     icon: "other",
-    external: true,
   },
 };
 
@@ -39,20 +34,17 @@ const MORE = [
   {
     href: RELEASE_DOWNLOAD.macos,
     label: "macOS",
-    hint: RELEASE_DMG,
-    external: true,
+    hint: RELEASE_ASSETS.macos,
   },
   {
-    href: ROUTES.contribute,
+    href: RELEASE_DOWNLOAD.windows,
     label: "Windows",
-    hint: "source",
-    external: false,
+    hint: RELEASE_ASSETS.windows,
   },
   {
-    href: ROUTES.contribute,
+    href: RELEASE_DOWNLOAD.linux,
     label: "Linux",
-    hint: "source",
-    external: false,
+    hint: RELEASE_ASSETS.linux,
   },
 ] as const;
 
@@ -83,23 +75,13 @@ export function DownloadButton() {
 
   return (
     <div ref={rootRef} className="relative flex flex-col items-center gap-2">
-      {primary.external ? (
-        <a
-          href={primary.href}
-          className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
-        >
-          <PlatformIcon os={primary.icon} />
-          {primary.text}
-        </a>
-      ) : (
-        <AppLink
-          href={primary.href}
-          className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
-        >
-          <PlatformIcon os={primary.icon} />
-          {primary.text}
-        </AppLink>
-      )}
+      <a
+        href={primary.href}
+        className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
+      >
+        <PlatformIcon os={primary.icon} />
+        {primary.text}
+      </a>
 
       <button
         type="button"
@@ -120,25 +102,13 @@ export function DownloadButton() {
         >
           {MORE.map((item) => (
             <li key={item.label} className="border-b border-rule last:border-b-0">
-              {item.external ? (
-                <a
-                  href={item.href}
-                  className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    {item.label}
-                  </span>
-                  <span className="text-mute">{item.hint}</span>
-                </a>
-              ) : (
-                <AppLink
-                  href={item.href}
-                  className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
-                >
-                  <span>{item.label}</span>
-                  <span className="text-mute">{item.hint}</span>
-                </AppLink>
-              )}
+              <a
+                href={item.href}
+                className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
+              >
+                <span>{item.label}</span>
+                <span className="text-mute">{item.hint}</span>
+              </a>
             </li>
           ))}
         </ul>

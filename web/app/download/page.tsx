@@ -5,16 +5,16 @@ import { pageMeta } from "@/lib/seo";
 import {
   GITHUB_CLONE,
   GITHUB_URL,
+  RELEASE_ASSETS,
   RELEASE_DOWNLOAD,
-  RELEASE_DMG,
   RELEASE_TAG,
   ROUTES,
 } from "@/lib/site";
 
 export const metadata = pageMeta({
-  title: "Download Arbor — macOS pre-release, or build from source",
+  title: "Download Arbor — macOS, Windows, and Linux pre-release",
   description:
-    "Download the Arbor v0.1.0-pre.1 macOS disk image, or clone arbor-cae and compile the Tauri desktop app on Windows or Linux.",
+    "Download Arbor v0.1.0-pre.1 for macOS, Windows, or Linux from GitHub Releases, or clone arbor-cae and compile the Tauri desktop app yourself.",
   path: ROUTES.download,
 });
 
@@ -25,7 +25,7 @@ export default function DownloadPage() {
         <InteriorHeader
           kicker={`Pre-release · ${RELEASE_TAG}`}
           title="Install Arbor on the machine that cuts"
-          lede="The current GitHub pre-release ships a macOS Apple Silicon .dmg. Windows and Linux still compile from source. There is no app store account and no cloud activation."
+          lede="The current GitHub pre-release ships macOS, Windows, and Linux installers. There is no app store account and no cloud activation."
           aside={
             <p className="text-[0.95rem] text-mute">
               Read the{" "}
@@ -38,23 +38,33 @@ export default function DownloadPage() {
         <article className="mx-auto max-w-sheet px-[var(--gutter)] py-12 lg:py-16">
           <Prose>
             <h2 className="font-display text-h3 text-paper">Packaged builds</h2>
+            <ul className="list-disc space-y-2 pl-5">
+              <li>
+                macOS (Apple Silicon):{" "}
+                <TextLink href={RELEASE_DOWNLOAD.macos} external>
+                  {RELEASE_ASSETS.macos}
+                </TextLink>
+                . Unsigned. Gatekeeper will warn; Control-click → Open.
+              </li>
+              <li>
+                Windows (x64):{" "}
+                <TextLink href={RELEASE_DOWNLOAD.windows} external>
+                  {RELEASE_ASSETS.windows}
+                </TextLink>
+                . SmartScreen may warn; More info → Run anyway.
+              </li>
+              <li>
+                Linux (x64 AppImage):{" "}
+                <TextLink href={RELEASE_DOWNLOAD.linux} external>
+                  {RELEASE_ASSETS.linux}
+                </TextLink>
+                . chmod +x, then run.
+              </li>
+            </ul>
             <p>
-              macOS (Apple Silicon):{" "}
-              <TextLink href={RELEASE_DOWNLOAD.macos} external>
-                {RELEASE_DMG}
-              </TextLink>{" "}
-              from{" "}
+              Files live on{" "}
               <TextLink href={RELEASE_DOWNLOAD.index} external>
                 {RELEASE_TAG}
-              </TextLink>
-              . The binary is unsigned. Gatekeeper will warn; open it from
-              Finder with Control-click → Open if macOS blocks the first launch.
-            </p>
-            <p>
-              Windows and Linux installers are not in this pre-release. Use the
-              clone steps below. The release list is{" "}
-              <TextLink href={`${GITHUB_URL}/releases`} external>
-                GitHub Releases
               </TextLink>
               .
             </p>
@@ -67,13 +77,8 @@ export default function DownloadPage() {
             </pre>
             <p>
               You need a current Node toolchain and the Tauri 2 / Rust
-              prerequisites for your OS. The window crate is Tauri 2; kernel I/O
-              is Rust; solids are OpenCASCADE. See{" "}
-              <TextLink href={ROUTES.specs}>specifications</TextLink> for the
-              rest of the bill of materials.
-            </p>
-            <p>
-              Source repository:{" "}
+              prerequisites for your OS. See{" "}
+              <TextLink href={ROUTES.specs}>specifications</TextLink>. Source:{" "}
               <TextLink href={GITHUB_URL} external>
                 Eerielettuce3717/arbor-cae
               </TextLink>

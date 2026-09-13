@@ -38,7 +38,7 @@ const ITEMS = [
   },
   {
     q: "How do I install it?",
-    a: "macOS Apple Silicon has a pre-release disk image on GitHub Releases (v0.1.0-pre.1). Windows and Linux still clone arbor-cae and run npm run tauri. There is no app-store listing and no license server.",
+    a: "macOS, Windows, and Linux installers are on GitHub Releases as v0.1.0-pre.1 (Arbor.dmg, Arbor.msi, Arbor.AppImage). You can also clone arbor-cae and run npm run tauri. There is no app-store listing and no license server.",
   },
 ];
 
