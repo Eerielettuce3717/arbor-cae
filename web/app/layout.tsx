@@ -25,7 +25,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://eerielettuce3717.github.io/arbor-cae"),
+  metadataBase: new URL("https://eerielettuce3717.github.io"),
   title: "Arbor — parametric CAD, native ECAD, zero cloud",
   description:
     "Open-source local-first desktop CAD/CAM/ECAD. OpenCASCADE solids, SQLite versioning, Gerber out. The STEP file never leaves this machine.",
