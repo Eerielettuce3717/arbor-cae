@@ -55,16 +55,6 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
-  --color-eng-bg: var(--background);
-  --color-eng-panel: var(--card);
-  --color-eng-elevated: var(--muted);
-  --color-eng-hover: var(--hover);
-  --color-eng-active: var(--active);
-  --color-eng-border: var(--border);
-  --color-eng-text: var(--foreground);
-  --color-eng-muted: var(--muted-foreground);
-  --color-eng-faint: var(--faint);
-
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
