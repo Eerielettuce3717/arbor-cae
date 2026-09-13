@@ -49,7 +49,7 @@ function normal(face: Pt3[]): Pt3 {
   const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
   const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
   const m = Math.hypot(nx, ny, nz) || 1;
-  return [nx / m, ny / m, nz / m];
+  return [nx / m, ny / m, nz / m] as Pt3;
 }
 
 function facing(face: Pt3[]) {
@@ -74,8 +74,8 @@ function shade(face: Pt3[]) {
 }
 
 function prismFaces(ring: [number, number][], y0: number, y1: number): Pt3[][] {
-  const top: Pt3[] = ring.map(([x, z]) => [x, y1, z]).reverse();
-  const bottom: Pt3[] = ring.map(([x, z]) => [x, y0, z]);
+  const top: Pt3[] = ring.map(([x, z]) => [x, y1, z] as Pt3).reverse();
+  const bottom: Pt3[] = ring.map(([x, z]) => [x, y0, z] as Pt3);
   const sides: Pt3[][] = ring.map(([x0, z0], i) => {
     const [x1, z1] = ring[(i + 1) % ring.length];
     return [
@@ -83,7 +83,7 @@ function prismFaces(ring: [number, number][], y0: number, y1: number): Pt3[][] {
       [x1, y0, z1],
       [x1, y1, z1],
       [x0, y1, z0],
-    ];
+    ] as Pt3[];
   });
   return [bottom, top, ...sides];
 }
