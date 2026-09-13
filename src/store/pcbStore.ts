@@ -270,6 +270,16 @@ const TOOL_TO_PANEL: Partial<Record<PcbToolId, PcbPanelId>> = {
   manufacturing: "manufacturing",
 };
 
+/**
+ * Monotonic token identifying the newest manufacturing export.
+ *
+ * Only the newest export may publish its result. A slow earlier export used to
+ * finish after a later one had already failed DRC and set `exportBlocked`, then
+ * clear that flag and report success — advertising Gerber/Excellon files as
+ * ready to fabricate for a board with live DRC violations.
+ */
+let exportGeneration = 0;
+
 export const usePcbStore = create<PcbState>((set, get) => ({
   outline: {
     ...DEFAULT_OUTLINE,
@@ -611,6 +621,7 @@ export const usePcbStore = create<PcbState>((set, get) => ({
   },
 
   exportManufacturingFiles: async () => {
+    const generation = ++exportGeneration;
     const state = get();
     const result = state.runManufacturingDrc();
     if (!result.passed) {
@@ -642,6 +653,11 @@ export const usePcbStore = create<PcbState>((set, get) => ({
     try {
       const gtlPath = await saveGtlFile(base, gtl);
       const drlPath = await saveDrlFile(base, drl);
+      // These files were generated from a snapshot taken before the awaits. If a
+      // newer export has started since, that one owns the published state —
+      // clearing exportBlocked here could unblock a board that has since failed
+      // DRC, and lastExportPaths would point at superseded output.
+      if (generation !== exportGeneration) return false;
       set({
         lastGtl: gtl,
         lastDrl: drl,
@@ -651,6 +667,7 @@ export const usePcbStore = create<PcbState>((set, get) => ({
       });
       return true;
     } catch (err) {
+      if (generation !== exportGeneration) return false;
       const msg = err instanceof Error ? err.message : String(err);
       set({
         statusMessage: `Export failed: ${msg}`,

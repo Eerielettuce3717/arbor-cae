@@ -57,7 +57,9 @@ fn map_doc_state(row: &rusqlite::Row<'_>) -> rusqlite::Result<DocumentState> {
 }
 
 pub fn create_project(db: &CadDb, input: CreateProjectInput) -> DbResult<Project> {
-    db.with_conn(|conn| {
+    // Project + main branch + root commit + document state + release config must
+    // land together; a partial project is unopenable.
+    db.with_tx(|conn| {
         let id = new_id();
         let now = now_iso();
         conn.execute(
@@ -197,7 +199,9 @@ pub fn set_branch_protection(db: &CadDb, branch_id: &str, protected: bool) -> Db
 }
 
 pub fn create_commit(db: &CadDb, input: CreateCommitInput) -> DbResult<Commit> {
-    db.with_conn(|conn| {
+    // Commit row, document state, and branch head advance are one unit: a commit
+    // without its head update silently vanishes from branch history.
+    db.with_tx(|conn| {
         let branch: Branch = conn.query_row(
             "SELECT id, project_id, name, head_commit_id, is_default, is_protected, created_at, updated_at
              FROM branches WHERE id = ?1",
@@ -374,7 +378,7 @@ pub fn compare_commits(db: &CadDb, left_id: &str, right_id: &str) -> DbResult<Co
 }
 
 pub fn repair_commit(db: &CadDb, commit_id: &str, repaired_tree: Value, author_id: &str) -> DbResult<Commit> {
-    db.with_conn(|conn| {
+    db.with_tx(|conn| {
         let base: Commit = conn.query_row(
             "SELECT id, project_id, branch_id, parent_id, merge_parent_id, message, author_id, author_name, created_at, is_repaired
              FROM commits WHERE id = ?1",
@@ -426,10 +430,23 @@ pub fn repair_commit(db: &CadDb, commit_id: &str, repaired_tree: Value, author_i
 }
 
 pub fn restore_commit(db: &CadDb, branch_id: &str, commit_id: &str, author_id: &str, author_name: &str) -> DbResult<Commit> {
-    let state = get_document_state(db, commit_id)?
-        .ok_or_else(|| crate::db::DbError::Message("missing document state for restore".into()))?;
+    db.with_tx(|conn| {
+        // Read the snapshot inside the transaction. Loading it beforehand (via
+        // get_document_state, which takes its own lock) let the commit be deleted
+        // or rewritten in between, so the restore could commit a feature tree that
+        // no longer existed in canonical history.
+        let state: DocumentState = conn
+            .query_row(
+                "SELECT id, commit_id, document_id, feature_tree, content_hash, created_at
+                 FROM document_state WHERE commit_id = ?1",
+                params![commit_id],
+                map_doc_state,
+            )
+            .optional()?
+            .ok_or_else(|| {
+                crate::db::DbError::Message("missing document state for restore".into())
+            })?;
 
-    db.with_conn(|conn| {
         let branch: Branch = conn.query_row(
             "SELECT id, project_id, name, head_commit_id, is_default, is_protected, created_at, updated_at
              FROM branches WHERE id = ?1",
@@ -496,7 +513,8 @@ pub fn merge_branches(
     author_name: &str,
     message: &str,
 ) -> DbResult<MergeResult> {
-    db.with_conn(|conn| {
+    // Merge commit, document state, and target head advance are one unit.
+    db.with_tx(|conn| {
         let source: Branch = conn.query_row(
             "SELECT id, project_id, name, head_commit_id, is_default, is_protected, created_at, updated_at
              FROM branches WHERE id = ?1",
@@ -531,8 +549,24 @@ pub fn merge_branches(
         let source_val: Value = serde_json::from_str(&source_tree).unwrap_or(Value::Object(Default::default()));
         let target_val: Value = serde_json::from_str(&target_tree).unwrap_or(Value::Object(Default::default()));
 
-        let (merged, conflicts) = three_way_merge(&target_val, &source_val);
-        let auto_merged = conflicts.is_empty();
+        let mut conflicts = Vec::new();
+        let merged = merge_trees(&target_val, &source_val, "", &mut conflicts);
+
+        // Refuse to write anything when the sides genuinely diverged.
+        //
+        // The previous behaviour recorded the conflicts and then committed the
+        // merge anyway with source values overwriting target, so a reported
+        // "merge with N conflicts" had already destroyed the target branch's
+        // edits. There is no conflict-resolution UI, so the only safe outcome is
+        // to leave both branches untouched and report what clashed.
+        if !conflicts.is_empty() {
+            return Ok(MergeResult {
+                commit: None,
+                conflicts,
+                auto_merged: false,
+            });
+        }
+
         let now = now_iso();
         let id = new_id();
         let tree_json = serde_json::to_string(&merged).unwrap_or_else(|_| "{}".into());
@@ -563,7 +597,7 @@ pub fn merge_branches(
         )?;
 
         Ok(MergeResult {
-            commit: Commit {
+            commit: Some(Commit {
                 id,
                 project_id: project_id.to_string(),
                 branch_id: target_branch_id.to_string(),
@@ -574,9 +608,9 @@ pub fn merge_branches(
                 author_name: author_name.to_string(),
                 created_at: now,
                 is_repaired: false,
-            },
+            }),
             conflicts,
-            auto_merged,
+            auto_merged: true,
         })
     })
 }
@@ -607,27 +641,79 @@ fn flatten_json(value: &Value, prefix: &str) -> BTreeMap<String, String> {
     out
 }
 
-/// Prefer source values when keys differ; record conflicts when both sides changed relative to empty base.
-fn three_way_merge(base_target: &Value, source: &Value) -> (Value, Vec<String>) {
-    let mut target_map = flatten_json(base_target, "");
-    let source_map = flatten_json(source, "");
-    let mut conflicts = Vec::new();
-
-    for (k, v) in source_map {
-        if let Some(existing) = target_map.get(&k) {
-            if existing != &v {
-                conflicts.push(k.clone());
+/// Recursively merge `source` into `target`, preserving JSON structure and types.
+///
+/// Keys present only on one side are taken as-is. Leaves that differ on both
+/// sides are recorded as conflicts, identified by dotted/indexed path so the UI
+/// can point at the offending field.
+///
+/// This replaces an earlier flatten-and-rebuild implementation that reassembled
+/// the tree as a single flat object of dotted keys with every value coerced to a
+/// string. That corrupted the feature tree on *every* merge, conflict or not:
+/// `{"features":[{"depth":12}]}` came back as `{"features[0].depth":"12"}`.
+fn merge_trees(
+    target: &Value,
+    source: &Value,
+    path: &str,
+    conflicts: &mut Vec<String>,
+) -> Value {
+    match (target, source) {
+        (Value::Object(t), Value::Object(s)) => {
+            let mut out = t.clone();
+            for (key, source_value) in s {
+                let child_path = if path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{path}.{key}")
+                };
+                match t.get(key) {
+                    Some(target_value) => {
+                        out.insert(
+                            key.clone(),
+                            merge_trees(target_value, source_value, &child_path, conflicts),
+                        );
+                    }
+                    // Added only on the source side: no conflict possible.
+                    None => {
+                        out.insert(key.clone(), source_value.clone());
+                    }
+                }
+            }
+            Value::Object(out)
+        }
+        (Value::Array(t), Value::Array(s)) => {
+            // Differing lengths mean the sequence itself diverged (an element was
+            // inserted or removed). Element-wise merging would silently reindex
+            // features, so treat the array as one conflicting unit.
+            if t.len() != s.len() {
+                conflicts.push(if path.is_empty() {
+                    "(root)".to_string()
+                } else {
+                    path.to_string()
+                });
+                return source.clone();
+            }
+            let merged = t
+                .iter()
+                .zip(s.iter())
+                .enumerate()
+                .map(|(i, (tv, sv))| merge_trees(tv, sv, &format!("{path}[{i}]"), conflicts))
+                .collect();
+            Value::Array(merged)
+        }
+        _ => {
+            if target == source {
+                target.clone()
+            } else {
+                conflicts.push(if path.is_empty() {
+                    "(root)".to_string()
+                } else {
+                    path.to_string()
+                });
+                source.clone()
             }
         }
-        target_map.insert(k, v);
     }
-
-    // Rebuild a shallow object from dotted keys for storage.
-    let mut root = serde_json::Map::new();
-    for (k, v) in target_map {
-        root.insert(k, Value::String(v.trim_matches('"').to_string()));
-    }
-    (Value::Object(root), conflicts)
 }
 
 fn simple_hash(s: &str) -> String {
@@ -712,4 +798,93 @@ pub fn upsert_property(
             updated_at: now,
         })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::merge_trees;
+    use serde_json::json;
+
+    fn merge(target: serde_json::Value, source: serde_json::Value) -> (serde_json::Value, Vec<String>) {
+        let mut conflicts = Vec::new();
+        let merged = merge_trees(&target, &source, "", &mut conflicts);
+        (merged, conflicts)
+    }
+
+    #[test]
+    fn identical_trees_merge_to_themselves_with_types_intact() {
+        let tree = json!({
+            "features": [
+                { "id": "f1", "type": "extrude", "depth": 12.5, "suppressed": false }
+            ],
+            "units": "mm"
+        });
+        let (merged, conflicts) = merge(tree.clone(), tree.clone());
+        assert!(conflicts.is_empty(), "identical trees must not conflict");
+        // The old flatten/rebuild turned this into {"features[0].depth": "12.5", ...}.
+        assert_eq!(merged, tree);
+        assert!(merged["features"].is_array());
+        assert!(merged["features"][0]["depth"].is_number());
+        assert!(merged["features"][0]["suppressed"].is_boolean());
+    }
+
+    #[test]
+    fn disjoint_edits_merge_without_conflict_and_keep_nesting() {
+        let target = json!({ "a": { "x": 1 }, "shared": "same" });
+        let source = json!({ "a": { "y": 2 }, "shared": "same" });
+        let (merged, conflicts) = merge(target, source);
+        assert!(conflicts.is_empty());
+        assert_eq!(merged, json!({ "a": { "x": 1, "y": 2 }, "shared": "same" }));
+        assert!(merged["a"]["x"].is_number());
+    }
+
+    #[test]
+    fn divergent_leaf_reports_dotted_conflict_path() {
+        let target = json!({ "features": { "f1": { "depth": 12 } } });
+        let source = json!({ "features": { "f1": { "depth": 30 } } });
+        let (_, conflicts) = merge(target, source);
+        assert_eq!(conflicts, vec!["features.f1.depth".to_string()]);
+    }
+
+    #[test]
+    fn divergent_array_element_reports_indexed_conflict_path() {
+        let target = json!({ "features": [{ "depth": 12 }] });
+        let source = json!({ "features": [{ "depth": 30 }] });
+        let (_, conflicts) = merge(target, source);
+        assert_eq!(conflicts, vec!["features[0].depth".to_string()]);
+    }
+
+    #[test]
+    fn array_length_change_conflicts_instead_of_reindexing() {
+        let target = json!({ "features": [{ "id": "a" }] });
+        let source = json!({ "features": [{ "id": "a" }, { "id": "b" }] });
+        let (_, conflicts) = merge(target, source);
+        assert_eq!(conflicts, vec!["features".to_string()]);
+    }
+
+    #[test]
+    fn source_only_keys_are_added_without_conflict() {
+        let target = json!({ "a": 1 });
+        let source = json!({ "a": 1, "b": { "nested": true } });
+        let (merged, conflicts) = merge(target, source);
+        assert!(conflicts.is_empty());
+        assert_eq!(merged, json!({ "a": 1, "b": { "nested": true } }));
+    }
+
+    #[test]
+    fn target_only_keys_survive_the_merge() {
+        let target = json!({ "keep": "mine", "shared": 1 });
+        let source = json!({ "shared": 1 });
+        let (merged, conflicts) = merge(target, source);
+        assert!(conflicts.is_empty());
+        assert_eq!(merged["keep"], json!("mine"));
+    }
+
+    #[test]
+    fn type_change_on_same_key_is_a_conflict() {
+        let target = json!({ "depth": 12 });
+        let source = json!({ "depth": "12" });
+        let (_, conflicts) = merge(target, source);
+        assert_eq!(conflicts, vec!["depth".to_string()]);
+    }
 }

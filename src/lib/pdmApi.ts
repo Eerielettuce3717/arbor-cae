@@ -63,7 +63,8 @@ export interface CommitDiff {
 }
 
 export interface MergeResult {
-  commit: Commit;
+  /** Null when the merge was refused because of conflicts; nothing was written. */
+  commit: Commit | null;
   conflicts: string[];
   autoMerged: boolean;
 }

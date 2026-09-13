@@ -3,25 +3,42 @@
  */
 
 import {
+  BufferAttribute,
   BufferGeometry,
   Color,
   DoubleSide,
-  Float32BufferAttribute,
   Mesh,
   MeshStandardMaterial,
-  Uint32BufferAttribute,
+  Sphere,
+  Vector3,
 } from "three";
 import type { MeshBuffers } from "./types";
 
 export function bufferGeometryFromMesh(mesh: MeshBuffers): BufferGeometry {
   const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new Float32BufferAttribute(mesh.positions, 3),
-  );
-  geometry.setAttribute("normal", new Float32BufferAttribute(mesh.normals, 3));
-  geometry.setIndex(new Uint32BufferAttribute(mesh.indices, 1));
-  geometry.computeBoundingSphere();
+
+  if (mesh.normals.length !== mesh.positions.length) {
+    throw new Error(
+      `Mesh ${mesh.shapeId}: normal buffer length ${mesh.normals.length} does not match position buffer length ${mesh.positions.length}`,
+    );
+  }
+
+  // Plain BufferAttribute adopts the typed array as-is. The Float32BufferAttribute
+  // / Uint32BufferAttribute subclasses re-wrap it (`new Float32Array(array)`),
+  // which copied every buffer and threw away the zero-copy transfer the worker
+  // just paid for.
+  geometry.setAttribute("position", new BufferAttribute(mesh.positions, 3));
+  geometry.setAttribute("normal", new BufferAttribute(mesh.normals, 3));
+  geometry.setIndex(new BufferAttribute(mesh.indices, 1));
+
+  if (mesh.positions.length === 0) {
+    // computeBoundingSphere() on an empty attribute yields a NaN radius, which
+    // makes frustum culling drop every object and spams the console.
+    geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0), 0);
+  } else {
+    geometry.computeBoundingSphere();
+  }
+
   return geometry;
 }
 

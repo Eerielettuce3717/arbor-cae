@@ -496,6 +496,56 @@ pub fn write_text_file(
     if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
         return Err("invalid file name".to_string());
     }
-    std::fs::write(&path, contents).map_err(map_err)?;
+
+    write_atomic(&path, contents.as_bytes()).map_err(map_err)?;
     Ok(path.display().to_string())
+}
+
+/// Write `bytes` to `path` atomically: temp file in the same directory, flushed
+/// and fsynced, then renamed over the target.
+///
+/// `fs::write` truncates the destination and then streams into it, so a crash or
+/// power loss mid-write leaves a partial file at the final path. These exports
+/// are G-code and NC programs fed to machine controllers, where a silently
+/// truncated program is a physical hazard rather than just lost data. A rename
+/// over a fully-synced temp file means a reader sees either the old contents or
+/// the complete new contents, never a partial program.
+fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let dir = path.parent().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "path has no parent directory")
+    })?;
+
+    // Same directory as the target, so the rename cannot cross a filesystem.
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid file name")
+        })?;
+    let tmp_path = dir.join(format!(".{file_name}.{}.tmp", std::process::id()));
+
+    // Scoped so the handle is closed before the rename (required on Windows).
+    {
+        let mut tmp = std::fs::File::create(&tmp_path)?;
+        if let Err(err) = tmp.write_all(bytes).and_then(|()| tmp.sync_all()) {
+            let _ = std::fs::remove_file(&tmp_path);
+            return Err(err);
+        }
+    }
+
+    if let Err(err) = std::fs::rename(&tmp_path, path) {
+        let _ = std::fs::remove_file(&tmp_path);
+        return Err(err);
+    }
+
+    // Persist the directory entry itself, so the rename survives a crash too.
+    // Not supported on every platform or filesystem; a failure here does not
+    // invalidate the data already written and synced.
+    if let Ok(dir_handle) = std::fs::File::open(dir) {
+        let _ = dir_handle.sync_all();
+    }
+
+    Ok(())
 }

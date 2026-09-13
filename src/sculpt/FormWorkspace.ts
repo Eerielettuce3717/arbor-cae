@@ -455,9 +455,13 @@ export class FormWorkspace {
             face.every((id) => sel.indices.includes(id));
         }
       }
-      mat.emissive = new Color(selected ? "#f59e0b" : "#000000");
+      // Mutate the existing Color and leave needsUpdate alone: emissive and
+      // emissiveIntensity are plain uniforms, so Three.js picks them up without
+      // rebuilding the shader program. Assigning a new Color and forcing
+      // needsUpdate recompiled every pickable's program on each highlight pass,
+      // which runs per frame while a gizmo is being dragged.
+      mat.emissive.set(selected ? 0xf59e0b : 0x000000);
       mat.emissiveIntensity = selected ? 0.8 : kind === "vertex" ? 0.35 : 0;
-      mat.needsUpdate = true;
     }
   }
 

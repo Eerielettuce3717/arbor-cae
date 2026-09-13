@@ -220,7 +220,8 @@ pub struct CommitDiff {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MergeResult {
-    pub commit: Commit,
+    /// `None` when the merge was refused because of conflicts; nothing was written.
+    pub commit: Option<Commit>,
     pub conflicts: Vec<String>,
     pub auto_merged: bool,
 }

@@ -54,6 +54,36 @@ impl CadDb {
         let conn = self.conn.lock();
         f(&conn)
     }
+
+    /// Run `f` inside a single `BEGIN IMMEDIATE` transaction, rolling back on error.
+    ///
+    /// SQLite autocommits every statement individually, so a multi-statement
+    /// operation interrupted partway through leaves the database in a state no
+    /// complete operation would ever produce: a commit row whose branch head was
+    /// never advanced, or an accepted ownership transfer whose lock never moved.
+    /// Use this for any operation that writes more than one row.
+    ///
+    /// Not reentrant — the connection mutex is not recursive and SQLite rejects
+    /// nested `BEGIN`, so `f` must not call back into `with_tx` or `with_conn`.
+    pub fn with_tx<F, T>(&self, f: F) -> DbResult<T>
+    where
+        F: FnOnce(&Connection) -> DbResult<T>,
+    {
+        let conn = self.conn.lock();
+        conn.execute_batch("BEGIN IMMEDIATE")?;
+        match f(&conn) {
+            Ok(value) => {
+                conn.execute_batch("COMMIT")?;
+                Ok(value)
+            }
+            Err(err) => {
+                // Surface the original error: a rollback failure is a consequence
+                // of it, not the cause, and hiding it would obscure the real fault.
+                let _ = conn.execute_batch("ROLLBACK");
+                Err(err)
+            }
+        }
+    }
 }
 
 pub fn now_iso() -> String {
@@ -91,6 +121,56 @@ mod tests {
         assert_eq!(graph.branches.len(), 1);
         assert_eq!(graph.branches[0].name, "main");
         assert!(!graph.nodes.is_empty());
+
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn with_tx_rolls_back_every_write_when_the_closure_fails() {
+        let dir = std::env::temp_dir().join(format!("cad_engine_tx_{}", new_id()));
+        let db = CadDb::open(&dir).expect("open db");
+
+        let count = |db: &CadDb| -> i64 {
+            db.with_conn(|conn| {
+                Ok(conn
+                    .query_row("SELECT COUNT(*) FROM projects", [], |r| r.get(0))
+                    .unwrap_or(0))
+            })
+            .unwrap_or(0)
+        };
+
+        let before = count(&db);
+
+        // Two successful inserts followed by a failure: all three must vanish.
+        let result: DbResult<()> = db.with_tx(|conn| {
+            for name in ["tx-a", "tx-b"] {
+                conn.execute(
+                    "INSERT INTO projects (id, name, description, root_path, owner_id, created_at, updated_at)
+                     VALUES (?1, ?2, '', '/tmp', 'u1', ?3, ?3)",
+                    rusqlite::params![new_id(), name, now_iso()],
+                )?;
+            }
+            Err(DbError::Message("simulated mid-operation failure".into()))
+        });
+
+        assert!(result.is_err(), "closure error must propagate");
+        assert_eq!(
+            count(&db),
+            before,
+            "failed transaction must leave no partial rows behind",
+        );
+
+        // The connection must still be usable after a rollback.
+        let after_ok: DbResult<()> = db.with_tx(|conn| {
+            conn.execute(
+                "INSERT INTO projects (id, name, description, root_path, owner_id, created_at, updated_at)
+                 VALUES (?1, 'tx-ok', '', '/tmp', 'u1', ?2, ?2)",
+                rusqlite::params![new_id(), now_iso()],
+            )?;
+            Ok(())
+        });
+        assert!(after_ok.is_ok(), "connection must survive a rollback");
+        assert_eq!(count(&db), before + 1);
 
         let _ = std::fs::remove_dir_all(dir);
     }

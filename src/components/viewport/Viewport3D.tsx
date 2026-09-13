@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -39,6 +38,7 @@ import {
 import {
   ArViewportPlaceholder,
   createArViewportBridge,
+  type ArViewportBridge,
 } from "./ar/ArViewportScaffold";
 import {
   OnshapeControls,
@@ -166,7 +166,23 @@ export function Viewport3D({
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
   const [formLevels, setFormLevels] = useState(2);
 
-  const arBridge = useMemo(() => createArViewportBridge(), []);
+  /**
+   * The AR bridge owns its own lifecycle. It used to be a `useMemo` disposed by
+   * the WebGL scene effect, which both coupled two unrelated lifetimes and made
+   * the bridge a dependency of the scene — recreating it would have torn down
+   * the GL context. Creating and disposing it in one effect also survives a
+   * StrictMode remount, where the memo would have been reused after disposal.
+   */
+  const [arBridge, setArBridge] = useState<ArViewportBridge | null>(null);
+
+  useEffect(() => {
+    const bridge = createArViewportBridge();
+    setArBridge(bridge);
+    return () => {
+      setArBridge(null);
+      bridge.dispose();
+    };
+  }, []);
 
   const renderOptionsRef = useRef(renderOptions);
   renderOptionsRef.current = renderOptions;
@@ -174,6 +190,18 @@ export function Viewport3D({
   displayRef.current = displayOverrides;
   const cameraModeRef = useRef(cameraMode);
   cameraModeRef.current = cameraMode;
+
+  /**
+   * Set whenever material-affecting state changes, cleared once the render loop
+   * has pushed it to the GPU. `applyMaterials` used to run on every single
+   * frame, and it ends with `needsUpdate = true`, which forced Three.js to
+   * rebuild every shader program 60 times a second.
+   */
+  const materialsDirtyRef = useRef(true);
+
+  useEffect(() => {
+    materialsDirtyRef.current = true;
+  }, [renderOptions, displayOverrides]);
 
   useEffect(() => {
     const host = canvasHostRef.current;
@@ -319,6 +347,8 @@ export function Viewport3D({
       setStatusLine(
         `OCCT mesh · ${buffers.triangleCount} tris · ${buffers.vertexCount} verts`,
       );
+      // Freshly built materials still carry defaults; let the loop configure them.
+      materialsDirtyRef.current = true;
       fit();
     };
 
@@ -412,14 +442,18 @@ export function Viewport3D({
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      applyMaterials(
-        solidMeshes,
-        edgeLines,
-        phantomEdges,
-        renderOptionsRef.current,
-        displayRef.current,
-        sectionPlane,
-      );
+      // Materials only change on user input, not per frame.
+      if (materialsDirtyRef.current) {
+        materialsDirtyRef.current = false;
+        applyMaterials(
+          solidMeshes,
+          edgeLines,
+          phantomEdges,
+          renderOptionsRef.current,
+          displayRef.current,
+          sectionPlane,
+        );
+      }
       const nextPr = renderOptionsRef.current.highQuality
         ? Math.min(window.devicePixelRatio, 2)
         : 1;
@@ -453,7 +487,6 @@ export function Viewport3D({
       ro.disconnect();
       exitFormWorkspace();
       controls.dispose();
-      arBridge.dispose();
       disposeObject(scene);
       renderer.dispose();
       renderer.forceContextLoss();
@@ -462,7 +495,7 @@ export function Viewport3D({
       }
       apiRef.current = null;
     };
-  }, [arBridge]);
+  }, []);
 
   useEffect(() => {
     const api = apiRef.current;
@@ -714,7 +747,7 @@ export function Viewport3D({
         </button>
       </div>
 
-      {arPanelOpen && (
+      {arPanelOpen && arBridge && (
         <ArViewportPlaceholder
           bridge={arBridge}
           onClose={() => setArPanelOpen(false)}
@@ -737,6 +770,27 @@ export function Viewport3D({
   );
 }
 
+/** Scratch normal for the section plane; avoids allocating on every update. */
+const SECTION_NORMAL = new Vector3();
+
+/**
+ * Stable clipping-plane arrays.
+ *
+ * Three.js keys its shader program cache partly on the number of clipping
+ * planes, and assigning a freshly allocated array each time defeated reuse.
+ * Reusing these two arrays keeps the identity and the length stable.
+ */
+const NO_PLANES: Plane[] = [];
+const ONE_PLANE: Plane[] = [];
+
+/**
+ * Push render/display state onto the live materials.
+ *
+ * Only called when something actually changed — see `materialsDirtyRef`.
+ * `needsUpdate` is set only for properties that alter the compiled program
+ * (transparency and clipping-plane count); colours, opacity, metalness and
+ * roughness are plain uniforms and never need a recompile.
+ */
 function applyMaterials(
   solids: Mesh[],
   edges: LineSegments[],
@@ -745,15 +799,23 @@ function applyMaterials(
   display: DisplayOverridesState,
   sectionPlane: Plane,
 ) {
-  sectionPlane.set(
-    new Vector3(
-      display.sectionPlane.a || 0,
-      display.sectionPlane.b || 0,
-      display.sectionPlane.c || 1,
-    ).normalize(),
-    display.sectionPlane.d,
+  SECTION_NORMAL.set(
+    display.sectionPlane.a || 0,
+    display.sectionPlane.b || 0,
+    display.sectionPlane.c || 1,
   );
-  const planes = display.sectionViewEnabled ? [sectionPlane] : [];
+  // A zero vector would normalize to NaN and clip the whole scene away.
+  if (SECTION_NORMAL.lengthSq() < 1e-12) SECTION_NORMAL.set(0, 0, 1);
+  sectionPlane.set(SECTION_NORMAL.normalize(), display.sectionPlane.d);
+
+  let planes: Plane[];
+  if (display.sectionViewEnabled) {
+    ONE_PLANE[0] = sectionPlane;
+    ONE_PLANE.length = 1;
+    planes = ONE_PLANE;
+  } else {
+    planes = NO_PLANES;
+  }
 
   for (const mesh of solids) {
     const id = String(mesh.userData.partId ?? mesh.name);
@@ -780,12 +842,16 @@ function applyMaterials(
       mat.emissiveIntensity = 0;
     }
 
+    const programChanged =
+      mat.transparent !== forceTransparent ||
+      (mat.clippingPlanes?.length ?? 0) !== planes.length;
+
     mat.transparent = forceTransparent;
     mat.opacity = forceTransparent ? 0.35 : 1;
     mat.depthWrite = !forceTransparent;
     mat.clippingPlanes = planes;
     mat.clipShadows = display.sectionViewEnabled;
-    mat.needsUpdate = true;
+    if (programChanged) mat.needsUpdate = true;
   }
 
   const showBoundary = render.hiddenEdges === "visible";

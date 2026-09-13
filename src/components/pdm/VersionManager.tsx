@@ -200,11 +200,17 @@ export function VersionManager({
         authorName: currentUserName,
         message: `Merge into ${defaultBranch.name}`,
       });
-      setStatus(
-        result.autoMerged
-          ? "Merge completed without conflicts"
-          : `Merge with ${result.conflicts.length} conflict(s)`,
-      );
+      if (result.commit) {
+        setStatus("Merge completed without conflicts");
+      } else {
+        // Conflicting merges are refused outright — both branches are untouched.
+        setError(
+          `Merge refused: ${result.conflicts.length} conflicting field(s). ` +
+            `Nothing was committed. Conflicts: ${result.conflicts
+              .slice(0, 5)
+              .join(", ")}${result.conflicts.length > 5 ? ", …" : ""}`,
+        );
+      }
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

@@ -225,7 +225,9 @@ pub fn create_release_candidate(
     notes: &str,
     parts: Vec<(String, String, Option<String>)>,
 ) -> DbResult<ReleaseCandidate> {
-    db.with_conn(|conn| {
+    // Candidate plus its parts list: a crash mid-loop would leave a candidate
+    // whose BOM is silently missing parts.
+    db.with_tx(|conn| {
         let id = new_id();
         let now = now_iso();
         conn.execute(
@@ -307,7 +309,9 @@ pub fn review_candidate(
         ));
     }
 
-    db.with_conn(|conn| {
+    // The review row and the resulting candidate status must agree; recording a
+    // review without its status update leaves the approval gate mis-evaluated.
+    db.with_tx(|conn| {
         let candidate: ReleaseCandidate = conn.query_row(
             "SELECT id, project_id, commit_id, name, revision, status, configuration, created_by, created_at, updated_at, released_at, obsolete_at, notes
              FROM release_candidates WHERE id = ?1",
@@ -357,8 +361,12 @@ pub fn review_candidate(
         };
 
         if decision == "approved" && config.require_approvals {
+            // COUNT(DISTINCT reviewer_id), not COUNT(*): release_reviews has no
+            // uniqueness constraint on (candidate, reviewer), so a plain row
+            // count let one reviewer satisfy min_approvals by voting twice —
+            // a double-clicked button was enough to bypass the approval gate.
             let approvals: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM release_reviews WHERE release_candidate_id = ?1 AND decision = 'approved'",
+                "SELECT COUNT(DISTINCT reviewer_id) FROM release_reviews WHERE release_candidate_id = ?1 AND decision = 'approved'",
                 params![candidate_id],
                 |r| r.get(0),
             )?;
@@ -385,7 +393,9 @@ pub fn review_candidate(
 }
 
 pub fn release_candidate(db: &CadDb, candidate_id: &str) -> DbResult<ReleaseCandidate> {
-    db.with_conn(|conn| {
+    // Obsoleting the previous release and marking this one released must not be
+    // separable, or a crash between them leaves two active releases (or none).
+    db.with_tx(|conn| {
         let mut candidate: ReleaseCandidate = conn.query_row(
             "SELECT id, project_id, commit_id, name, revision, status, configuration, created_by, created_at, updated_at, released_at, obsolete_at, notes
              FROM release_candidates WHERE id = ?1",

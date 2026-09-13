@@ -123,8 +123,16 @@ export class OnshapeControls {
    * Used by "Orient Normal to Sketch Plane".
    */
   orientToPlane(origin: Vector3, normal: Vector3, upHint: Vector3) {
-    const n = normal.clone().normalize();
-    const up = upHint.clone().normalize();
+    // Degenerate plane data would normalize to NaN and leave the camera
+    // permanently unusable, so fall back to a sane basis instead.
+    const n = normal.clone();
+    if (n.lengthSq() < 1e-12) n.set(0, 0, 1);
+    n.normalize();
+
+    const up = upHint.clone();
+    if (up.lengthSq() < 1e-12) up.set(0, 1, 0);
+    up.normalize();
+
     if (Math.abs(n.dot(up)) > 0.99) {
       up.set(0, 1, 0);
       if (Math.abs(n.dot(up)) > 0.99) up.set(1, 0, 0);
@@ -361,12 +369,22 @@ export class OnshapeControls {
   }
 
   private unprojectOnTargetPlane(ndc: Vector2, out: Vector3) {
-    this.eye.copy(this.camera.position).sub(this.target).normalize();
+    this.eye.copy(this.camera.position).sub(this.target);
+    // A camera sitting exactly on its target normalizes to NaN, which would then
+    // propagate into the camera position and break navigation until reload.
+    if (this.eye.lengthSq() < 1e-12) {
+      this.eye.set(0, 0, 1);
+    } else {
+      this.eye.normalize();
+    }
+
     // Plane: eye · (X - target) = 0
     out.set(ndc.x, ndc.y, 0.5).unproject(this.camera);
     const dir = out.sub(this.camera.position).normalize();
     const denom = this.eye.dot(dir);
-    if (Math.abs(denom) < 1e-8) {
+    // Reject NaN as well as near-parallel: `Math.abs(NaN) < 1e-8` is false, so a
+    // magnitude-only test would let NaN through into the returned point.
+    if (!Number.isFinite(denom) || Math.abs(denom) < 1e-8) {
       out.copy(this.target);
       return;
     }

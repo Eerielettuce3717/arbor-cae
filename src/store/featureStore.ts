@@ -590,6 +590,16 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
     const { features, evaluateFeature } = get();
     let lastMesh: MeshBuffers | null = null;
     try {
+      // Reset the rollup body before replaying the tree.
+      //
+      // Fillet and Boolean features write their result back over the shared
+      // "demo" body so the next feature consumes it. Without this reset the
+      // rollup carried over from the previous rebuild, so replaying the tree
+      // filleted an already-filleted body and re-cut an already-cut one. Every
+      // parameter edit therefore produced different geometry than a fresh load
+      // of the same feature tree.
+      await cadClient.createDemoShape("demo");
+
       for (const feature of features) {
         if (feature.suppressed) continue;
         if (

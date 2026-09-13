@@ -140,7 +140,9 @@ pub fn resolve_ownership_transfer(
     transfer_id: &str,
     accept: bool,
 ) -> DbResult<OwnershipTransfer> {
-    db.with_conn(|conn| {
+    // Marking the transfer resolved and moving the document lock must be atomic,
+    // or ownership ends up recorded in one place and not the other.
+    db.with_tx(|conn| {
         let mut transfer: OwnershipTransfer = conn.query_row(
             "SELECT id, project_id, document_id, from_owner_id, to_owner_id, to_owner_name, status, requested_at, resolved_at
              FROM ownership_transfers WHERE id = ?1",
