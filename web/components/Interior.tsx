@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import type { ReactNode } from "react";
 
 export function InteriorHeader({
@@ -60,11 +60,11 @@ export function TextLink({
     );
   }
   return (
-    <Link
+    <AppLink
       href={href}
       className="text-paper underline decoration-rule underline-offset-4 hover:text-signal"
     >
       {children}
-    </Link>
+    </AppLink>
   );
 }

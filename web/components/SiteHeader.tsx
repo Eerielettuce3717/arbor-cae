@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { useState } from "react";
 import { Logo } from "./Mark";
 import { GITHUB_URL, NAV } from "@/lib/site";
@@ -19,13 +19,13 @@ export function SiteHeader() {
 
         <nav aria-label="Main" className="ml-auto hidden items-stretch md:flex">
           {NAV.map((link) => (
-            <Link
+            <AppLink
               key={link.href}
               href={link.href}
               className="flex min-h-11 items-center border-l border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper transition-colors hover:bg-panel hover:text-signal"
             >
               {link.label}
-            </Link>
+            </AppLink>
           ))}
           <a
             href={GITHUB_URL}
@@ -58,7 +58,7 @@ export function SiteHeader() {
           className="border-t border-rule bg-panel md:hidden"
         >
           {NAV.map((link) => (
-            <Link
+            <AppLink
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
@@ -66,7 +66,7 @@ export function SiteHeader() {
             >
               {link.label}
               <span className="text-signal">→</span>
-            </Link>
+            </AppLink>
           ))}
           <a
             href={GITHUB_URL}

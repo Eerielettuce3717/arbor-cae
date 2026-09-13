@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { DownloadStrip } from "./ui/DownloadButton";
 import { Logo } from "./Mark";
 import { FOOTER_SITEMAP, GITHUB_URL } from "@/lib/site";
@@ -45,12 +45,12 @@ export function SiteFooter() {
           <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {FOOTER_SITEMAP.map((item) => (
               <li key={item.href}>
-                <Link
+                <AppLink
                   href={item.href}
                   className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:text-signal"
                 >
                   {item.label}
-                </Link>
+                </AppLink>
               </li>
             ))}
           </ul>

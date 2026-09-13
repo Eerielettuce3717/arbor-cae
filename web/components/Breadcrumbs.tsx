@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { JsonLd } from "./JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { ROUTES } from "@/lib/site";
@@ -25,9 +25,9 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                     {item.name}
                   </span>
                 ) : (
-                  <Link href={item.path} className="hover:text-signal">
+                  <AppLink href={item.path} className="hover:text-signal">
                     {item.name}
-                  </Link>
+                  </AppLink>
                 )}
               </li>
             );

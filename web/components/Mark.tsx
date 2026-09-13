@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "./AppLink";
 import { ROUTES } from "@/lib/site";
 
 export function Mark({
@@ -36,9 +36,9 @@ export function Logo({
   markClassName?: string;
 }) {
   return (
-    <Link href={ROUTES.home} className={`inline-flex items-center gap-3 ${className}`}>
+    <AppLink href={ROUTES.home} className={`inline-flex items-center gap-3 ${className}`}>
       <Mark className={markClassName} decorative />
       <span className={nameClassName}>Arbor</span>
-    </Link>
+    </AppLink>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AppLink } from "@/components/AppLink";
 import { PageShell } from "@/components/PageShell";
 import { ROUTES } from "@/lib/site";
 
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <PageShell>
+    <PageShell nativeLinks>
       <main id="main">
         <header className="border-b border-rule bg-ink">
           <div className="mx-auto max-w-sheet px-[var(--gutter)] py-16 sm:py-24">
@@ -52,24 +52,24 @@ export default function NotFound() {
               specs, modules, download, contribute, FAQ, and license.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
-              <Link
+              <AppLink
                 href={ROUTES.home}
                 className="inline-flex min-h-11 items-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
               >
                 Return home
-              </Link>
-              <Link
+              </AppLink>
+              <AppLink
                 href={ROUTES.specs}
                 className="inline-flex min-h-11 items-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
               >
                 Open specs
-              </Link>
-              <Link
+              </AppLink>
+              <AppLink
                 href={ROUTES.faq}
                 className="inline-flex min-h-11 items-center border border-rule px-6 font-mono text-[11px] uppercase tracking-[0.16em] text-paper hover:border-paper"
               >
                 Read FAQ
-              </Link>
+              </AppLink>
             </div>
           </div>
         </header>
