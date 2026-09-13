@@ -530,12 +530,12 @@ export const usePcbStore = create<PcbState>((set, get) => ({
     set({
       altium365: {
         ...get().altium365,
-        connected: true,
-        syncStatus: "scaffold",
+        connected: false,
+        syncStatus: "error",
         statusMessage:
-          "Connected (UI placeholder) — OAuth / workspace bind TBD.",
+          "Altium 365 OAuth is not wired — connection refused (no fake session).",
       },
-      statusMessage: "Altium 365 connected (scaffold).",
+      statusMessage: "Altium 365 not connected.",
     });
   },
 

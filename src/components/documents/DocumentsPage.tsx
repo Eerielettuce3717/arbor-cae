@@ -38,7 +38,7 @@ interface FolderNode {
   parentId: string | null;
 }
 
-const MOCK_FOLDERS: FolderNode[] = [
+const SAMPLE_FOLDERS: FolderNode[] = [
   { id: "f-root", name: "Workspace", parentId: null },
   { id: "f-mech", name: "Mechanical", parentId: "f-root" },
   { id: "f-elec", name: "Electronics Enclosures", parentId: "f-root" },
@@ -46,7 +46,7 @@ const MOCK_FOLDERS: FolderNode[] = [
   { id: "f-rel", name: "Release Candidates", parentId: "f-mech" },
 ];
 
-const MOCK_DOCUMENTS: CadDocument[] = [
+const SAMPLE_DOCUMENTS: CadDocument[] = [
   {
     id: "d-1",
     name: "Bracket Plate",
@@ -140,8 +140,8 @@ const MOCK_DOCUMENTS: CadDocument[] = [
   },
 ];
 
-const MOCK_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
-const MOCK_FILTERS = [
+const SAMPLE_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
+const SAMPLE_FILTERS = [
   { id: "mine", name: "Owned by me" },
   { id: "week", name: "Modified this week" },
   { id: "parts", name: "Parts only" },
@@ -181,7 +181,11 @@ export function DocumentsPage({
 }: DocumentsPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [orgSection, setOrgSection] = useState<OrgSection>("folders");
-  const [selectedFolderId, setSelectedFolderId] = useState("f-mech");
+  const [folders, setFolders] = useState<FolderNode[]>([]);
+  const [documents, setDocuments] = useState<CadDocument[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [filters, setFilters] = useState(SAMPLE_FILTERS);
+  const [selectedFolderId, setSelectedFolderId] = useState("f-root");
   const [activeLabels, setActiveLabels] = useState<string[]>([]);
   const [activeFilterIds, setActiveFilterIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -192,17 +196,34 @@ export function DocumentsPage({
   const [advancedKind, setAdvancedKind] = useState<DocumentKind | "any">("any");
   const [advancedOwner, setAdvancedOwner] = useState("");
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const usingSample = documents.length > 0;
+
+  function loadSampleWorkspace() {
+    setFolders(SAMPLE_FOLDERS);
+    setDocuments(SAMPLE_DOCUMENTS);
+    setLabels(SAMPLE_LABELS);
+    setFilters(SAMPLE_FILTERS);
+    setSelectedFolderId("f-mech");
+  }
+
+  function clearWorkspace() {
+    setFolders([]);
+    setDocuments([]);
+    setLabels([]);
+    setActiveLabels([]);
+    setSelectedFolderId("f-root");
+  }
 
   const visibleDocs = useMemo(() => {
     const inTrash = orgSection === "trash";
-    return MOCK_DOCUMENTS.filter((doc) => {
+    return documents.filter((doc) => {
       if (inTrash) return doc.folderId === "f-trash";
       if (doc.folderId === "f-trash") return false;
 
       if (orgSection === "folders") {
         const folderMatch =
           doc.folderId === selectedFolderId ||
-          isDescendantFolder(selectedFolderId, doc.folderId);
+          isDescendantFolder(selectedFolderId, doc.folderId, folders);
         if (!folderMatch && selectedFolderId !== "f-root") return false;
       }
 
@@ -239,6 +260,8 @@ export function DocumentsPage({
       return true;
     });
   }, [
+    documents,
+    folders,
     orgSection,
     selectedFolderId,
     activeLabels,
@@ -331,14 +354,14 @@ export function DocumentsPage({
         <div className="min-h-0 flex-1 overflow-y-auto border-t border-border p-2">
           {orgSection === "folders" && (
             <FolderTree
-              folders={MOCK_FOLDERS}
+              folders={folders}
               selectedId={selectedFolderId}
               onSelect={setSelectedFolderId}
             />
           )}
           {orgSection === "labels" && (
             <ul className="space-y-1">
-              {MOCK_LABELS.map((label) => (
+              {labels.map((label) => (
                 <li key={label}>
                   <button
                     type="button"
@@ -356,11 +379,16 @@ export function DocumentsPage({
                   </button>
                 </li>
               ))}
+              {labels.length === 0 && (
+                <li className="px-2 py-1 text-xs text-muted-foreground">
+                  No labels yet.
+                </li>
+              )}
             </ul>
           )}
           {orgSection === "filters" && (
             <ul className="space-y-1">
-              {MOCK_FILTERS.map((filter) => (
+              {filters.map((filter) => (
                 <li key={filter.id}>
                   <button
                     type="button"
@@ -392,8 +420,8 @@ export function DocumentsPage({
                     className="rounded-md border border-dashed border-border px-2 py-2 text-sm text-muted-foreground"
                   >
                     {name}
-                    <div className="mt-1 text-[10px] uppercase tracking-wide text-amber-400/90">
-                      Mock · not connected
+                    <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Not connected
                     </div>
                   </li>
                 ),
@@ -446,10 +474,28 @@ export function DocumentsPage({
             </h1>
             <p className="text-xs text-muted-foreground">
               Local workspace · units {defaultUnit}
+              {usingSample ? " · sample data" : " · empty"}
             </p>
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            {usingSample ? (
+              <button
+                type="button"
+                onClick={clearWorkspace}
+                className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
+              >
+                Clear sample
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={loadSampleWorkspace}
+                className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-accent"
+              >
+                Load sample workspace
+              </button>
+            )}
             <button
               type="button"
               onClick={onOpenVersions}
@@ -577,8 +623,21 @@ export function DocumentsPage({
             />
           )}
           {visibleDocs.length === 0 && (
-            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
-              No documents match the current filters.
+            <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+              <p>
+                {documents.length === 0
+                  ? "No documents yet. Create one or load the sample workspace."
+                  : "No documents match the current filters."}
+              </p>
+              {documents.length === 0 && (
+                <button
+                  type="button"
+                  onClick={loadSampleWorkspace}
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:border-accent hover:text-accent"
+                >
+                  Load sample workspace
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -588,10 +647,14 @@ export function DocumentsPage({
   );
 }
 
-function isDescendantFolder(ancestorId: string, folderId: string): boolean {
+function isDescendantFolder(
+  ancestorId: string,
+  folderId: string,
+  folders: FolderNode[],
+): boolean {
   if (ancestorId === "f-root") return true;
   let current: string | null = folderId;
-  const byId = Object.fromEntries(MOCK_FOLDERS.map((f) => [f.id, f]));
+  const byId = Object.fromEntries(folders.map((f) => [f.id, f]));
   while (current) {
     if (current === ancestorId) return true;
     current = byId[current]?.parentId ?? null;

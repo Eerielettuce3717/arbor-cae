@@ -71,15 +71,7 @@ export interface AppLayoutProps {
   children?: ReactNode;
 }
 
-const DEFAULT_TABS: WorkspaceTab[] = [
-  { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
-  { id: "d-1", title: "Bracket Plate", kind: "part" },
-  { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
-  { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
-  { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
-  { id: "d-render", title: "Bracket Render Studio", kind: "render" },
-  { id: "d-pcb", title: "Main Board PCB Studio", kind: "pcb" },
-];
+const DEFAULT_TABS: WorkspaceTab[] = [];
 
 const SKETCH_TOOL_MAP: Record<string, SketchTool> = {
   Line: SketchTool.Line,

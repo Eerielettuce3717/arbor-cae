@@ -8,11 +8,7 @@ import {
 } from "react";
 import {
   AmbientLight,
-  BoxGeometry,
-  Color,
-  CylinderGeometry,
   DirectionalLight,
-  DoubleSide,
   EdgesGeometry,
   GridHelper,
   Group,
@@ -232,22 +228,9 @@ export function Viewport3D({
     modelRoot.name = "modelRoot";
     scene.add(modelRoot);
 
-    const { solids, edges, phantom } = createDemoPart();
     const solidMeshes: Mesh[] = [];
     const edgeLines: LineSegments[] = [];
     const phantomEdges: LineSegments[] = [];
-    for (const mesh of solids) {
-      modelRoot.add(mesh);
-      solidMeshes.push(mesh);
-    }
-    for (const line of edges) {
-      modelRoot.add(line);
-      edgeLines.push(line);
-    }
-    for (const line of phantom) {
-      modelRoot.add(line);
-      phantomEdges.push(line);
-    }
 
     const sectionPlane = new Plane(new Vector3(0, 0, -1), 0);
     let formWorkspace: FormWorkspace | null = null;
@@ -752,65 +735,6 @@ export function Viewport3D({
       </div>
     </div>
   );
-}
-
-function createDemoPart(): {
-  solids: Mesh[];
-  edges: LineSegments[];
-  phantom: LineSegments[];
-} {
-  const bodyMat = new MeshStandardMaterial({
-    color: new Color("#5b8def"),
-    metalness: 0.25,
-    roughness: 0.45,
-    side: DoubleSide,
-  });
-
-  const body = new Mesh(new BoxGeometry(2, 0.35, 1.2), bodyMat);
-  body.position.set(0, 0.175, 0);
-  body.name = "demo-part";
-  body.userData.partId = "demo-part";
-
-  const boss = new Mesh(new CylinderGeometry(0.28, 0.28, 0.55, 48), bodyMat);
-  boss.position.set(-0.55, 0.45, 0);
-  boss.name = "demo-boss";
-  boss.userData.partId = "demo-part";
-
-  const solids = [body, boss];
-
-  const edgeMat = new LineBasicMaterial({
-    color: 0x0f172a,
-    transparent: true,
-    opacity: 0.9,
-  });
-  const phantomMat = new LineBasicMaterial({
-    color: 0x64748b,
-    transparent: true,
-    opacity: 0.45,
-  });
-
-  const edges: LineSegments[] = [];
-  const phantom: LineSegments[] = [];
-
-  for (const mesh of solids) {
-    const e = new LineSegments(new EdgesGeometry(mesh.geometry, 20), edgeMat);
-    e.position.copy(mesh.position);
-    e.rotation.copy(mesh.rotation);
-    e.scale.copy(mesh.scale);
-    e.userData.partId = "demo-part";
-    e.userData.edgeKind = "boundary";
-    edges.push(e);
-
-    const p = new LineSegments(new EdgesGeometry(mesh.geometry, 1), phantomMat);
-    p.position.copy(mesh.position);
-    p.rotation.copy(mesh.rotation);
-    p.scale.copy(mesh.scale);
-    p.userData.partId = "demo-part";
-    p.userData.edgeKind = "tangent";
-    phantom.push(p);
-  }
-
-  return { solids, edges, phantom };
 }
 
 function applyMaterials(

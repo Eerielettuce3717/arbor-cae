@@ -32,39 +32,6 @@ export interface ReleaseManagementProps {
   onProjectReady?: (projectId: string) => void;
 }
 
-const DEMO_CANDIDATES: ReleaseCandidate[] = [
-  {
-    id: "rc-1",
-    projectId: "demo",
-    commitId: "c4",
-    name: "Drive Assembly RC1",
-    revision: "A",
-    status: "in_review",
-    configuration: "production",
-    createdBy: "local-user",
-    createdAt: "2026-09-11T12:00:00Z",
-    updatedAt: "2026-09-11T12:00:00Z",
-    releasedAt: null,
-    obsoleteAt: null,
-    notes: "First production candidate",
-  },
-  {
-    id: "rc-0",
-    projectId: "demo",
-    commitId: "c3",
-    name: "Drive Assembly Proto",
-    revision: "0",
-    status: "released",
-    configuration: "prototype",
-    createdBy: "u-chen",
-    createdAt: "2026-09-01T09:00:00Z",
-    updatedAt: "2026-09-02T09:00:00Z",
-    releasedAt: "2026-09-02T09:00:00Z",
-    obsoleteAt: null,
-    notes: "",
-  },
-];
-
 export function ReleaseManagement({
   projectId,
   currentUserId = "local-user",
@@ -106,30 +73,13 @@ export function ReleaseManagement({
     setError("");
     if (!isTauriRuntime()) {
       setOffline(true);
-      setCandidates(DEMO_CANDIDATES);
-      setSelectedId((prev) => prev ?? DEMO_CANDIDATES[0]?.id ?? null);
-      setConfig({
-        id: "cfg-demo",
-        projectId: "demo",
-        name: "Default Release Process",
-        requireApprovals: true,
-        minApprovals: 1,
-        allowSelfApprove: false,
-        autoObsoletePrevious: true,
-        createdAt: "",
-        updatedAt: "",
-      });
-      setApprovers([
-        {
-          id: "ap-1",
-          releaseConfigId: "cfg-demo",
-          userId: "u-chen",
-          userName: "A. Chen",
-          role: "approver",
-        },
-      ]);
+      setCandidates([]);
+      setSelectedId(null);
+      setConfig(null);
+      setApprovers([]);
       setPackages([]);
-      setStatus("Demo data · Tauri required for live release DB");
+      setCommits([]);
+      setStatus("Open via `npm run tauri` to connect release management");
       return;
     }
 
@@ -176,7 +126,8 @@ export function ReleaseManagement({
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setOffline(true);
-      setCandidates(DEMO_CANDIDATES);
+      setCandidates([]);
+      setSelectedId(null);
     }
   }, [projectId, currentUserId, onProjectReady]);
 

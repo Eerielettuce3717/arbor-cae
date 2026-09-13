@@ -6,7 +6,6 @@ import {
   type OwnershipTransfer,
   type WorkspaceLock,
   isTauriRuntime,
-  mockBranchGraph,
   pdm,
 } from "../../lib/pdmApi";
 
@@ -43,8 +42,8 @@ export function VersionManager({
     try {
       if (!isTauriRuntime()) {
         setOffline(true);
-        setGraph(mockBranchGraph());
-        setStatus("Demo graph · open via `npm run tauri` for live .cad_db");
+        setGraph(null);
+        setStatus("Open via `npm run tauri` to connect .cad_db");
         return;
       }
       setOffline(false);
@@ -77,7 +76,7 @@ export function VersionManager({
       setStatus(`.cad_db · ${path}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setGraph(mockBranchGraph());
+      setGraph(null);
       setOffline(true);
     }
   }, [projectId, currentUserId, onProjectReady]);
@@ -184,19 +183,9 @@ export function VersionManager({
 
   async function handleRepair() {
     if (!selected) return;
-    try {
-      await pdm.repairCommit(
-        selected.id,
-        {
-          features: [{ id: "repaired", type: "extrude", depth: 10 }],
-          note: "auto-repair stub",
-        },
-        currentUserId,
-      );
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    setError(
+      "Commit repair needs a real document snapshot — fake extrude payloads are disabled.",
+    );
   }
 
   async function handleMerge() {

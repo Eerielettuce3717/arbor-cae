@@ -6,19 +6,12 @@ import { VersionManager } from "./components/pdm/VersionManager";
 
 type AppRoute = "documents" | "workspace" | "versions" | "releases";
 
-const INITIAL_TABS: WorkspaceTab[] = [
-  { id: "d-2", title: "Drive Assembly", kind: "assembly", dirty: true },
-  { id: "d-1", title: "Bracket Plate", kind: "part" },
-  { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
-  { id: "d-sim", title: "Bracket Simulation Studio", kind: "simulation" },
-  { id: "d-render", title: "Bracket Render Studio", kind: "render" },
-  { id: "d-pcb", title: "Main Board PCB Studio", kind: "pcb" },
-];
+const INITIAL_TABS: WorkspaceTab[] = [];
 
 export default function App() {
   const [route, setRoute] = useState<AppRoute>("documents");
   const [tabs, setTabs] = useState<WorkspaceTab[]>(INITIAL_TABS);
-  const [activeTabId, setActiveTabId] = useState("d-2");
+  const [activeTabId, setActiveTabId] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const onProjectReady = useCallback((id: string) => {
