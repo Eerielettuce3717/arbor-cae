@@ -11,7 +11,7 @@ export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 export const GITHUB_ISSUES = `${GITHUB_URL}/issues`;
 export const GITHUB_CLONE = `${GITHUB_URL}.git`;
 /** Pre-release tag. GitHub /releases/latest ignores prereleases, so download URLs use this tag. */
-export const RELEASE_TAG = "v0.1.0-pre.2";
+export const RELEASE_TAG = "v0.1.0-pre.3";
 export const RELEASE_ASSETS = {
   macos: "Arbor.dmg",
   windows: "Arbor.msi",

@@ -6,7 +6,7 @@ on:
       release_tag:
         description: "Existing release tag to upload the installers to"
         required: true
-        default: "v0.1.0-pre.2"
+        default: "v0.1.0-pre.3"
 
 permissions:
   contents: write
