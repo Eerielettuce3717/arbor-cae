@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppLink } from "@/components/AppLink";
+import { ForceReloadLinks } from "@/components/ForceReloadLinks";
 import { PageShell } from "@/components/PageShell";
 import { ROUTES } from "@/lib/site";
 
@@ -38,6 +39,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <PageShell nativeLinks>
+      <ForceReloadLinks />
       <main id="main">
         <header className="border-b border-rule bg-ink">
           <div className="mx-auto max-w-sheet px-[var(--gutter)] py-16 sm:py-24">
