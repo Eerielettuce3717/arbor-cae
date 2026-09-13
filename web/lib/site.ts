@@ -10,6 +10,13 @@ export const GITHUB_REPO = "Eerielettuce3717/arbor-cae";
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 export const GITHUB_ISSUES = `${GITHUB_URL}/issues`;
 export const GITHUB_CLONE = `${GITHUB_URL}.git`;
+/** Pre-release tag. GitHub /releases/latest ignores prereleases, so download URLs use this tag. */
+export const RELEASE_TAG = "v0.1.0-pre.1";
+export const RELEASE_DMG = "Arbor.dmg";
+export const RELEASE_DOWNLOAD = {
+  macos: `${GITHUB_URL}/releases/download/${RELEASE_TAG}/${RELEASE_DMG}`,
+  index: `${GITHUB_URL}/releases/tag/${RELEASE_TAG}`,
+} as const;
 
 export const ROUTES = {
   home: "/",

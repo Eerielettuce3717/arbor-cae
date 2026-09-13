@@ -38,7 +38,7 @@ const ITEMS = [
   },
   {
     q: "How do I install it?",
-    a: "There is no packaged installer yet. Clone arbor-cae and run npm run tauri. GitHub Releases will host a .dmg / .msi / AppImage only after a tag is cut.",
+    a: "macOS Apple Silicon has a pre-release disk image on GitHub Releases (v0.1.0-pre.1). Windows and Linux still clone arbor-cae and run npm run tauri. There is no app-store listing and no license server.",
   },
 ];
 

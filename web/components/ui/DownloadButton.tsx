@@ -3,19 +3,57 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AppLink } from "../AppLink";
 import { useOS, type OS } from "@/hooks/useOS";
-import { GITHUB_URL, ROUTES } from "@/lib/site";
+import { GITHUB_URL, RELEASE_DOWNLOAD, RELEASE_DMG, ROUTES } from "@/lib/site";
 
-const PRIMARY: Record<OS, { text: string; icon: OS }> = {
-  macos: { text: "Build for macOS", icon: "macos" },
-  windows: { text: "Build for Windows", icon: "windows" },
-  linux: { text: "Build for Linux", icon: "linux" },
-  other: { text: "Build from source", icon: "other" },
+const PRIMARY: Record<
+  OS,
+  { href: string; text: string; icon: OS; external: boolean }
+> = {
+  macos: {
+    href: RELEASE_DOWNLOAD.macos,
+    text: "Download for macOS",
+    icon: "macos",
+    external: true,
+  },
+  windows: {
+    href: ROUTES.contribute,
+    text: "Build for Windows",
+    icon: "windows",
+    external: false,
+  },
+  linux: {
+    href: ROUTES.contribute,
+    text: "Build for Linux",
+    icon: "linux",
+    external: false,
+  },
+  other: {
+    href: RELEASE_DOWNLOAD.index,
+    text: "Pre-release",
+    icon: "other",
+    external: true,
+  },
 };
 
 const MORE = [
-  { href: ROUTES.contribute, label: "Build notes", hint: "local" },
-  { href: GITHUB_URL, label: "Source", hint: "GitHub", external: true },
-  { href: `${GITHUB_URL}/releases`, label: "Releases", hint: "empty", external: true },
+  {
+    href: RELEASE_DOWNLOAD.macos,
+    label: "macOS",
+    hint: RELEASE_DMG,
+    external: true,
+  },
+  {
+    href: ROUTES.contribute,
+    label: "Windows",
+    hint: "source",
+    external: false,
+  },
+  {
+    href: ROUTES.contribute,
+    label: "Linux",
+    hint: "source",
+    external: false,
+  },
 ] as const;
 
 export function DownloadButton() {
@@ -45,13 +83,23 @@ export function DownloadButton() {
 
   return (
     <div ref={rootRef} className="relative flex flex-col items-center gap-2">
-      <AppLink
-        href={ROUTES.contribute}
-        className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
-      >
-        <PlatformIcon os={primary.icon} />
-        {primary.text}
-      </AppLink>
+      {primary.external ? (
+        <a
+          href={primary.href}
+          className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
+        >
+          <PlatformIcon os={primary.icon} />
+          {primary.text}
+        </a>
+      ) : (
+        <AppLink
+          href={primary.href}
+          className="inline-flex min-h-12 min-w-[16.5rem] items-center justify-center gap-2.5 bg-signal px-8 font-mono text-[12px] uppercase tracking-[0.16em] text-ink hover:bg-paper"
+        >
+          <PlatformIcon os={primary.icon} />
+          {primary.text}
+        </AppLink>
+      )}
 
       <button
         type="button"
@@ -60,7 +108,7 @@ export function DownloadButton() {
         onClick={() => setOpen((value) => !value)}
         className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mute hover:text-paper"
       >
-        Source and releases
+        Other platforms
         <Chevron open={open} />
       </button>
 
@@ -71,15 +119,15 @@ export function DownloadButton() {
           className="absolute top-[calc(100%+2px)] z-30 w-[18.5rem] border border-rule bg-ink"
         >
           {MORE.map((item) => (
-            <li key={item.href} className="border-b border-rule last:border-b-0">
-              {"external" in item && item.external ? (
+            <li key={item.label} className="border-b border-rule last:border-b-0">
+              {item.external ? (
                 <a
                   href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
                   className="flex min-h-11 items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.12em] text-paper hover:bg-panel hover:text-signal"
                 >
-                  <span>{item.label}</span>
+                  <span className="inline-flex items-center gap-2">
+                    {item.label}
+                  </span>
                   <span className="text-mute">{item.hint}</span>
                 </a>
               ) : (

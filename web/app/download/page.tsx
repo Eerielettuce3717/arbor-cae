@@ -2,12 +2,19 @@ import { DownloadStrip } from "@/components/ui/DownloadButton";
 import { InteriorHeader, Prose, TextLink } from "@/components/Interior";
 import { PageShell } from "@/components/PageShell";
 import { pageMeta } from "@/lib/seo";
-import { GITHUB_CLONE, GITHUB_URL, ROUTES } from "@/lib/site";
+import {
+  GITHUB_CLONE,
+  GITHUB_URL,
+  RELEASE_DOWNLOAD,
+  RELEASE_DMG,
+  RELEASE_TAG,
+  ROUTES,
+} from "@/lib/site";
 
 export const metadata = pageMeta({
-  title: "Download Arbor — build the Tauri desktop app from source",
+  title: "Download Arbor — macOS pre-release, or build from source",
   description:
-    "Arbor has no packaged GitHub Release yet. Clone arbor-cae and compile the Tauri desktop app on macOS, Windows, or Linux.",
+    "Download the Arbor v0.1.0-pre.1 macOS disk image, or clone arbor-cae and compile the Tauri desktop app on Windows or Linux.",
   path: ROUTES.download,
 });
 
@@ -16,9 +23,9 @@ export default function DownloadPage() {
     <PageShell crumbs={[{ name: "Download", path: ROUTES.download }]}>
       <main id="main">
         <InteriorHeader
-          kicker="Source"
+          kicker={`Pre-release · ${RELEASE_TAG}`}
           title="Install Arbor on the machine that cuts"
-          lede="No GitHub Release assets exist yet — there is no .dmg, .msi, or AppImage to fetch. Clone the kernel and compile. There is no app store account and no cloud activation."
+          lede="The current GitHub pre-release ships a macOS Apple Silicon .dmg. Windows and Linux still compile from source. There is no app store account and no cloud activation."
           aside={
             <p className="text-[0.95rem] text-mute">
               Read the{" "}
@@ -32,12 +39,24 @@ export default function DownloadPage() {
           <Prose>
             <h2 className="font-display text-h3 text-paper">Packaged builds</h2>
             <p>
-              Packaged installers will come from{" "}
+              macOS (Apple Silicon):{" "}
+              <TextLink href={RELEASE_DOWNLOAD.macos} external>
+                {RELEASE_DMG}
+              </TextLink>{" "}
+              from{" "}
+              <TextLink href={RELEASE_DOWNLOAD.index} external>
+                {RELEASE_TAG}
+              </TextLink>
+              . The binary is unsigned. Gatekeeper will warn; open it from
+              Finder with Control-click → Open if macOS blocks the first launch.
+            </p>
+            <p>
+              Windows and Linux installers are not in this pre-release. Use the
+              clone steps below. The release list is{" "}
               <TextLink href={`${GITHUB_URL}/releases`} external>
                 GitHub Releases
-              </TextLink>{" "}
-              when a tag is cut. That list is empty today. The orange control
-              sends you to build notes, not a missing CAD-Engine.dmg.
+              </TextLink>
+              .
             </p>
 
             <h2 className="mt-10 font-display text-h3 text-paper">
