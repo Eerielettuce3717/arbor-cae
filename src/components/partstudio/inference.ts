@@ -118,6 +118,41 @@ export function resolveInference(
   let snapped = { ...cursor };
   let bestDist = threshold;
 
+  const originDist = Math.hypot(cursor.x, cursor.y);
+  if (originDist <= bestDist) {
+    bestDist = originDist;
+    snapped = { x: 0, y: 0 };
+    snaps.length = 0;
+    snaps.push({
+      kind: "origin",
+      position: snapped,
+      sourceId: "origin",
+      label: "Origin",
+    });
+  } else {
+    if (Math.abs(cursor.y) <= threshold && Math.abs(cursor.x) > threshold) {
+      snapped = { x: cursor.x, y: 0 };
+      snaps.push({
+        kind: "axis",
+        position: snapped,
+        guideFrom: { x: 0, y: 0 },
+        sourceId: "axis-x",
+        label: "X axis",
+      });
+      bestDist = Math.abs(cursor.y);
+    } else if (Math.abs(cursor.x) <= threshold && Math.abs(cursor.y) > threshold) {
+      snapped = { x: 0, y: cursor.y };
+      snaps.push({
+        kind: "axis",
+        position: snapped,
+        guideFrom: { x: 0, y: 0 },
+        sourceId: "axis-y",
+        label: "Y axis",
+      });
+      bestDist = Math.abs(cursor.x);
+    }
+  }
+
   for (const anchor of collectAnchorPoints(entities)) {
     const d = Math.hypot(cursor.x - anchor.position.x, cursor.y - anchor.position.y);
     if (d <= bestDist) {

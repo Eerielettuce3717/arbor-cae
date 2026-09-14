@@ -55,6 +55,7 @@ import {
 } from "./types";
 import { ViewCube, type ViewCubeFace } from "./ViewCube";
 import { ViewportMenus } from "./ViewportMenus";
+import { createDatumGroup } from "./datums";
 
 const AXONOMETRIC: Record<
   "isometric" | "dimetric" | "trimetric",
@@ -245,6 +246,8 @@ export function Viewport3D({
 
     const grid = createThemedGrid(resolvedThemeRef.current);
     scene.add(grid);
+    const datums = createDatumGroup();
+    scene.add(datums);
     applyViewportSceneTheme(
       scene,
       resolvedThemeRef.current,

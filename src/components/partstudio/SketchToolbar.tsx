@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   CONSTRAINT_TOOLBAR_ITEMS,
   SKETCH_TOOLBAR_ITEMS,
@@ -41,133 +42,146 @@ export function SketchToolbar() {
   );
   const clearSketch = useSketchStore((s) => s.clearSketch);
   const setActive = useSketchStore((s) => s.setActive);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   return (
-    <div className="pointer-events-auto flex max-w-full flex-col gap-1 border-b border-border bg-card/95 px-2 py-1.5">
-      <div className="flex flex-wrap items-center gap-3">
-        {GROUP_ORDER.map((group) => {
-          const items = SKETCH_TOOLBAR_ITEMS.filter((t) => t.group === group);
-          if (items.length === 0) return null;
-          return (
-            <div key={group} className="flex items-center gap-0.5">
-              <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
-                {GROUP_LABEL[group]}
-              </span>
-              {items.map((item) => {
-                const active = activeTool === item.tool;
-                return (
-                  <button
-                    key={item.tool}
-                    type="button"
-                    title={
-                      item.implemented
-                        ? item.label
-                        : `${item.label} (scaffolded)`
-                    }
-                    aria-label={item.label}
-                    aria-pressed={active}
-                    aria-disabled={!item.implemented}
-                    disabled={!item.implemented}
-                    onClick={() => {
-                      if (!item.implemented) return;
-                      setActiveTool(item.tool);
-                    }}
-                    className={`rounded px-1.5 py-0.5 text-[10px] ${
-                      !item.implemented
-                        ? "cursor-not-allowed opacity-45 text-faint"
-                        : active
-                        ? "bg-accent text-accent-foreground"
-                        : item.implemented
-                          ? "text-muted-foreground hover:bg-hover hover:text-accent"
-                          : "text-faint/80 hover:bg-hover hover:text-muted-foreground"
-                    }`}
-                  >
-                    {shortLabel(item.label)}
-                    {!item.implemented && (
-                      <span className="ml-0.5 text-[8px] text-faint">·</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+    <div className="pointer-events-auto flex h-9 max-w-full items-center gap-0.5 overflow-x-auto border-b border-border bg-card/95 px-2">
+      {GROUP_ORDER.map((group) => {
+        const items = SKETCH_TOOLBAR_ITEMS.filter((t) => t.group === group);
+        if (items.length === 0) return null;
+        const live = items.filter((t) => t.implemented);
+        const current =
+          live.find((t) => t.tool === activeTool) ?? live[0] ?? items[0];
+        const open = openGroup === group;
+        return (
+          <div key={group} className="relative shrink-0">
+            <button
+              type="button"
+              title={GROUP_LABEL[group]}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              onClick={() => setOpenGroup(open ? null : group)}
+              className={`flex h-7 items-center gap-1 rounded px-1.5 text-[11px] ${
+                items.some((t) => t.tool === activeTool)
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-hover hover:text-accent"
+              }`}
+            >
+              {shortLabel(current.label)}
+              <span className="text-[8px] opacity-70">▾</span>
+            </button>
+            {open && (
+              <>
+                <button
+                  type="button"
+                  className="fixed inset-0 z-20 cursor-default"
+                  aria-label="Close sketch tools"
+                  onClick={() => setOpenGroup(null)}
+                />
+                <div
+                  role="menu"
+                  className="absolute left-0 top-full z-30 mt-0.5 min-w-[160px] rounded border border-border bg-card py-1"
+                >
+                  {items.map((item) => {
+                    const active = activeTool === item.tool;
+                    return (
+                      <button
+                        key={item.tool}
+                        type="button"
+                        role="menuitem"
+                        title={
+                          item.implemented
+                            ? item.label
+                            : `${item.label} (scaffolded)`
+                        }
+                        aria-label={item.label}
+                        disabled={!item.implemented}
+                        onClick={() => {
+                          if (!item.implemented) return;
+                          setActiveTool(item.tool);
+                          setOpenGroup(null);
+                        }}
+                        className={`block w-full px-3 py-1.5 text-left text-[11px] ${
+                          !item.implemented
+                            ? "cursor-not-allowed text-faint"
+                            : active
+                              ? "bg-active text-accent"
+                              : "text-foreground hover:bg-hover hover:text-accent"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
 
-      <div className="flex flex-wrap items-center gap-1">
-        <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-faint">
-          Constraints
-        </span>
-        {CONSTRAINT_TOOLBAR_ITEMS.map((item) => {
+      <div className="mx-1 h-5 w-px shrink-0 bg-border" />
+
+      {CONSTRAINT_TOOLBAR_ITEMS.filter((item) => item.implemented).map(
+        (item) => {
           const active = activeConstraintTool === item.type;
           return (
             <button
               key={item.type}
               type="button"
-              title={
-                item.implemented
-                  ? item.label
-                  : `${item.label} (scaffolded)`
-              }
+              title={item.label}
               aria-label={item.label}
               aria-pressed={active}
-              aria-disabled={!item.implemented}
-              disabled={!item.implemented}
-              onClick={() => {
-                if (!item.implemented) return;
+              onClick={() =>
                 setActiveConstraintTool(
                   active ? null : (item.type as SketchConstraintType),
-                );
-              }}
-              className={`rounded px-1.5 py-0.5 text-[10px] ${
-                !item.implemented
-                  ? "cursor-not-allowed opacity-45 text-faint"
-                  : active
+                )
+              }
+              className={`h-7 shrink-0 rounded px-1.5 text-[11px] ${
+                active
                   ? "bg-emerald-700 text-white"
-                  : item.implemented
-                    ? "text-muted-foreground hover:bg-hover hover:text-accent"
-                    : "text-faint/80 hover:bg-hover"
+                  : "text-muted-foreground hover:bg-hover hover:text-accent"
               }`}
             >
               {item.label}
             </button>
           );
-        })}
+        },
+      )}
 
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            onClick={toggleConstructionMode}
-            className={`rounded border px-2 py-0.5 text-[10px] ${
-              constructionMode
-                ? "border-amber-600 bg-amber-900/40 text-amber-200"
-                : "border-border text-muted-foreground hover:text-accent"
-            }`}
-          >
-            Construction
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTool(SketchTool.Select)}
-            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-accent"
-          >
-            Select
-          </button>
-          <button
-            type="button"
-            onClick={clearSketch}
-            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-rose-300"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={() => setActive(false)}
-            className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-accent"
-          >
-            Exit sketch
-          </button>
-        </div>
+      <div className="ml-auto flex shrink-0 items-center gap-1 pl-2">
+        <button
+          type="button"
+          onClick={toggleConstructionMode}
+          className={`h-7 rounded border px-2 text-[11px] ${
+            constructionMode
+              ? "border-amber-600 bg-amber-900/40 text-amber-200"
+              : "border-border text-muted-foreground hover:text-accent"
+          }`}
+        >
+          Construction
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTool(SketchTool.Select)}
+          className="h-7 rounded border border-border px-2 text-[11px] text-muted-foreground hover:text-accent"
+        >
+          Select
+        </button>
+        <button
+          type="button"
+          onClick={clearSketch}
+          className="h-7 rounded border border-border px-2 text-[11px] text-muted-foreground hover:text-rose-300"
+        >
+          Clear
+        </button>
+        <button
+          type="button"
+          onClick={() => setActive(false)}
+          className="h-7 rounded border border-border px-2 text-[11px] text-muted-foreground hover:text-accent"
+        >
+          Exit sketch
+        </button>
       </div>
     </div>
   );

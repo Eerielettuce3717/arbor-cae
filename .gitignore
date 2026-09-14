@@ -12,6 +12,10 @@ web/out/
 **/.cad_db
 **/.cad_db-*
 
+# QA explorer artifacts
+test_screenshots/
+.venv-explorer/
+
 # Logs / OS
 *.log
 .DS_Store

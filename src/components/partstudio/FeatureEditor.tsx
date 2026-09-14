@@ -474,9 +474,13 @@ function FeatureParamsForm({ feature }: { feature: CadFeature }) {
           <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] text-accent">
             Form Workspace
           </span>
-        ) : evaluated ? (
+        ) : evaluated && feature.shapeId ? (
           <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-300">
             Worker evaluated
+          </span>
+        ) : evaluated ? (
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] text-faint">
+            Kernel · not built
           </span>
         ) : (
           <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] text-faint">

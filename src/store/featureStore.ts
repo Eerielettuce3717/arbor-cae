@@ -252,6 +252,7 @@ export const useFeatureStore = create<FeatureStoreState>((set, get) => ({
         })),
       },
     });
+    void get().regenerateTree();
   },
 
   addFeature: (type, atIndex) => {

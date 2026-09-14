@@ -3,56 +3,42 @@ import {
   DocumentsPage,
   type OpenDocumentRequest,
 } from "./components/documents/DocumentsPage";
+import { WorkspacesPage } from "./components/documents/WorkspacesPage";
 import { AppLayout, type WorkspaceTab } from "./components/layout/AppLayout";
 import { ReleaseManagement } from "./components/pdm/ReleaseManagement";
 import { VersionManager } from "./components/pdm/VersionManager";
+import { useCatalogStore, type StudioKind } from "./store/catalogStore";
 
-type AppRoute = "documents" | "workspace" | "versions" | "releases";
+type AppRoute = "workspaces" | "documents" | "studio" | "versions" | "releases";
 
 const INITIAL_TABS: WorkspaceTab[] = [];
 
-const SAMPLE_CATALOG: Record<string, WorkspaceTab> = {
-  "d-1": { id: "d-1", title: "Bracket Plate", kind: "part" },
-  "d-2": { id: "d-2", title: "Drive Assembly", kind: "assembly" },
-  "d-3": { id: "d-3", title: "Housing A Drawing", kind: "drawing" },
-  "d-4": { id: "d-4", title: "Shaft Collar", kind: "part" },
-  "d-5": { id: "d-5", title: "PCB Frame", kind: "part" },
-  "d-cam": { id: "d-cam", title: "Bracket CAM Studio", kind: "cam" },
-  "d-sim": {
-    id: "d-sim",
-    title: "Bracket Simulation Studio",
-    kind: "simulation",
-  },
-  "d-render": {
-    id: "d-render",
-    title: "Bracket Render Studio",
-    kind: "render",
-  },
-  "d-pcb": {
-    id: "d-pcb",
-    title: "Main Board PCB Studio",
-    kind: "pcb",
-  },
-};
-
 export default function App() {
-  const [route, setRoute] = useState<AppRoute>("documents");
+  const [route, setRoute] = useState<AppRoute>("workspaces");
   const [tabs, setTabs] = useState<WorkspaceTab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
+  const selectedWorkspaceId = useCatalogStore((s) => s.selectedWorkspaceId);
+  const workspaceName =
+    useCatalogStore((s) =>
+      s.workspaces.find((w) => w.id === s.selectedWorkspaceId),
+    )?.name ?? "Workspace";
 
   const onProjectReady = useCallback((id: string) => {
     setProjectId(id);
   }, []);
 
   function openDocument(request: OpenDocumentRequest | string) {
-    const tab: WorkspaceTab =
+    const catalog = useCatalogStore.getState();
+    const fromStore =
       typeof request === "string"
-        ? (SAMPLE_CATALOG[request] ?? {
-            id: request,
-            title: `Document ${request}`,
-            kind: "part",
-          })
+        ? catalog.documents.find((d) => d.id === request)
+        : catalog.documents.find((d) => d.id === request.id);
+
+    const tab: WorkspaceTab = fromStore
+      ? { id: fromStore.id, title: fromStore.name, kind: fromStore.kind }
+      : typeof request === "string"
+        ? { id: request, title: `Document ${request}`, kind: "part" }
         : {
             id: request.id,
             title: request.title,
@@ -63,7 +49,12 @@ export default function App() {
       prev.some((t) => t.id === tab.id) ? prev : [...prev, tab],
     );
     setActiveTabId(tab.id);
-    setRoute("workspace");
+    setRoute("studio");
+  }
+
+  function createAndOpen(kind: StudioKind, label?: string) {
+    const doc = useCatalogStore.getState().createDocument(kind, label);
+    openDocument({ id: doc.id, title: doc.name, kind: doc.kind });
   }
 
   function closeTab(tabId: string) {
@@ -80,10 +71,31 @@ export default function App() {
     });
   }
 
+  if (route === "workspaces") {
+    return (
+      <WorkspacesPage
+        onOpenWorkspace={() => setRoute("documents")}
+        onOpenVersions={() => setRoute("versions")}
+        onOpenReleases={() => setRoute("releases")}
+      />
+    );
+  }
+
+  if (route === "documents" && !selectedWorkspaceId) {
+    return (
+      <WorkspacesPage
+        onOpenWorkspace={() => setRoute("documents")}
+        onOpenVersions={() => setRoute("versions")}
+        onOpenReleases={() => setRoute("releases")}
+      />
+    );
+  }
+
   if (route === "documents") {
     return (
       <DocumentsPage
         onOpenDocument={openDocument}
+        onBackToWorkspaces={() => setRoute("workspaces")}
         onOpenVersions={() => setRoute("versions")}
         onOpenReleases={() => setRoute("releases")}
       />
@@ -95,7 +107,9 @@ export default function App() {
       <div className="flex h-full min-h-0 flex-col">
         <PdmNav
           active="versions"
-          onBack={() => setRoute("documents")}
+          onBack={() =>
+            setRoute(selectedWorkspaceId ? "documents" : "workspaces")
+          }
           onVersions={() => setRoute("versions")}
           onReleases={() => setRoute("releases")}
         />
@@ -114,7 +128,9 @@ export default function App() {
       <div className="flex h-full min-h-0 flex-col">
         <PdmNav
           active="releases"
-          onBack={() => setRoute("documents")}
+          onBack={() =>
+            setRoute(selectedWorkspaceId ? "documents" : "workspaces")
+          }
           onVersions={() => setRoute("versions")}
           onReleases={() => setRoute("releases")}
         />
@@ -132,11 +148,15 @@ export default function App() {
     <AppLayout
       tabs={tabs}
       activeTabId={activeTabId}
+      workspaceName={workspaceName}
       onSelectTab={setActiveTabId}
       onCloseTab={closeTab}
       onBackToDocuments={() => setRoute("documents")}
+      onBackToWorkspaces={() => setRoute("workspaces")}
       onOpenVersions={() => setRoute("versions")}
       onOpenReleases={() => setRoute("releases")}
+      onCreateDocument={createAndOpen}
+      onOpenCatalogDocument={openDocument}
     />
   );
 }
@@ -159,7 +179,7 @@ function PdmNav({
         onClick={onBack}
         className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
       >
-        ← Documents
+        ← Back
       </button>
       <button
         type="button"

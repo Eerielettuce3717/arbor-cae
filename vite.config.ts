@@ -27,7 +27,12 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: [
+        "**/src-tauri/**",
+        "**/test_screenshots/**",
+        "**/agent_explorer.py",
+        "**/.venv-explorer/**",
+      ],
     },
   },
 }));

@@ -15,6 +15,7 @@ import {
   type Mat4,
   type Vec3,
 } from "../assembly/mateMath";
+import { useCatalogStore, type CadDocument as WorkspaceDocument } from "./catalogStore";
 import {
   DEFAULT_BOM_COLUMNS,
   DEFAULT_BOM_FORMATTING,
@@ -51,8 +52,51 @@ function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function fallbackCatalogDoc(
+  doc: Pick<WorkspaceDocument, "id" | "name" | "kind">,
+): CatalogDocument {
+  return {
+    id: doc.id,
+    name: doc.name,
+    kind: doc.kind === "assembly" ? "assembly" : "part",
+    partNumber: "LOC",
+    description: "Workspace document",
+    material: "—",
+    massGrams: 0,
+    revision: "V1",
+    latestRevision: "V1",
+    workspaceDirty: true,
+    primitive: { kind: "box", size: [1, 0.4, 0.8] },
+    color: "#8b949e",
+  };
+}
+
 function catalogById(id: string): CatalogDocument | undefined {
-  return INSERTABLE_DOCUMENTS.find((d) => d.id === id);
+  const known = INSERTABLE_DOCUMENTS.find((d) => d.id === id);
+  if (known) return known;
+  const doc = useCatalogStore.getState().documents.find((d) => d.id === id);
+  if (!doc || (doc.kind !== "part" && doc.kind !== "assembly")) return undefined;
+  return fallbackCatalogDoc(doc);
+}
+
+export function listInsertableDocuments(): {
+  workspace: CatalogDocument[];
+  library: CatalogDocument[];
+} {
+  const catalog = useCatalogStore.getState();
+  const wsId = catalog.selectedWorkspaceId;
+  const workspaceDocs = catalog.documents.filter(
+    (d) =>
+      (!wsId || d.workspaceId === wsId) &&
+      (d.kind === "part" || d.kind === "assembly"),
+  );
+  const workspace = workspaceDocs.map((doc) => {
+    const known = INSERTABLE_DOCUMENTS.find((d) => d.id === doc.id);
+    return known ? { ...known, name: doc.name } : fallbackCatalogDoc(doc);
+  });
+  const seen = new Set(workspace.map((d) => d.id));
+  const library = INSERTABLE_DOCUMENTS.filter((d) => !seen.has(d.id));
+  return { workspace, library };
 }
 
 function countOfMate(mates: AssemblyMate[], type: MateType): number {

@@ -165,7 +165,9 @@ export type InferenceKind =
   | "grid"
   | "horizontal"
   | "vertical"
-  | "coincident";
+  | "coincident"
+  | "origin"
+  | "axis";
 
 export interface InferenceSnap {
   kind: InferenceKind;

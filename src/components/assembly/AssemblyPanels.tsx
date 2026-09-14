@@ -1,8 +1,11 @@
-import { useState } from "react";
-import { useAssemblyStore } from "../../store/assemblyStore";
+import { useMemo, useState } from "react";
+import {
+  listInsertableDocuments,
+  useAssemblyStore,
+} from "../../store/assemblyStore";
+import { useCatalogStore } from "../../store/catalogStore";
 import {
   IMPLEMENTED_MATES,
-  INSERTABLE_DOCUMENTS,
   MATE_CATALOG,
   RELATION_CATALOG,
   type MateType,
@@ -98,22 +101,65 @@ function panelTitle(panel: string): string {
   }
 }
 
+function useInsertableLists() {
+  const workspaceId = useCatalogStore((s) => s.selectedWorkspaceId);
+  const documents = useCatalogStore((s) => s.documents);
+  return useMemo(
+    () => listInsertableDocuments(),
+    [workspaceId, documents],
+  );
+}
+
+function InsertRow({
+  doc,
+  onInsert,
+}: {
+  doc: ReturnType<typeof listInsertableDocuments>["workspace"][number];
+  onInsert: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onInsert(doc.id)}
+      className="flex w-full items-center gap-2 rounded border border-border px-2 py-2 text-left hover:bg-hover"
+    >
+      <span className="text-[11px] text-faint">
+        {doc.kind === "assembly" ? "⧉" : "◼"}
+      </span>
+      <span className="h-3 w-3 rounded-sm" style={{ background: doc.color }} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs text-foreground">{doc.name}</div>
+        <div className="text-[10px] text-faint">
+          {doc.partNumber} · {doc.kind} · {doc.revision}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function InsertPanel() {
   const insertDocument = useAssemblyStore((s) => s.insertDocument);
   const setActivePanel = useAssemblyStore((s) => s.setActivePanel);
+  const { workspace, library } = useInsertableLists();
   const [filter, setFilter] = useState("");
   const q = filter.trim().toLowerCase();
-  const docs = INSERTABLE_DOCUMENTS.filter(
-    (d) =>
-      !q ||
-      d.name.toLowerCase().includes(q) ||
-      d.partNumber.toLowerCase().includes(q),
-  );
+  const matches = (d: (typeof workspace)[number]) =>
+    !q ||
+    d.name.toLowerCase().includes(q) ||
+    d.partNumber.toLowerCase().includes(q);
+  const workspaceDocs = workspace.filter(matches);
+  const libraryDocs = library.filter(matches);
+
+  function insert(id: string) {
+    insertDocument(id);
+    setActivePanel("none");
+  }
 
   return (
     <div className="flex h-full flex-col p-3">
       <p className="mb-2 text-[11px] text-faint">
-        Insert a part studio or sub-assembly. A document link is created automatically.
+        Workspace documents first. Extra sample parts stay in the library
+        below so insert stays short.
       </p>
       <input
         className={`${inputClass} mb-2`}
@@ -121,32 +167,30 @@ function InsertPanel() {
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
       />
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-        {docs.map((doc) => (
-          <button
-            key={doc.id}
-            type="button"
-            onClick={() => {
-              insertDocument(doc.id);
-              setActivePanel("none");
-            }}
-            className="flex w-full items-center gap-2 rounded border border-border px-2 py-2 text-left hover:bg-hover"
-          >
-            <span className="text-[11px] text-faint">
-              {doc.kind === "assembly" ? "⧉" : "◼"}
-            </span>
-            <span
-              className="h-3 w-3 rounded-sm"
-              style={{ background: doc.color }}
-            />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs text-foreground">{doc.name}</div>
-              <div className="text-[10px] text-faint">
-                {doc.partNumber} · {doc.kind} · {doc.revision}
-              </div>
-            </div>
-          </button>
-        ))}
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+        <section className="space-y-1">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-faint">
+            This workspace
+          </h4>
+          {workspaceDocs.length === 0 && (
+            <p className="px-1 py-2 text-[11px] text-muted-foreground">
+              No part studios or assemblies here yet.
+            </p>
+          )}
+          {workspaceDocs.map((doc) => (
+            <InsertRow key={doc.id} doc={doc} onInsert={insert} />
+          ))}
+        </section>
+        {libraryDocs.length > 0 && (
+          <section className="space-y-1">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wide text-faint">
+              Sample library
+            </h4>
+            {libraryDocs.map((doc) => (
+              <InsertRow key={doc.id} doc={doc} onInsert={insert} />
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );
@@ -157,6 +201,8 @@ function LinkingPanel() {
   const linkDocument = useAssemblyStore((s) => s.linkDocument);
   const unlinkDocument = useAssemblyStore((s) => s.unlinkDocument);
   const setLinkMode = useAssemblyStore((s) => s.setLinkMode);
+  const { workspace, library } = useInsertableLists();
+  const available = [...workspace, ...library];
   const linkedIds = new Set(links.map((l) => l.documentId));
 
   return (
@@ -203,7 +249,7 @@ function LinkingPanel() {
       <h4 className="text-[10px] font-semibold uppercase tracking-wide text-faint">
         Available documents
       </h4>
-      {INSERTABLE_DOCUMENTS.filter((d) => !linkedIds.has(d.id)).map((doc) => (
+      {available.filter((d) => !linkedIds.has(d.id)).map((doc) => (
         <div key={doc.id} className="flex items-center gap-2">
           <span className="flex-1 truncate text-muted-foreground">{doc.name}</span>
           <button
@@ -538,12 +584,14 @@ function AssemblyToolsPanel() {
   const showMatesMode = useAssemblyStore((s) => s.showMatesMode);
   const setSnapMode = useAssemblyStore((s) => s.setSnapMode);
   const setShowMatesMode = useAssemblyStore((s) => s.setShowMatesMode);
+  const { workspace, library } = useInsertableLists();
+  const replaceOptions = [...workspace, ...library];
 
   const seedId = selectedInstanceIds[0] ?? instances[0]?.id ?? "";
   const [count, setCount] = useState(3);
   const [spacing, setSpacing] = useState(0.6);
   const [angle, setAngle] = useState(120);
-  const [replaceDoc, setReplaceDoc] = useState(INSERTABLE_DOCUMENTS[3]?.id ?? "d-5");
+  const [replaceDoc, setReplaceDoc] = useState("d-1");
   const axisY: Vec3 = [0, 1, 0];
   const axisX: Vec3 = [1, 0, 0];
 
@@ -647,7 +695,7 @@ function AssemblyToolsPanel() {
           value={replaceDoc}
           onChange={(e) => setReplaceDoc(e.target.value)}
         >
-          {INSERTABLE_DOCUMENTS.map((d) => (
+          {replaceOptions.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
             </option>

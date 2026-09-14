@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Settings } from "lucide-react";
 import { isTauriRuntime, pdm, type Project } from "../../lib/pdmApi";
+import { useCatalogStore, type StudioKind } from "../../store/catalogStore";
 import { PreferencesModal } from "../settings/PreferencesModal";
 import { Logo } from "../ui/Logo";
 
@@ -28,8 +29,6 @@ type DocumentKind =
   | "render"
   | "pcb"
   | "folder";
-
-type StudioKind = Exclude<DocumentKind, "folder">;
 
 type LengthUnit = "mm" | "in" | "m" | "ft";
 
@@ -57,135 +56,12 @@ export interface OpenDocumentRequest {
   kind: StudioKind;
 }
 
-const SAMPLE_FOLDERS: FolderNode[] = [
-  { id: "f-root", name: "Workspace", parentId: null },
-  { id: "f-mech", name: "Mechanical", parentId: "f-root" },
-  { id: "f-elec", name: "Electronics Enclosures", parentId: "f-root" },
-  { id: "f-proto", name: "Prototypes", parentId: "f-mech" },
-  { id: "f-rel", name: "Release Candidates", parentId: "f-mech" },
-];
-
-const SAMPLE_DOCUMENTS: CadDocument[] = [
-  {
-    id: "d-1",
-    name: "Bracket Plate",
-    kind: "part",
-    folderId: "f-proto",
-    labels: ["WIP", "Aluminum"],
-    modifiedAt: "2026-09-11T18:22:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-2",
-    name: "Drive Assembly",
-    kind: "assembly",
-    folderId: "f-mech",
-    labels: ["Critical"],
-    modifiedAt: "2026-09-10T09:05:00Z",
-    owner: "You",
-    children: ["d-1", "d-4"],
-  },
-  {
-    id: "d-3",
-    name: "Housing A Drawing",
-    kind: "drawing",
-    folderId: "f-rel",
-    labels: ["Released"],
-    modifiedAt: "2026-09-08T14:40:00Z",
-    owner: "A. Chen",
-  },
-  {
-    id: "d-4",
-    name: "Shaft Collar",
-    kind: "part",
-    folderId: "f-proto",
-    labels: ["WIP"],
-    modifiedAt: "2026-09-12T08:12:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-5",
-    name: "PCB Frame",
-    kind: "part",
-    folderId: "f-elec",
-    labels: ["Plastic"],
-    modifiedAt: "2026-09-07T16:00:00Z",
-    owner: "M. Ortiz",
-  },
-  {
-    id: "d-6",
-    name: "Old Fixture v1",
-    kind: "assembly",
-    folderId: "f-trash",
-    labels: [],
-    modifiedAt: "2026-06-01T12:00:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-cam",
-    name: "Bracket CAM Studio",
-    kind: "cam",
-    folderId: "f-proto",
-    labels: ["WIP", "Aluminum"],
-    modifiedAt: "2026-09-12T16:00:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-sim",
-    name: "Bracket Simulation Studio",
-    kind: "simulation",
-    folderId: "f-proto",
-    labels: ["WIP"],
-    modifiedAt: "2026-09-12T16:20:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-render",
-    name: "Bracket Render Studio",
-    kind: "render",
-    folderId: "f-proto",
-    labels: ["WIP"],
-    modifiedAt: "2026-09-12T16:22:00Z",
-    owner: "You",
-  },
-  {
-    id: "d-pcb",
-    name: "Main Board PCB Studio",
-    kind: "pcb",
-    folderId: "f-elec",
-    labels: ["WIP"],
-    modifiedAt: "2026-09-12T16:35:00Z",
-    owner: "You",
-  },
-];
-
-const SAMPLE_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
 const SAMPLE_FILTERS = [
   { id: "mine", name: "Owned by me" },
   { id: "week", name: "Modified this week" },
   { id: "parts", name: "Parts only" },
   { id: "assy", name: "Assemblies only" },
 ];
-
-const PDM_FOLDER: FolderNode = {
-  id: "f-pdm",
-  name: "PDM Projects",
-  parentId: null,
-};
-
-type WorkspaceSource = "empty" | "sample" | "pdm";
-
-function projectsToDocuments(projects: Project[]): CadDocument[] {
-  return projects.map((p) => ({
-    id: p.id,
-    name: p.name,
-    kind: "folder" as const,
-    folderId: PDM_FOLDER.id,
-    labels: ["PDM"],
-    modifiedAt: p.updatedAt,
-    owner: p.ownerId || "You",
-  }));
-}
 
 const KIND_GLYPH: Record<DocumentKind, string> = {
   part: "◼",
@@ -213,22 +89,39 @@ function isStudioKind(kind: DocumentKind): kind is StudioKind {
 
 export interface DocumentsPageProps {
   onOpenDocument?: (request: OpenDocumentRequest | string) => void;
+  onBackToWorkspaces?: () => void;
   onOpenVersions?: () => void;
   onOpenReleases?: () => void;
 }
 
 export function DocumentsPage({
   onOpenDocument,
+  onBackToWorkspaces,
   onOpenVersions,
   onOpenReleases,
 }: DocumentsPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [orgSection, setOrgSection] = useState<OrgSection>("folders");
-  const [folders, setFolders] = useState<FolderNode[]>([]);
-  const [documents, setDocuments] = useState<CadDocument[]>([]);
-  const [labels, setLabels] = useState<string[]>([]);
+  const selectedWorkspaceId = useCatalogStore((s) => s.selectedWorkspaceId);
+  const workspaceName =
+    useCatalogStore((s) =>
+      s.workspaces.find((w) => w.id === s.selectedWorkspaceId),
+    )?.name ?? "Workspace";
+  const allFolders = useCatalogStore((s) => s.folders);
+  const allDocuments = useCatalogStore((s) => s.documents);
+  const folders = allFolders.filter((f) => f.workspaceId === selectedWorkspaceId);
+  const documents = allDocuments.filter(
+    (d) => d.workspaceId === selectedWorkspaceId,
+  );
+  const labels = useCatalogStore((s) => s.labels);
+  const catalogSource = useCatalogStore((s) => s.source);
+  const selectedFolderId = useCatalogStore((s) => s.selectedFolderId);
+  const setSelectedFolderId = useCatalogStore((s) => s.selectFolder);
+  const loadSample = useCatalogStore((s) => s.loadSample);
+  const clearCatalog = useCatalogStore((s) => s.clear);
+  const createDocument = useCatalogStore((s) => s.createDocument);
+  const addFolder = useCatalogStore((s) => s.createFolder);
   const [filters, setFilters] = useState(SAMPLE_FILTERS);
-  const [selectedFolderId, setSelectedFolderId] = useState("f-root");
   const [activeLabels, setActiveLabels] = useState<string[]>([]);
   const [activeFilterIds, setActiveFilterIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -240,7 +133,7 @@ export function DocumentsPage({
   const [advancedKind, setAdvancedKind] = useState<DocumentKind | "any">("any");
   const [advancedOwner, setAdvancedOwner] = useState("");
   const [prefsOpen, setPrefsOpen] = useState(false);
-  const [dataSource, setDataSource] = useState<WorkspaceSource>("empty");
+  const dataSource = catalogSource;
   const [pdmPath, setPdmPath] = useState<string | null>(null);
   const [pdmError, setPdmError] = useState<string | null>(null);
   const [pdmBusy, setPdmBusy] = useState(false);
@@ -249,14 +142,9 @@ export function DocumentsPage({
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   const applyPdmProjects = useCallback((projects: Project[], dbPath: string) => {
-    setFolders([PDM_FOLDER]);
-    setDocuments(projectsToDocuments(projects));
-    setLabels(["PDM"]);
-    setActiveLabels([]);
-    setSelectedFolderId(PDM_FOLDER.id);
     setPdmPath(dbPath);
     setPdmError(null);
-    setDataSource("pdm");
+    void projects;
   }, []);
 
   const refreshPdmProjects = useCallback(async () => {
@@ -321,26 +209,19 @@ export function DocumentsPage({
   }, [showCreateMenu, showMoreMenu]);
 
   function loadSampleWorkspace() {
-    setFolders(SAMPLE_FOLDERS);
-    setDocuments(SAMPLE_DOCUMENTS);
-    setLabels(SAMPLE_LABELS);
+    loadSample();
     setFilters(SAMPLE_FILTERS);
-    setSelectedFolderId("f-mech");
-    setDataSource("sample");
     setPdmPath(null);
     setPdmError(null);
     setShowMoreMenu(false);
   }
 
   function clearWorkspace() {
-    setFolders([]);
-    setDocuments([]);
-    setLabels([]);
+    clearCatalog();
     setActiveLabels([]);
-    setSelectedFolderId("f-root");
-    setDataSource("empty");
     setPdmPath(null);
     setShowMoreMenu(false);
+    onBackToWorkspaces?.();
   }
 
   async function createPdmProject() {
@@ -372,58 +253,16 @@ export function DocumentsPage({
 
   function createLocalDocument(kind: DocumentKind, label: string) {
     setShowCreateMenu(false);
-    const rootId = "f-local-root";
-    const ensureLocalFolders = (): FolderNode[] => {
-      if (dataSource === "pdm" || folders.length === 0) {
-        return [{ id: rootId, name: "Workspace", parentId: null }];
-      }
-      return folders;
-    };
-
     if (kind === "folder") {
-      const nextFolders = ensureLocalFolders();
-      const id = `f-local-${Date.now()}`;
-      const parentId =
-        nextFolders.some((f) => f.id === selectedFolderId) &&
-        selectedFolderId !== "f-root"
-          ? selectedFolderId
-          : (nextFolders[0]?.id ?? null);
-      setFolders([
-        ...nextFolders,
-        { id, name: `Folder ${nextFolders.length}`, parentId },
-      ]);
-      if (dataSource === "pdm") {
-        setDocuments([]);
-        setPdmPath(null);
-      }
-      setDataSource("sample");
+      addFolder(label);
       return;
     }
-
-    const nextFolders = ensureLocalFolders();
-    const folderId = nextFolders.some((f) => f.id === selectedFolderId)
-      ? selectedFolderId
-      : nextFolders[0].id;
-    const id = `d-local-${Date.now()}`;
-    const baseDocs = dataSource === "pdm" ? [] : documents;
-    const name = `${label} ${baseDocs.filter((d) => d.kind === kind).length + 1}`;
-    setFolders(nextFolders);
-    setDocuments([
-      ...baseDocs,
-      {
-        id,
-        name,
-        kind,
-        folderId,
-        labels: ["Local"],
-        modifiedAt: new Date().toISOString(),
-        owner: "You",
-      },
-    ]);
-    setSelectedFolderId(folderId);
-    setPdmPath(null);
-    setDataSource("sample");
-    onOpenDocument?.({ id, title: name, kind });
+    const created = createDocument(kind as StudioKind, label);
+    onOpenDocument?.({
+      id: created.id,
+      title: created.name,
+      kind: created.kind,
+    });
   }
 
   function handleOpenDocument(doc: CadDocument) {
@@ -517,11 +356,15 @@ export function DocumentsPage({
         : `Local workspace · ${defaultUnit} · empty`;
 
   return (
-    <div className="relative flex h-full min-h-0 bg-background text-foreground">
+    <div
+      data-explorer="documents-page"
+      className="relative flex h-full min-h-0 bg-background text-foreground"
+    >
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-card">
         <div ref={createMenuRef} className="relative z-30 border-b border-border p-3">
           <button
             type="button"
+            data-explorer="create-menu"
             onClick={() => {
               setShowMoreMenu(false);
               setShowCreateMenu((v) => !v);
@@ -716,10 +559,23 @@ export function DocumentsPage({
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
           <div className="min-w-0 shrink">
-            <Logo className="h-7 w-7" />
-            <h1 className="sr-only">Documents</h1>
+            <div className="flex items-center gap-2">
+              {onBackToWorkspaces && (
+                <button
+                  type="button"
+                  onClick={onBackToWorkspaces}
+                  className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
+                >
+                  ← Workspaces
+                </button>
+              )}
+              <Logo className="h-7 w-7" />
+            </div>
+            <h1 className="mt-1 text-sm font-semibold tracking-tight">
+              {workspaceName}
+            </h1>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {statusLine}
+              Documents · {statusLine}
               {pdmBusy ? " · loading…" : ""}
             </p>
             {pdmError && (
@@ -738,6 +594,7 @@ export function DocumentsPage({
             <div ref={moreMenuRef} className="relative shrink-0">
               <button
                 type="button"
+                data-explorer="more-menu"
                 onClick={() => {
                   setShowCreateMenu(false);
                   setShowMoreMenu((v) => !v);
@@ -1076,6 +933,8 @@ function ListView({
               key={doc.id}
               tabIndex={0}
               role="button"
+              data-explorer-doc={doc.id}
+              data-explorer-kind={doc.kind}
               aria-label={
                 pdmMode || doc.kind === "folder"
                   ? `Open Versions for ${doc.name}`
@@ -1143,6 +1002,8 @@ function StructureView({
       <div key={doc.id}>
         <button
           type="button"
+          data-explorer-doc={doc.id}
+          data-explorer-kind={doc.kind}
           onClick={() => onOpen(doc)}
           style={{ paddingLeft: 12 + depth * 16 }}
           className="flex w-full items-center gap-2 border-b border-border/60 py-2 text-left text-sm hover:bg-hover"

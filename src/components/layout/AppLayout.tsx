@@ -5,6 +5,7 @@ import {
   type AnalysisToolId,
   type MeshBuffers,
 } from "../../cad/types";
+import { useCatalogStore } from "../../store/catalogStore";
 import { useFeatureStore } from "../../store/featureStore";
 import {
   EVALUATED_FEATURE_TOOLS,
@@ -56,6 +57,7 @@ import {
 import { Viewport3D } from "../viewport/Viewport3D";
 import { PreferencesModal } from "../settings/PreferencesModal";
 import { Logo } from "../ui/Logo";
+import { CommandRibbon, type RibbonGroup } from "./CommandRibbon";
 
 export interface WorkspaceTab {
   id: string;
@@ -74,11 +76,19 @@ export interface WorkspaceTab {
 export interface AppLayoutProps {
   tabs?: WorkspaceTab[];
   activeTabId?: string;
+  workspaceName?: string;
   onSelectTab?: (tabId: string) => void;
   onCloseTab?: (tabId: string) => void;
   onBackToDocuments?: () => void;
+  onBackToWorkspaces?: () => void;
   onOpenVersions?: () => void;
   onOpenReleases?: () => void;
+  onCreateDocument?: (kind: WorkspaceTab["kind"], label?: string) => void;
+  onOpenCatalogDocument?: (doc: {
+    id: string;
+    title: string;
+    kind: WorkspaceTab["kind"];
+  }) => void;
   children?: ReactNode;
 }
 
@@ -220,17 +230,18 @@ function isPartStudioToolImplemented(tool: string): boolean {
   return false;
 }
 
-const disabledToolClass =
-  "cursor-not-allowed opacity-45 text-faint hover:bg-transparent hover:text-faint";
-
 export function AppLayout({
   tabs = DEFAULT_TABS,
   activeTabId,
+  workspaceName,
   onSelectTab,
   onCloseTab,
   onBackToDocuments,
+  onBackToWorkspaces,
   onOpenVersions,
   onOpenReleases,
+  onCreateDocument,
+  onOpenCatalogDocument,
   children,
 }: AppLayoutProps) {
   const [internalActive, setInternalActive] = useState(
@@ -244,6 +255,7 @@ export function AppLayout({
   );
   const [occtMesh, setOcctMesh] = useState<MeshBuffers | null>(null);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const [insertOpen, setInsertOpen] = useState(false);
 
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
@@ -312,6 +324,20 @@ export function AppLayout({
   useEffect(() => {
     if (lastMesh) setOcctMesh(lastMesh);
   }, [lastMesh]);
+
+  useEffect(() => {
+    if (activeTab?.kind !== "part") return;
+    const catalog = useCatalogStore.getState();
+    const doc = catalog.documents.find((d) => d.id === currentTabId);
+    const store = useFeatureStore.getState();
+    const samplePart =
+      catalog.source === "sample" &&
+      doc?.kind === "part" &&
+      !doc.labels.includes("Local");
+    if (store.features.length === 0 && samplePart) {
+      store.loadSampleFeatures();
+    }
+  }, [activeTab?.kind, currentTabId]);
 
   const onSculptCageChanged = useCallback(
     (cageVertices: number[]) => {
@@ -382,8 +408,161 @@ export function AppLayout({
     setOcctMesh(mesh);
   }, []);
 
+  const ribbonGroups: RibbonGroup[] = isPcb
+    ? PCB_TOOLBAR_GROUPS.map((group) => ({
+        id: group.id,
+        label: group.label,
+        tools: group.tools.map((tool) => ({
+          id: tool.id,
+          label: tool.label,
+          implemented: true,
+          active: pcbTool === tool.id,
+        })),
+      }))
+    : isRender
+      ? RENDER_TOOLBAR_GROUPS.map((group) => ({
+          id: group.id,
+          label: group.label,
+          tools: group.tools.map((tool) => ({
+            id: tool.id,
+            label: tool.label,
+            implemented: true,
+            active: renderTool === tool.id,
+          })),
+        }))
+      : isSimulation
+        ? SIMULATION_TOOLBAR_GROUPS.map((group) => ({
+            id: group.id,
+            label: group.label,
+            tools: group.tools.map((tool) => ({
+              id: tool.id,
+              label: tool.label,
+              implemented: true,
+              active: simulationTool === tool.id,
+            })),
+          }))
+        : isCam
+          ? CAM_TOOLBAR_GROUPS.map((group) => ({
+              id: group.id,
+              label: group.label,
+              tools: group.tools.map((tool) => ({
+                id: tool.id,
+                label: tool.label,
+                implemented: true,
+                active: camTool === tool.id,
+              })),
+            }))
+          : isDrawing
+            ? DRAWING_TOOLBAR_GROUPS.map((group) => ({
+                id: group.id,
+                label: group.label,
+                tools: group.tools.map((tool) => ({
+                  id: tool.id,
+                  label: tool.label,
+                  implemented: IMPLEMENTED_DRAWING_TOOLS.has(
+                    tool.id as DrawingToolId,
+                  ),
+                  active: drawingTool === tool.id,
+                })),
+              }))
+            : isAssembly
+              ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => ({
+                  id: group.id,
+                  label: group.label,
+                  tools: group.tools.map((tool) => ({
+                    id: tool.id,
+                    label: tool.label,
+                    implemented: IMPLEMENTED_ASSEMBLY_TOOLS.has(tool.id),
+                    active:
+                      assemblyTool === tool.id ||
+                      (tool.id === "snapMode" && snapMode) ||
+                      (tool.id === "showMates" && showMatesMode),
+                  })),
+                }))
+              : TOOLBAR_GROUPS.map((group) => ({
+                  id: group.id,
+                  label: group.label,
+                  tools: group.tools.map((tool) => ({
+                    id: tool,
+                    label: tool,
+                    implemented: isPartStudioToolImplemented(tool),
+                    active: activeTool === tool,
+                  })),
+                }));
+
+  function onRibbonSelect(id: string) {
+    if (isPcb) setPcbTool(id as PcbToolId);
+    else if (isRender) setRenderTool(id as RenderToolId);
+    else if (isSimulation) setSimulationTool(id as SimulationToolId);
+    else if (isCam) setCamTool(id as CamToolId);
+    else if (isDrawing) setDrawingTool(id as DrawingToolId);
+    else if (isAssembly) setAssemblyTool(id as AssemblyToolId);
+    else onSelectTool(id);
+  }
+
+  const ribbonStatus = (
+    <>
+      <span>
+        Active:{" "}
+        <span className="font-medium text-accent">
+          {isPcb
+            ? pcbTool
+            : isRender
+              ? renderTool
+              : isSimulation
+                ? simulationTool
+                : isCam
+                  ? camTool
+                  : isDrawing
+                    ? drawingTool
+                    : isAssembly
+                      ? assemblyTool
+                      : activeTool}
+        </span>
+      </span>
+      <span className="text-faint">|</span>
+      <span>{activeTab?.title ?? "No document"}</span>
+      {(isPcb || isRender || isSimulation || isCam || isDrawing || isAssembly) && (
+        <>
+          <span className="text-faint">|</span>
+          <span className="max-w-[240px] truncate text-accent/80">
+            {isPcb
+              ? pcbStatus
+              : isRender
+                ? renderStatus
+                : isSimulation
+                  ? simulationStatus
+                  : isCam
+                    ? camStatus
+                    : isDrawing
+                      ? drawingStatus
+                      : assemblyStatus}
+          </span>
+        </>
+      )}
+      {!isAssembly &&
+        !isDrawing &&
+        !isCam &&
+        !isSimulation &&
+        !isRender &&
+        !isPcb &&
+        selectedFeatureId && (
+          <>
+            <span className="text-faint">|</span>
+            <span className="text-accent/80">
+              {features.find((f) => f.id === selectedFeatureId)?.name ??
+                selectedFeatureId}
+            </span>
+          </>
+        )}
+    </>
+  );
+
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-background text-foreground">
+    <div
+      data-explorer="workspace"
+      className="relative flex h-full min-h-0 flex-col bg-background text-foreground"
+    >
       {/* Top chrome: Document Menu + Document Tabs */}
       <div className="flex shrink-0 items-stretch border-b border-border bg-card">
         <div className="flex items-center border-r border-border px-3">
@@ -392,12 +571,13 @@ export function AppLayout({
         <div className="relative flex items-center border-r border-border">
           <button
             type="button"
+            data-explorer="document-menu"
             onClick={() => setMenuOpen((v) => !v)}
             className="flex h-full items-center gap-2 px-3 text-sm font-semibold tracking-tight text-foreground hover:bg-hover hover:text-accent"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            Document
+            {workspaceName ?? "Document"}
             <span className="text-[10px] text-muted-foreground">▾</span>
           </button>
           {menuOpen && (
@@ -407,21 +587,22 @@ export function AppLayout({
             >
               {(
                 [
-                  { type: "item", label: "New Part Studio" },
-                  { type: "item", label: "New Assembly" },
-                  { type: "item", label: "New Drawing" },
-                  { type: "item", label: "New CAM Studio" },
-                  { type: "item", label: "New Simulation Studio" },
-                  { type: "item", label: "New Render Studio" },
-                  { type: "item", label: "New PCB Studio" },
+                  { type: "item", label: "New Part Studio", kind: "part" },
+                  { type: "item", label: "New Assembly", kind: "assembly" },
+                  { type: "item", label: "New Drawing", kind: "drawing" },
+                  { type: "item", label: "New CAM Studio", kind: "cam" },
+                  {
+                    type: "item",
+                    label: "New Simulation Studio",
+                    kind: "simulation",
+                  },
+                  { type: "item", label: "New Render Studio", kind: "render" },
+                  { type: "item", label: "New PCB Studio", kind: "pcb" },
                   { type: "sep", label: "sep-1" },
                   { type: "item", label: "Load sample data" },
-                  { type: "item", label: "Open…" },
-                  { type: "item", label: "Save" },
-                  { type: "item", label: "Save As…" },
+                  { type: "item", label: "Import from workspace…" },
                   { type: "item", label: "Export STEP…" },
                   { type: "sep", label: "sep-2" },
-                  { type: "item", label: "Document properties" },
                   { type: "item", label: "Preferences…" },
                   { type: "item", label: "Close document" },
                 ] as const
@@ -453,6 +634,15 @@ export function AppLayout({
                         usePcbStore.getState().loadSamplePcb();
                         useRenderStore.getState().loadSampleRender();
                         useSimulationStore.getState().loadSampleSimulation();
+                      }
+                      if (item.label === "Import from workspace…") {
+                        setInsertOpen(true);
+                      }
+                      if ("kind" in item && item.kind) {
+                        onCreateDocument?.(
+                          item.kind,
+                          item.label.replace(/^New /, ""),
+                        );
                       }
                     }}
                   >
@@ -506,6 +696,15 @@ export function AppLayout({
         </div>
 
         <div className="flex items-center gap-2 border-l border-border px-3">
+          {onBackToWorkspaces && (
+            <button
+              type="button"
+              onClick={onBackToWorkspaces}
+              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
+            >
+              Workspaces
+            </button>
+          )}
           {onBackToDocuments && (
             <button
               type="button"
@@ -546,316 +745,16 @@ export function AppLayout({
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border bg-muted/80 px-2 py-1.5">
-        {isPcb
-          ? PCB_TOOLBAR_GROUPS.map((group) => (
-              <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  {group.label}
-                </span>
-                {group.tools.map((tool) => {
-                  const active = pcbTool === tool.id;
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => setPcbTool(tool.id as PcbToolId)}
-                      className={`rounded px-2 py-1 text-xs ${
-                        active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-hover hover:text-accent"
-                      }`}
-                    >
-                      {tool.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ))
-          : isRender
-          ? RENDER_TOOLBAR_GROUPS.map((group) => (
-              <div key={group.id} className="flex items-center gap-1">
-                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                  {group.label}
-                </span>
-                {group.tools.map((tool) => {
-                  const active = renderTool === tool.id;
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => setRenderTool(tool.id as RenderToolId)}
-                      className={`rounded px-2 py-1 text-xs ${
-                        active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:bg-hover hover:text-accent"
-                      }`}
-                    >
-                      {tool.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ))
-          : isSimulation
-            ? SIMULATION_TOOLBAR_GROUPS.map((group) => (
-                <div key={group.id} className="flex items-center gap-1">
-                  <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                    {group.label}
-                  </span>
-                  {group.tools.map((tool) => {
-                    const active = simulationTool === tool.id;
-                    return (
-                      <button
-                        key={tool.id}
-                        type="button"
-                        onClick={() =>
-                          setSimulationTool(tool.id as SimulationToolId)
-                        }
-                        className={`rounded px-2 py-1 text-xs ${
-                          active
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-hover hover:text-accent"
-                        }`}
-                      >
-                        {tool.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
-            : isCam
-              ? CAM_TOOLBAR_GROUPS.map((group) => (
-                  <div key={group.id} className="flex items-center gap-1">
-                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                      {group.label}
-                    </span>
-                    {group.tools.map((tool) => {
-                      const active = camTool === tool.id;
-                      return (
-                        <button
-                          key={tool.id}
-                          type="button"
-                          onClick={() => setCamTool(tool.id as CamToolId)}
-                          className={`rounded px-2 py-1 text-xs ${
-                            active
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-hover hover:text-accent"
-                          }`}
-                        >
-                          {tool.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))
-              : isDrawing
-                ? DRAWING_TOOLBAR_GROUPS.map((group) => (
-                    <div key={group.id} className="flex items-center gap-1">
-                      <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                        {group.label}
-                      </span>
-                      {group.tools.map((tool) => {
-                        const active = drawingTool === tool.id;
-                        const implemented = IMPLEMENTED_DRAWING_TOOLS.has(
-                          tool.id as DrawingToolId,
-                        );
-                        return (
-                          <button
-                            key={tool.id}
-                            type="button"
-                            disabled={!implemented}
-                            aria-disabled={!implemented}
-                            title={
-                              implemented
-                                ? tool.label
-                                : `${tool.label} (not implemented)`
-                            }
-                            onClick={() => {
-                              if (!implemented) return;
-                              setDrawingTool(tool.id as DrawingToolId);
-                            }}
-                            className={`rounded px-2 py-1 text-xs ${
-                              !implemented
-                                ? disabledToolClass
-                                : active
-                                  ? "bg-accent text-accent-foreground"
-                                  : "text-muted-foreground hover:bg-hover hover:text-accent"
-                            }`}
-                          >
-                            {tool.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))
-                : isAssembly
-                  ? ASSEMBLY_TOOLBAR_GROUPS.map((group) => (
-                      <div key={group.id} className="flex items-center gap-1">
-                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                          {group.label}
-                        </span>
-                        {group.tools.map((tool) => {
-                          const toggled =
-                            (tool.id === "snapMode" && snapMode) ||
-                            (tool.id === "showMates" && showMatesMode);
-                          const active = assemblyTool === tool.id || toggled;
-                          const implemented = IMPLEMENTED_ASSEMBLY_TOOLS.has(
-                            tool.id,
-                          );
-                          return (
-                            <button
-                              key={tool.id}
-                              type="button"
-                              disabled={!implemented}
-                              aria-disabled={!implemented}
-                              title={
-                                implemented
-                                  ? tool.label
-                                  : `${tool.label} (not implemented)`
-                              }
-                              onClick={() => {
-                                if (!implemented) return;
-                                setAssemblyTool(tool.id);
-                              }}
-                              className={`rounded px-2 py-1 text-xs ${
-                                !implemented
-                                  ? disabledToolClass
-                                  : active
-                                    ? "bg-accent text-accent-foreground"
-                                    : "text-muted-foreground hover:bg-hover hover:text-accent"
-                              }`}
-                            >
-                              {tool.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))
-                  : TOOLBAR_GROUPS.map((group) => (
-                      <div key={group.id} className="flex items-center gap-1">
-                        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-faint">
-                          {group.label}
-                        </span>
-                        {group.tools.map((tool) => {
-                          const implemented = isPartStudioToolImplemented(tool);
-                          return (
-                            <button
-                              key={tool}
-                              type="button"
-                              disabled={!implemented}
-                              aria-disabled={!implemented}
-                              title={
-                                implemented
-                                  ? tool
-                                  : `${tool} (not implemented)`
-                              }
-                              onClick={() => onSelectTool(tool)}
-                              className={`rounded px-2 py-1 text-xs ${
-                                !implemented
-                                  ? disabledToolClass
-                                  : activeTool === tool
-                                    ? "bg-accent text-accent-foreground"
-                                    : "text-muted-foreground hover:bg-hover hover:text-accent"
-                              }`}
-                            >
-                              {tool}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))}
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
-          <span>
-            Active:{" "}
-            <span className="font-medium text-accent">
-              {isPcb
-                ? pcbTool
-                : isRender
-                ? renderTool
-                : isSimulation
-                  ? simulationTool
-                  : isCam
-                    ? camTool
-                    : isDrawing
-                      ? drawingTool
-                      : isAssembly
-                        ? assemblyTool
-                        : activeTool}
-            </span>
-          </span>
-          <span className="text-faint">|</span>
-          <span>{activeTab?.title ?? "No document"}</span>
-          {isPcb && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {pcbStatus}
-              </span>
-            </>
-          )}
-          {isRender && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {renderStatus}
-              </span>
-            </>
-          )}
-          {isSimulation && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {simulationStatus}
-              </span>
-            </>
-          )}
-          {isCam && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {camStatus}
-              </span>
-            </>
-          )}
-          {isDrawing && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {drawingStatus}
-              </span>
-            </>
-          )}
-          {isAssembly && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="max-w-[240px] truncate text-accent/80">
-                {assemblyStatus}
-              </span>
-            </>
-          )}
-          {!isAssembly &&
-            !isDrawing &&
-            !isCam &&
-            !isSimulation &&
-            !isRender &&
-            !isPcb &&
-            selectedFeatureId && (
-            <>
-              <span className="text-faint">|</span>
-              <span className="text-accent/80">
-                {features.find((f) => f.id === selectedFeatureId)?.name ??
-                  selectedFeatureId}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      <CommandRibbon
+        groups={ribbonGroups}
+        onSelect={onRibbonSelect}
+        status={ribbonStatus}
+      />
 
       <div className="flex min-h-0 flex-1">
         {/* Document Panel (feature tree) */}
         <aside
+          data-explorer="tree-panel"
           className={`flex shrink-0 flex-col border-r border-border bg-card transition-[width] ${
             panelCollapsed ? "w-10" : "w-64"
           }`}
@@ -950,7 +849,91 @@ export function AppLayout({
             ))}
         </section>
       </div>
+      {insertOpen && (
+        <InsertFromWorkspace
+          currentId={currentTabId}
+          onClose={() => setInsertOpen(false)}
+          onOpen={(doc) => {
+            onOpenCatalogDocument?.(doc);
+            if (isAssembly && (doc.kind === "part" || doc.kind === "assembly")) {
+              useAssemblyStore.getState().insertDocument(doc.id);
+            }
+            setInsertOpen(false);
+          }}
+        />
+      )}
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+    </div>
+  );
+}
+
+function InsertFromWorkspace({
+  currentId,
+  onClose,
+  onOpen,
+}: {
+  currentId: string;
+  onClose: () => void;
+  onOpen: (doc: {
+    id: string;
+    title: string;
+    kind: WorkspaceTab["kind"];
+  }) => void;
+}) {
+  const workspaceId = useCatalogStore((s) => s.selectedWorkspaceId);
+  const documents = useCatalogStore((s) =>
+    workspaceId
+      ? s.documents.filter((d) => d.workspaceId === workspaceId)
+      : s.documents,
+  );
+
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-start justify-center bg-background/80 p-8"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-label="Insert from workspace"
+        className="w-full max-w-md border border-border bg-card"
+      >
+        <header className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold">Documents in this workspace</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded px-2 text-sm text-faint hover:bg-hover hover:text-accent"
+            aria-label="Close insert picker"
+          >
+            ×
+          </button>
+        </header>
+        <div className="max-h-80 overflow-auto p-2">
+          {documents.length === 0 && (
+            <p className="px-2 py-4 text-xs text-muted-foreground">
+              No other documents yet. Create a Part Studio from the workspace
+              menu.
+            </p>
+          )}
+          {documents.map((doc) => (
+            <button
+              key={doc.id}
+              type="button"
+              disabled={doc.id === currentId}
+              onClick={() =>
+                onOpen({ id: doc.id, title: doc.name, kind: doc.kind })
+              }
+              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-hover disabled:opacity-40"
+            >
+              <span>{doc.name}</span>
+              <span className="text-[10px] uppercase text-faint">{doc.kind}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -59,6 +59,7 @@ import {
   applyViewportSceneTheme,
   createThemedGrid,
 } from "../../theme/viewportTheme";
+import { createDatumGroup } from "../viewport/datums";
 
 const AXONOMETRIC: Record<
   "isometric" | "dimetric" | "trimetric",
@@ -210,6 +211,7 @@ export function AssemblyViewport() {
     scene.add(fill);
     const grid = createThemedGrid(resolvedThemeRef.current);
     scene.add(grid);
+    scene.add(createDatumGroup());
     applyViewportSceneTheme(
       scene,
       resolvedThemeRef.current,
