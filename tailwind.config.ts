@@ -35,14 +35,21 @@ const config: Config = {
         },
       },
       fontFamily: {
+        display: [
+          "Space Grotesk",
+          "IBM Plex Sans",
+          "ui-sans-serif",
+          "sans-serif",
+        ],
         sans: [
+          "Space Grotesk",
           "IBM Plex Sans",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
           "sans-serif",
         ],
-        mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
+        mono: ["Geist Mono", "IBM Plex Mono", "ui-monospace", "monospace"],
       },
       borderRadius: {
         sm: "2px",

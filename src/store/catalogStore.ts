@@ -9,12 +9,27 @@ export type StudioKind =
   | "render"
   | "pcb";
 
+export type ImportKind = "dxf" | "dwg" | "image";
+
 export interface WorkspaceRecord {
   id: string;
   name: string;
   description: string;
   owner: string;
   modifiedAt: string;
+  lastOpenedAt: string;
+  starred: boolean;
+  trashed: boolean;
+}
+
+export interface ImportRecord {
+  id: string;
+  name: string;
+  kind: ImportKind;
+  format: string;
+  owner: string;
+  modifiedAt: string;
+  workspaceId: string | null;
 }
 
 export interface FolderNode {
@@ -63,6 +78,9 @@ const SAMPLE_WORKSPACES: WorkspaceRecord[] = [
     description: "Mechanical drive, CAM, and drawings",
     owner: "You",
     modifiedAt: "2026-09-12T16:22:00Z",
+    lastOpenedAt: "2026-09-13T18:04:00Z",
+    starred: true,
+    trashed: false,
   },
   {
     id: "ws-elec",
@@ -70,6 +88,68 @@ const SAMPLE_WORKSPACES: WorkspaceRecord[] = [
     description: "Board and enclosure",
     owner: "You",
     modifiedAt: "2026-09-12T16:35:00Z",
+    lastOpenedAt: "2026-09-13T14:12:00Z",
+    starred: true,
+    trashed: false,
+  },
+  {
+    id: "ws-jig",
+    name: "Jig Library",
+    description: "Shared fixture pack from A. Chen",
+    owner: "A. Chen",
+    modifiedAt: "2026-09-09T11:40:00Z",
+    lastOpenedAt: "2026-09-10T08:15:00Z",
+    starred: false,
+    trashed: false,
+  },
+  {
+    id: "ws-old",
+    name: "Old Enclosure",
+    description: "Superseded housing study",
+    owner: "You",
+    modifiedAt: "2026-08-22T09:00:00Z",
+    lastOpenedAt: "2026-08-22T09:00:00Z",
+    starred: false,
+    trashed: true,
+  },
+];
+
+const SAMPLE_IMPORTS: ImportRecord[] = [
+  {
+    id: "imp-1",
+    name: "motor-mount.dxf",
+    kind: "dxf",
+    format: "DXF",
+    owner: "You",
+    modifiedAt: "2026-09-12T10:18:00Z",
+    workspaceId: "ws-drive",
+  },
+  {
+    id: "imp-2",
+    name: "housing-rev3.dwg",
+    kind: "dwg",
+    format: "DWG",
+    owner: "You",
+    modifiedAt: "2026-09-11T15:02:00Z",
+    workspaceId: "ws-drive",
+  },
+  {
+    id: "imp-3",
+    name: "datum-photo.png",
+    kind: "image",
+    format: "PNG",
+    owner: "M. Ortiz",
+    modifiedAt: "2026-09-08T19:44:00Z",
+    workspaceId: "ws-elec",
+  },
+  {
+    id: "imp-4",
+    name: "scan-reference.jpg",
+    kind: "image",
+    format: "JPEG",
+    owner: "You",
+    modifiedAt: "2026-09-07T12:30:00Z",
+    workspaceId: null,
   },
 ];
 
@@ -80,6 +160,8 @@ const SAMPLE_FOLDERS: FolderNode[] = [
   { id: "f-rel", workspaceId: "ws-drive", name: "Release Candidates", parentId: "f-mech" },
   { id: "f-elec-root", workspaceId: "ws-elec", name: "Workspace", parentId: null },
   { id: "f-elec", workspaceId: "ws-elec", name: "Boards", parentId: "f-elec-root" },
+  { id: "f-jig-root", workspaceId: "ws-jig", name: "Workspace", parentId: null },
+  { id: "f-old-root", workspaceId: "ws-old", name: "Workspace", parentId: null },
 ];
 
 const SAMPLE_DOCUMENTS: CadDocument[] = [
@@ -174,6 +256,27 @@ const SAMPLE_DOCUMENTS: CadDocument[] = [
     modifiedAt: "2026-09-12T16:35:00Z",
     owner: "You",
   },
+  {
+    id: "d-jig",
+    workspaceId: "ws-jig",
+    name: "Drill Jig Plate",
+    kind: "part",
+    folderId: "f-jig-root",
+    labels: ["Released"],
+    modifiedAt: "2026-09-09T11:40:00Z",
+    owner: "A. Chen",
+  },
+  {
+    id: "d-jig-assy",
+    workspaceId: "ws-jig",
+    name: "Fixture Assembly",
+    kind: "assembly",
+    folderId: "f-jig-root",
+    labels: ["Released"],
+    modifiedAt: "2026-09-09T11:38:00Z",
+    owner: "A. Chen",
+    children: ["d-jig"],
+  },
 ];
 
 const SAMPLE_LABELS = ["WIP", "Released", "Critical", "Aluminum", "Plastic"];
@@ -183,6 +286,7 @@ interface CatalogState {
   workspaces: WorkspaceRecord[];
   folders: FolderNode[];
   documents: CadDocument[];
+  imports: ImportRecord[];
   labels: string[];
   selectedWorkspaceId: string | null;
   selectedFolderId: string;
@@ -191,6 +295,9 @@ interface CatalogState {
   selectWorkspace: (id: string | null) => void;
   selectFolder: (id: string) => void;
   createWorkspace: (name?: string) => WorkspaceRecord;
+  toggleStar: (id: string) => void;
+  trashWorkspace: (id: string) => void;
+  restoreWorkspace: (id: string) => void;
   createDocument: (
     kind: StudioKind,
     label?: string,
@@ -206,6 +313,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   workspaces: [],
   folders: [],
   documents: [],
+  imports: [],
   labels: [],
   selectedWorkspaceId: null,
   selectedFolderId: "f-root",
@@ -216,8 +324,9 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       workspaces: SAMPLE_WORKSPACES,
       folders: SAMPLE_FOLDERS,
       documents: SAMPLE_DOCUMENTS,
+      imports: SAMPLE_IMPORTS,
       labels: SAMPLE_LABELS,
-      selectedWorkspaceId: "ws-drive",
+      selectedWorkspaceId: null,
       selectedFolderId: "f-root",
     }),
 
@@ -227,18 +336,26 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       workspaces: [],
       folders: [],
       documents: [],
+      imports: [],
       labels: [],
       selectedWorkspaceId: null,
       selectedFolderId: "f-root",
     }),
 
   selectWorkspace: (id) => {
+    if (!id) {
+      set({ selectedWorkspaceId: null, selectedFolderId: "f-root" });
+      return;
+    }
     const folders = get().folders.filter((f) => f.workspaceId === id);
     const root = folders.find((f) => f.parentId === null);
-    set({
+    set((s) => ({
       selectedWorkspaceId: id,
       selectedFolderId: root?.id ?? "f-root",
-    });
+      workspaces: s.workspaces.map((w) =>
+        w.id === id ? { ...w, lastOpenedAt: nowIso() } : w,
+      ),
+    }));
   },
 
   selectFolder: (id) => set({ selectedFolderId: id }),
@@ -251,6 +368,9 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       description: "Local workspace",
       owner: "You",
       modifiedAt: nowIso(),
+      lastOpenedAt: nowIso(),
+      starred: true,
+      trashed: false,
     };
     const root: FolderNode = {
       id: uid("f"),
@@ -267,6 +387,29 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     }));
     return created;
   },
+
+  toggleStar: (id) =>
+    set((s) => ({
+      workspaces: s.workspaces.map((w) =>
+        w.id === id ? { ...w, starred: !w.starred } : w,
+      ),
+    })),
+
+  trashWorkspace: (id) =>
+    set((s) => ({
+      workspaces: s.workspaces.map((w) =>
+        w.id === id ? { ...w, trashed: true, starred: false } : w,
+      ),
+      selectedWorkspaceId:
+        s.selectedWorkspaceId === id ? null : s.selectedWorkspaceId,
+    })),
+
+  restoreWorkspace: (id) =>
+    set((s) => ({
+      workspaces: s.workspaces.map((w) =>
+        w.id === id ? { ...w, trashed: false } : w,
+      ),
+    })),
 
   createDocument: (kind, label, workspaceId) => {
     const s = get();

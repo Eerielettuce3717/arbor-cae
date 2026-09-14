@@ -1,24 +1,43 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+import { ActivityView } from "./components/dashboard/ActivityView";
+import { AnalyticsView } from "./components/dashboard/AnalyticsView";
+import { Dashboard } from "./components/dashboard/Dashboard";
+import { ProfileView } from "./components/dashboard/ProfileView";
+import { SettingsView } from "./components/dashboard/SettingsView";
 import {
-  DocumentsPage,
-  type OpenDocumentRequest,
-} from "./components/documents/DocumentsPage";
-import { WorkspacesPage } from "./components/documents/WorkspacesPage";
-import { AppLayout, type WorkspaceTab } from "./components/layout/AppLayout";
+  WorkspaceView,
+  type OpenStudioRequest,
+} from "./components/dashboard/WorkspaceView";
+import {
+  AppLayout,
+  type AppSurface,
+  type ShellNavId,
+  type WorkspaceTab,
+} from "./components/layout/AppLayout";
 import { ReleaseManagement } from "./components/pdm/ReleaseManagement";
 import { VersionManager } from "./components/pdm/VersionManager";
 import { useCatalogStore, type StudioKind } from "./store/catalogStore";
 
-type AppRoute = "workspaces" | "documents" | "studio" | "versions" | "releases";
+type AppRoute =
+  | "dashboard"
+  | "workspace"
+  | "activity"
+  | "analytics"
+  | "settings"
+  | "profile"
+  | "studio"
+  | "versions"
+  | "releases";
 
 const INITIAL_TABS: WorkspaceTab[] = [];
 
 export default function App() {
-  const [route, setRoute] = useState<AppRoute>("workspaces");
+  const [route, setRoute] = useState<AppRoute>("dashboard");
   const [tabs, setTabs] = useState<WorkspaceTab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState("");
   const [projectId, setProjectId] = useState<string | null>(null);
   const selectedWorkspaceId = useCatalogStore((s) => s.selectedWorkspaceId);
+  const selectWorkspace = useCatalogStore((s) => s.selectWorkspace);
   const workspaceName =
     useCatalogStore((s) =>
       s.workspaces.find((w) => w.id === s.selectedWorkspaceId),
@@ -28,7 +47,7 @@ export default function App() {
     setProjectId(id);
   }, []);
 
-  function openDocument(request: OpenDocumentRequest | string) {
+  function openDocument(request: OpenStudioRequest | string) {
     const catalog = useCatalogStore.getState();
     const fromStore =
       typeof request === "string"
@@ -61,7 +80,7 @@ export default function App() {
     setTabs((prev) => {
       const next = prev.filter((t) => t.id !== tabId);
       if (next.length === 0) {
-        setRoute("documents");
+        setRoute(selectedWorkspaceId ? "workspace" : "dashboard");
         return next;
       }
       if (activeTabId === tabId) {
@@ -71,45 +90,84 @@ export default function App() {
     });
   }
 
-  if (route === "workspaces") {
-    return (
-      <WorkspacesPage
-        onOpenWorkspace={() => setRoute("documents")}
-        onOpenVersions={() => setRoute("versions")}
-        onOpenReleases={() => setRoute("releases")}
-      />
-    );
+  function goDashboard() {
+    selectWorkspace(null);
+    setRoute("dashboard");
   }
 
-  if (route === "documents" && !selectedWorkspaceId) {
-    return (
-      <WorkspacesPage
-        onOpenWorkspace={() => setRoute("documents")}
-        onOpenVersions={() => setRoute("versions")}
-        onOpenReleases={() => setRoute("releases")}
-      />
-    );
+  function openWorkspace(id: string) {
+    selectWorkspace(id);
+    setRoute("workspace");
   }
 
-  if (route === "documents") {
-    return (
-      <DocumentsPage
-        onOpenDocument={openDocument}
-        onBackToWorkspaces={() => setRoute("workspaces")}
-        onOpenVersions={() => setRoute("versions")}
-        onOpenReleases={() => setRoute("releases")}
-      />
-    );
+  function onNavigate(id: ShellNavId) {
+    if (id === "dashboard") {
+      goDashboard();
+      return;
+    }
+    setRoute(id);
   }
 
-  if (route === "versions") {
-    return (
+  function backFromPdm() {
+    if (selectedWorkspaceId) setRoute("workspace");
+    else setRoute("dashboard");
+  }
+
+  const surface: AppSurface = route;
+
+  const dashboardStage = (
+    <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div
+        className={`absolute inset-0 overflow-hidden transition-[translate] duration-300 ease-out motion-reduce:transition-none ${
+          route === "workspace"
+            ? "pointer-events-none -translate-x-full"
+            : "translate-x-0"
+        }`}
+        aria-hidden={route === "workspace"}
+        inert={route === "workspace"}
+      >
+        <Dashboard
+          listed={route === "dashboard"}
+          onOpenWorkspace={openWorkspace}
+        />
+      </div>
+      <div
+        className={`absolute inset-0 overflow-hidden transition-[translate] duration-300 ease-out motion-reduce:transition-none ${
+          route === "workspace"
+            ? "translate-x-0"
+            : "pointer-events-none translate-x-full"
+        }`}
+        aria-hidden={route !== "workspace"}
+        inert={route !== "workspace"}
+      >
+        <WorkspaceView
+          listed={route === "workspace"}
+          onBack={goDashboard}
+          onOpenStudio={openDocument}
+          onOpenVersions={() => setRoute("versions")}
+          onOpenReleases={() => setRoute("releases")}
+        />
+      </div>
+    </div>
+  );
+
+  let children: ReactNode = null;
+  if (route === "dashboard" || route === "workspace") {
+    children = dashboardStage;
+  } else if (route === "activity") {
+    children = <ActivityView />;
+  } else if (route === "analytics") {
+    children = <AnalyticsView />;
+  } else if (route === "settings") {
+    children = <SettingsView />;
+  } else if (route === "profile") {
+    children = <ProfileView />;
+  } else if (route === "versions") {
+    children = (
       <div className="flex h-full min-h-0 flex-col">
         <PdmNav
           active="versions"
-          onBack={() =>
-            setRoute(selectedWorkspaceId ? "documents" : "workspaces")
-          }
+          onBack={backFromPdm}
           onVersions={() => setRoute("versions")}
           onReleases={() => setRoute("releases")}
         />
@@ -121,16 +179,12 @@ export default function App() {
         </div>
       </div>
     );
-  }
-
-  if (route === "releases") {
-    return (
+  } else if (route === "releases") {
+    children = (
       <div className="flex h-full min-h-0 flex-col">
         <PdmNav
           active="releases"
-          onBack={() =>
-            setRoute(selectedWorkspaceId ? "documents" : "workspaces")
-          }
+          onBack={backFromPdm}
           onVersions={() => setRoute("versions")}
           onReleases={() => setRoute("releases")}
         />
@@ -146,18 +200,22 @@ export default function App() {
 
   return (
     <AppLayout
+      surface={surface}
+      onNavigate={onNavigate}
       tabs={tabs}
       activeTabId={activeTabId}
       workspaceName={workspaceName}
       onSelectTab={setActiveTabId}
       onCloseTab={closeTab}
-      onBackToDocuments={() => setRoute("documents")}
-      onBackToWorkspaces={() => setRoute("workspaces")}
+      onBackToDocuments={() => setRoute("workspace")}
+      onBackToWorkspaces={goDashboard}
       onOpenVersions={() => setRoute("versions")}
       onOpenReleases={() => setRoute("releases")}
       onCreateDocument={createAndOpen}
       onOpenCatalogDocument={openDocument}
-    />
+    >
+      {children}
+    </AppLayout>
   );
 }
 
@@ -173,18 +231,18 @@ function PdmNav({
   onReleases: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted px-3 py-1.5">
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-card px-3 py-2">
       <button
         type="button"
         onClick={onBack}
-        className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
+        className="border border-accent bg-active px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-accent hover:bg-accent hover:text-accent-foreground"
       >
-        ← Back
+        ← Back to Dashboard
       </button>
       <button
         type="button"
         onClick={onVersions}
-        className={`rounded px-2.5 py-1 text-[11px] font-medium ${
+        className={`px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] ${
           active === "versions"
             ? "bg-active text-accent"
             : "text-muted-foreground hover:bg-hover hover:text-accent"
@@ -195,7 +253,7 @@ function PdmNav({
       <button
         type="button"
         onClick={onReleases}
-        className={`rounded px-2.5 py-1 text-[11px] font-medium ${
+        className={`px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] ${
           active === "releases"
             ? "bg-active text-accent"
             : "text-muted-foreground hover:bg-hover hover:text-accent"
