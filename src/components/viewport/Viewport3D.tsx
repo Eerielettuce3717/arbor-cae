@@ -55,7 +55,14 @@ import {
 } from "./types";
 import { ViewCube, type ViewCubeFace } from "./ViewCube";
 import { ViewportMenus } from "./ViewportMenus";
-import { createDatumGroup } from "./datums";
+import { ReferenceGeometry } from "./ReferenceGeometry";
+import { SketchTool } from "../partstudio/types";
+import { useSketchStore } from "../../store/sketchStore";
+import {
+  InferenceEngine,
+  defaultReferenceTargets,
+  sketchEntitiesToTargets,
+} from "../../utils/inferencing";
 
 const AXONOMETRIC: Record<
   "isometric" | "dimetric" | "trimetric",
@@ -166,6 +173,17 @@ export function Viewport3D({
   const [arPanelOpen, setArPanelOpen] = useState(showArPanelProp ?? false);
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
   const [formLevels, setFormLevels] = useState(2);
+  const [inferenceLabel, setInferenceLabel] = useState<string | null>(null);
+
+  const sketchActive = useSketchStore((s) => s.active);
+  const sketchTool = useSketchStore((s) => s.activeTool);
+  const sketchEntities = useSketchStore((s) => s.entities);
+  const inferenceActive =
+    sketchActive && sketchTool !== SketchTool.Select;
+  const inferenceActiveRef = useRef(inferenceActive);
+  inferenceActiveRef.current = inferenceActive;
+  const sketchEntitiesRef = useRef(sketchEntities);
+  sketchEntitiesRef.current = sketchEntities;
 
   /**
    * The AR bridge owns its own lifecycle. It used to be a `useMemo` disposed by
@@ -246,8 +264,10 @@ export function Viewport3D({
 
     const grid = createThemedGrid(resolvedThemeRef.current);
     scene.add(grid);
-    const datums = createDatumGroup();
-    scene.add(datums);
+    const references = new ReferenceGeometry();
+    scene.add(references.root);
+    const inference = new InferenceEngine();
+    scene.add(inference.overlay);
     applyViewportSceneTheme(
       scene,
       resolvedThemeRef.current,
@@ -443,8 +463,48 @@ export function Viewport3D({
     let lastPixelRatio = renderer.getPixelRatio();
     const viewDir = new Vector3();
 
+    const applyInference = (clientX: number, clientY: number) => {
+      const canvas = renderer.domElement;
+      const toolOn = inferenceActiveRef.current;
+      const targets = defaultReferenceTargets(references.planeWorldSize() / 2);
+      if (toolOn) {
+        targets.push(...sketchEntitiesToTargets(sketchEntitiesRef.current));
+      }
+      const hit = inference.query({
+        clientX,
+        clientY,
+        canvas,
+        camera: active,
+        targets,
+        planeHalfExtent: references.planeWorldSize() / 2,
+      });
+      const planeId =
+        hit?.target.kind === "plane" ? hit.target.plane?.id ?? null : null;
+      references.setHoveredPlane(planeId);
+      if (!toolOn) inference.clear();
+      const label =
+        hit && (toolOn || hit.target.kind === "plane" || hit.target.kind === "origin")
+          ? hit.target.label
+          : null;
+      setInferenceLabel((prev) => (prev === label ? prev : label));
+      canvas.style.cursor = hit && toolOn ? "crosshair" : "";
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      applyInference(event.clientX, event.clientY);
+    };
+    const onPointerLeave = () => {
+      inference.clear();
+      references.setHoveredPlane(null);
+      setInferenceLabel(null);
+      renderer.domElement.style.cursor = "";
+    };
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
+
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      references.updateScale(active, controls.target);
       // Materials only change on user input, not per frame.
       if (materialsDirtyRef.current) {
         materialsDirtyRef.current = false;
@@ -488,8 +548,12 @@ export function Viewport3D({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
       exitFormWorkspace();
       controls.dispose();
+      inference.dispose();
+      references.dispose();
       disposeObject(scene);
       renderer.dispose();
       renderer.forceContextLoss();
@@ -682,6 +746,12 @@ export function Viewport3D({
       />
 
       <ViewCube viewDirection={viewDirection} onFaceClick={onFaceClick} />
+
+      {inferenceLabel && (
+        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 border border-accent bg-card px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+          {inferenceLabel}
+        </div>
+      )}
 
       {sculptActive && (
         <div className="pointer-events-auto absolute left-3 top-14 z-20 flex flex-col gap-2 rounded border border-border bg-card/95 p-2">

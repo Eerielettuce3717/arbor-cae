@@ -57,6 +57,7 @@ import {
 import { Viewport3D } from "../viewport/Viewport3D";
 import { PreferencesModal } from "../settings/PreferencesModal";
 import { CommandRibbon, type RibbonGroup } from "./CommandRibbon";
+import { StudioLayout } from "./StudioLayout";
 
 export interface WorkspaceTab {
   id: string;
@@ -236,7 +237,6 @@ export function StudioChrome({
   onSelectTab,
   onCloseTab,
   onBackToDocuments,
-  onBackToWorkspaces,
   onOpenVersions,
   onOpenReleases,
   onCreateDocument,
@@ -255,6 +255,7 @@ export function StudioChrome({
   const [occtMesh, setOcctMesh] = useState<MeshBuffers | null>(null);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
+  const [sessionDirty, setSessionDirty] = useState(false);
 
   const currentTabId = activeTabId ?? internalActive;
   const activeTab = tabs.find((t) => t.id === currentTabId) ?? tabs[0];
@@ -323,6 +324,36 @@ export function StudioChrome({
   useEffect(() => {
     if (lastMesh) setOcctMesh(lastMesh);
   }, [lastMesh]);
+
+  useEffect(() => {
+    setSessionDirty(false);
+    let armed = false;
+    const arm = window.setTimeout(() => {
+      armed = true;
+    }, 500);
+    const unsubs = [
+      useSketchStore.subscribe((s, prev) => {
+        if (!armed) return;
+        if (s.entities !== prev.entities || s.constraints !== prev.constraints) {
+          setSessionDirty(true);
+        }
+      }),
+      useFeatureStore.subscribe((s, prev) => {
+        if (!armed) return;
+        if (s.features !== prev.features) setSessionDirty(true);
+      }),
+      useAssemblyStore.subscribe((s, prev) => {
+        if (!armed) return;
+        if (s.mates !== prev.mates || s.instances !== prev.instances) {
+          setSessionDirty(true);
+        }
+      }),
+    ];
+    return () => {
+      window.clearTimeout(arm);
+      for (const unsub of unsubs) unsub();
+    };
+  }, [currentTabId]);
 
   useEffect(() => {
     if (activeTab?.kind !== "part") return;
@@ -558,6 +589,14 @@ export function StudioChrome({
   );
 
   return (
+    <StudioLayout
+      workspaceName={workspaceName}
+      documentTitle={activeTab?.title}
+      studioKind={activeTab?.kind}
+      dirty={sessionDirty}
+      onExitToWorkspace={onBackToDocuments}
+      onSave={() => setSessionDirty(false)}
+    >
     <div
       data-explorer="workspace"
       className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground"
@@ -672,8 +711,8 @@ export function StudioChrome({
                     {tab.kind[0]}
                   </span>
                   {tab.title}
-                  {tab.dirty && (
-                    <span className="ml-1 text-amber-400" title="Unsaved">
+                  {(tab.dirty || (isActive && sessionDirty)) && (
+                    <span className="ml-1 text-accent" title="Unsaved">
                       ●
                     </span>
                   )}
@@ -692,24 +731,6 @@ export function StudioChrome({
         </div>
 
         <div className="flex items-center gap-2 border-l border-border px-3">
-          {onBackToWorkspaces && (
-            <button
-              type="button"
-              onClick={onBackToWorkspaces}
-              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
-            >
-              Dashboard
-            </button>
-          )}
-          {onBackToDocuments && (
-            <button
-              type="button"
-              onClick={onBackToDocuments}
-              className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground hover:border-accent hover:text-accent"
-            >
-              Workspace
-            </button>
-          )}
           {onOpenVersions && (
             <button
               type="button"
@@ -737,7 +758,6 @@ export function StudioChrome({
           >
             <Settings className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
-          <span className="font-mono text-[10px] text-faint">mm · ISO</span>
         </div>
       </div>
 
@@ -860,6 +880,7 @@ export function StudioChrome({
       )}
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </div>
+    </StudioLayout>
   );
 }
 

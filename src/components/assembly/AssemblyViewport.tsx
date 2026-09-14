@@ -54,12 +54,16 @@ import {
 } from "../viewport/types";
 import { ViewCube, type ViewCubeFace } from "../viewport/ViewCube";
 import { ViewportMenus } from "../viewport/ViewportMenus";
+import { ReferenceGeometry } from "../viewport/ReferenceGeometry";
 import { useTheme } from "../../providers/ThemeProvider";
 import {
   applyViewportSceneTheme,
   createThemedGrid,
 } from "../../theme/viewportTheme";
-import { createDatumGroup } from "../viewport/datums";
+import {
+  InferenceEngine,
+  defaultReferenceTargets,
+} from "../../utils/inferencing";
 
 const AXONOMETRIC: Record<
   "isometric" | "dimetric" | "trimetric",
@@ -162,6 +166,7 @@ export function AssemblyViewport() {
   );
   const [fps, setFps] = useState(0);
   const [hoverConnector, setHoverConnector] = useState<string | null>(null);
+  const [inferenceLabel, setInferenceLabel] = useState<string | null>(null);
 
   const renderOptionsRef = useRef(renderOptions);
   renderOptionsRef.current = renderOptions;
@@ -171,6 +176,10 @@ export function AssemblyViewport() {
   cameraModeRef.current = cameraMode;
   const hoverRef = useRef(hoverConnector);
   hoverRef.current = hoverConnector;
+  const mateToolRef = useRef(mateToolActive);
+  mateToolRef.current = mateToolActive;
+  const snapModeRef = useRef(snapMode);
+  snapModeRef.current = snapMode;
 
   useEffect(() => {
     const host = canvasHostRef.current;
@@ -211,7 +220,10 @@ export function AssemblyViewport() {
     scene.add(fill);
     const grid = createThemedGrid(resolvedThemeRef.current);
     scene.add(grid);
-    scene.add(createDatumGroup());
+    const references = new ReferenceGeometry();
+    scene.add(references.root);
+    const inference = new InferenceEngine();
+    scene.add(inference.overlay);
     applyViewportSceneTheme(
       scene,
       resolvedThemeRef.current,
@@ -354,7 +366,35 @@ export function AssemblyViewport() {
       const hit = hitTest(event.clientX, event.clientY);
       const next = hit?.kind === "connector" ? hit.id : null;
       if (next !== hoverRef.current) setHoverConnector(next);
-      renderer.domElement.style.cursor = hit ? "pointer" : "default";
+
+      const toolOn = mateToolRef.current || snapModeRef.current;
+      if (hit?.kind === "connector") {
+        inference.clear();
+        references.setHoveredPlane(null);
+        setInferenceLabel(null);
+        renderer.domElement.style.cursor = "pointer";
+        return;
+      }
+
+      const inf = inference.query({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        canvas: renderer.domElement,
+        camera: active,
+        targets: defaultReferenceTargets(references.planeWorldSize() / 2),
+        planeHalfExtent: references.planeWorldSize() / 2,
+      });
+      const planeId =
+        inf?.target.kind === "plane" ? inf.target.plane?.id ?? null : null;
+      references.setHoveredPlane(planeId);
+      if (!toolOn) inference.clear();
+      const label =
+        inf &&
+        (toolOn || inf.target.kind === "plane" || inf.target.kind === "origin")
+          ? inf.target.label
+          : null;
+      setInferenceLabel((prev) => (prev === label ? prev : label));
+      renderer.domElement.style.cursor = hit || (toolOn && inf) ? "pointer" : "default";
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -373,6 +413,12 @@ export function AssemblyViewport() {
 
     renderer.domElement.addEventListener("pointermove", onPointerMove);
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    const onPointerLeave = () => {
+      inference.clear();
+      references.setHoveredPlane(null);
+      setInferenceLabel(null);
+    };
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
 
     let raf = 0;
     let frames = 0;
@@ -383,6 +429,7 @@ export function AssemblyViewport() {
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      references.updateScale(active, controls.target);
       applyInstanceState(
         instanceRoot,
         connectorRoot,
@@ -474,7 +521,10 @@ export function AssemblyViewport() {
       ro.disconnect();
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
       controls.dispose();
+      inference.dispose();
+      references.dispose();
       disposeObject(scene);
       renderer.dispose();
       renderer.forceContextLoss();
@@ -564,8 +614,13 @@ export function AssemblyViewport() {
       <ViewCube viewDirection={viewDirection} onFaceClick={onFaceClick} />
 
       {hoverConnector && (
-        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded border border-accent bg-card/95 px-2 py-1 text-[11px] text-accent">
+        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 border border-accent bg-card px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
           Mate connector · {connectors.find((c) => c.id === hoverConnector)?.name ?? hoverConnector}
+        </div>
+      )}
+      {!hoverConnector && inferenceLabel && (
+        <div className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 border border-accent bg-card px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+          {inferenceLabel}
         </div>
       )}
 

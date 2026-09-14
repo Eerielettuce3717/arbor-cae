@@ -33,6 +33,7 @@ import {
   type ActiveCamera,
 } from "../viewport/controls/OnshapeControls";
 import { ViewCube, type ViewCubeFace } from "../viewport/ViewCube";
+import { ReferenceGeometry } from "../viewport/ReferenceGeometry";
 import { useTheme } from "../../providers/ThemeProvider";
 import {
   applyViewportSceneTheme,
@@ -146,6 +147,8 @@ export function CamViewport() {
     scene.add(fill);
     const grid = createThemedGrid(resolvedThemeRef.current, 400, 40);
     scene.add(grid);
+    const references = new ReferenceGeometry();
+    scene.add(references.root);
     applyViewportSceneTheme(
       scene,
       resolvedThemeRef.current,
@@ -267,6 +270,25 @@ export function CamViewport() {
     };
     renderer.domElement.addEventListener("pointerdown", onPointer);
 
+    const onHover = (e: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      references.root.updateWorldMatrix(true, true);
+      raycaster.setFromCamera(pointer, active);
+      const hits = raycaster.intersectObjects(references.pickables, false);
+      const planeHit = hits.find((h) => h.object.userData.snapKind === "plane");
+      references.setHoveredPlane(
+        planeHit
+          ? (planeHit.object.userData.snapId as "front" | "top" | "right")
+          : null,
+      );
+    };
+    const onLeave = () => references.setHoveredPlane(null);
+    renderer.domElement.addEventListener("pointermove", onHover);
+    renderer.domElement.addEventListener("pointerleave", onLeave);
+
     let frame = 0;
     let lastT = performance.now();
     let frames = 0;
@@ -275,6 +297,7 @@ export function CamViewport() {
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
       controls.update();
+      references.updateScale(active, controls.target);
       viewDir.copy(active.position).sub(controls.target).normalize();
       if (frame % 8 === 0) {
         setViewDirection((prev) => {
@@ -312,7 +335,10 @@ export function CamViewport() {
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointer);
+      renderer.domElement.removeEventListener("pointermove", onHover);
+      renderer.domElement.removeEventListener("pointerleave", onLeave);
       controls.dispose();
+      references.dispose();
       disposeObject(scene);
       renderer.dispose();
       renderer.forceContextLoss();
