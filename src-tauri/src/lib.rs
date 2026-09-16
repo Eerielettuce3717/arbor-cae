@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod mailer;
 mod pdm;
 
 use db::CadDb;
@@ -55,6 +56,10 @@ pub fn run() {
             commands::pdm_list_reviews,
             commands::pdm_db_path,
             commands::write_text_file,
+            mailer::mailer_get_config,
+            mailer::mailer_save_config,
+            mailer::mailer_list_pushes,
+            mailer::mailer_send,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Arbor");

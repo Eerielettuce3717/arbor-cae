@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactNode } from "react";
-import { ActivityView } from "./components/dashboard/ActivityView";
+import { ActivityTab } from "./components/activity/ActivityTab";
 import { AnalyticsView } from "./components/dashboard/AnalyticsView";
 import { Dashboard } from "./components/dashboard/Dashboard";
 import { ProfileView } from "./components/dashboard/ProfileView";
@@ -155,7 +155,7 @@ export default function App() {
   if (route === "dashboard" || route === "workspace") {
     children = dashboardStage;
   } else if (route === "activity") {
-    children = <ActivityView />;
+    children = <ActivityTab />;
   } else if (route === "analytics") {
     children = <AnalyticsView />;
   } else if (route === "settings") {

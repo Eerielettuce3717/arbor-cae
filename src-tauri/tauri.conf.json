@@ -52,6 +52,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": [
+      "python/mailer.py"
+    ],
+    "externalBin": [
+      "binaries/mailer"
+    ],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",

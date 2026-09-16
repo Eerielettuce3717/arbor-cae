@@ -12,6 +12,9 @@ web/out/
 **/.cad_db
 **/.cad_db-*
 
+# Generated Python sidecar copies (build.rs)
+src-tauri/binaries/mailer-*
+
 # QA explorer artifacts
 test_screenshots/
 .venv-explorer/
